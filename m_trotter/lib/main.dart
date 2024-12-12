@@ -32,7 +32,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Application avec BottomNavigationBar'),
+          title: Center(child: Text('M\'Trotter')),
         ),
         body: _pages[_selectedIndex],
         bottomNavigationBar: BottomNavigationBar(
