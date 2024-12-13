@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'HomePage.dart';
+import 'SearchPage.dart';
+import 'MapPage.dart';
+import 'NewsPage.dart';
+import 'ProfilePage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +19,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   int _selectedIndex = 0;
   final List<Widget> _pages = [
-    Center(child: Text('Accueil', style: TextStyle(fontSize: 24))),
+    HomePage(),
     Center(child: Text('Rechercher', style: TextStyle(fontSize: 24))),
     Center(child: Text('Map', style: TextStyle(fontSize: 24))),
     Center(child: Text('Actualités', style: TextStyle(fontSize: 24))),
@@ -31,9 +36,6 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: Center(child: Text('M\'Trotter')),
-        ),
         body: _pages[_selectedIndex],
         bottomNavigationBar: BottomNavigationBar(
           items: const <BottomNavigationBarItem>[
