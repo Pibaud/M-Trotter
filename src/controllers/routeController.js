@@ -10,8 +10,8 @@ exports.calculateRoute = async (req, res, next) => {
 
         console.log("calcuating route")
 
-        const start = [parseFloat(startLon), parseFloat(startLat)];
-        const end = [parseFloat(endLon), parseFloat(endLat)];
+        const start = [parseFloat(startLat), parseFloat(startLon)];
+        const end = [parseFloat(endLat), parseFloat(endLon)];
         const route = await getRoute(start, end, mode || 'car');
 
         res.status(200).json(route);
