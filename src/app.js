@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware pour les routes
-app.use('/api', routes);
+app.use('/', routes);
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {

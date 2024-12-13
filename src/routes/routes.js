@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { calculateRoute } = require('../controllers/routeController');
+const routeController = require('../controllers/routeController');
 
-// Endpoint pour les itinéraires
-router.get('/route', calculateRoute);
+// Définition de la route pour calculer un itinéraire
+router.get('/route', routeController.calculateRoute);
 
 module.exports = router;

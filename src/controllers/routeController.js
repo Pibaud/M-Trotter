@@ -1,4 +1,4 @@
-const { getRoute } = require('../services/osrmService');
+const { getRoute } = require('../services/mapHopperService');
 
 exports.calculateRoute = async (req, res, next) => {
     try {
@@ -8,21 +8,15 @@ exports.calculateRoute = async (req, res, next) => {
             return res.status(400).json({ error: 'Missing required coordinates' });
         }
 
+        console.log("calcuating route")
+
         const start = [parseFloat(startLon), parseFloat(startLat)];
         const end = [parseFloat(endLon), parseFloat(endLat)];
-        const data = await getRoute(start, end, mode || 'driving');
+        const route = await getRoute(start, end, mode || 'car');
 
-        const routeResponse = {
-            status: "success",
-            start: data.waypoints[0].location, // Point de départ
-            end: data.waypoints[1].location, // Point d'arrivée
-            distance: data.routes[0].legs[0].distance, // Distance en mètres
-            duration: data.routes[0].legs[0].duration, // Durée en secondes
-            path: data.routes[0].geometry.coordinates // Coordonnées du chemin
-        };
-
-        res.status(200).json(routeResponse);
+        res.status(200).json(route);
     } catch (error) {
         next(error);
     }
 };
+
