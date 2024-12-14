@@ -21,7 +21,7 @@ class _MyAppState extends State<MyApp> {
   final List<Widget> _pages = [
     HomePage(),
     Center(child: Text('Rechercher', style: TextStyle(fontSize: 24))),
-    Center(child: Text('Map', style: TextStyle(fontSize: 24))),
+    MapPage(),
     Center(child: Text('Actualités', style: TextStyle(fontSize: 24))),
     Center(child: Text('Profil', style: TextStyle(fontSize: 24))),
   ];
