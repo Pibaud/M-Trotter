@@ -11,7 +11,11 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('M\'Trotter')),
+      appBar: AppBar(
+          title: Center(
+            child: Text('M\'Trotter'),
+          )
+      ),
       body: Column(
         children: [
           Padding(
@@ -19,9 +23,12 @@ class HomePageState extends State<HomePage> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Où voulez-vous aller ?',
+                hintStyle: TextStyle(
+                  color: Color.fromRGBO(0, 0, 0, 0.35),  // Réduit l'opacité à 50% avec RGB
+                ),
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(20.0),
                 ),
               ),
             ),
