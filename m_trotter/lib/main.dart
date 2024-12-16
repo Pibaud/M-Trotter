@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'HomePage.dart';
-import 'SearchPage.dart';
 import 'MapPage.dart';
-import 'NewsPage.dart';
-import 'ProfilePage.dart';
 
 void main() {
   runApp(const MyApp());
