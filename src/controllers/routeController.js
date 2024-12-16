@@ -12,7 +12,7 @@ exports.calculateRoute = async (req, res, next) => {
 
         const start = [parseFloat(startLat), parseFloat(startLon)];
         const end = [parseFloat(endLat), parseFloat(endLon)];
-        const route = await getRoute(start, end, mode || 'car');
+        const route = await getRoute(start, end, mode || 'foot');
 
         res.status(200).json(route);
     } catch (error) {
