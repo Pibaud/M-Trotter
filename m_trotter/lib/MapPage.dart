@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
 import 'LocationService.dart';
 
 class MapPage extends StatefulWidget {
@@ -14,6 +13,7 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
+  double _rotationAngle = 0.0;  // Initialiser l'angle de rotation
 
   @override
   void initState() {
@@ -23,18 +23,23 @@ class _MapPageState extends State<MapPage> {
 
   // Fonction pour obtenir la position de l'utilisateur
   Future<void> _getUserLocation() async {
+    print("Début de la récupération de la localisation...");
     // Instancier la classe LocationService
     LocationService locationService = LocationService();
 
     // Récupérer la position actuelle
     var position = await locationService.getCurrentPosition();
+    print("Retour dans MapPage.dart...");
     if (position != null) {
+      print("Setting de l'attribut...");
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
-
+      print("Attribut set");
       // Centrer la carte sur la position actuelle
+      print("Déplacement de la carte...");
       _mapController.move(LatLng(position.latitude, position.longitude), 13.0);
+      print("Fin du déplacement de la carte");
     } else {
       debugPrint('Impossible d\'obtenir la position de l\'utilisateur.');
     }
@@ -43,7 +48,17 @@ class _MapPageState extends State<MapPage> {
   void _resetMapOrientation() {
     setState(() {
       _mapController.rotate(0); // Remet la rotation à 0° (nord en haut)
+      _rotationAngle = 0.0;  // Mettre à jour l'angle de rotation
     });
+  }
+
+  // Fonction pour recentrer la carte sur la position actuelle
+  void _centerOnCurrentLocation() {
+    if (_currentLocation != null) {
+      _mapController.move(_currentLocation!, 14.5);
+    } else {
+      print("Position actuelle non disponible.");
+    }
   }
 
   @override
@@ -76,7 +91,7 @@ class _MapPageState extends State<MapPage> {
                     Marker(
                       point: _currentLocation!,
                       child: const Icon(
-                        Icons.my_location,
+                        Icons.radio_button_checked,
                         color: Colors.blue,
                         size: 30.0,
                       ),
@@ -118,7 +133,7 @@ class _MapPageState extends State<MapPage> {
               ),
               child: IconButton(
                 icon: Icon(
-                  Icons.rotate_right,
+                  Icons.explore,
                   size: 30.0,
                   color: Colors.black,
                 ),
@@ -127,6 +142,11 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _centerOnCurrentLocation, // Action pour recentrer sur la position
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.near_me)
       ),
     );
   }

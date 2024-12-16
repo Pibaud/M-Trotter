@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -8,6 +10,30 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
+  final TextEditingController _controller = TextEditingController();
+
+  // Fonction pour envoyer la requête au serveur
+  Future<void> sendDataToServer(String input) async {
+  // L'URL de votre serveur (local ou distant)
+  final String url = 'http://192.168.1.11:3000/api/data'; // Changez l'URL si nécessaire
+
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'data': input}), // Assure-toi d'envoyer la donnée sous forme de clé 'data'
+    );
+
+    if (response.statusCode == 200) {
+      print('Réponse du serveur : ${response.body}');
+    } else {
+      print('Erreur du serveur : ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Erreur lors de l\'envoi de la requête : $e');
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,6 +57,11 @@ class HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(20.0),
                 ),
               ),
+              onSubmitted: (String value) {
+                // Appelé lorsqu'on soumet le texte (en appuyant sur Entrée ou un bouton)
+                sendDataToServer(value); // Envoie les données au serveur
+                _controller.clear(); // Optionnel : efface le texte après soumission
+              },
             ),
           ),
           Text("Favoris"),

@@ -36,23 +36,26 @@ class LocationService {
 
   /// Obtient la position actuelle de l'utilisateur
   Future<Position?> getCurrentPosition() async {
+    print("Appel à getCurrentPosition...");
     // Vérifie et gère les permissions
     bool hasPermission = await _handleLocationPermission();
     if (!hasPermission) {
       return null;
     }
-
+    print("Permission acceptée");
     // Configure les paramètres de localisation
     LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high, // Précision élevée
+      accuracy: LocationAccuracy.medium, // Précision élevée
       distanceFilter: 10, // Mise à jour après un déplacement de 10 mètres
     );
 
     // Récupère la position actuelle
     try {
+      print("Récupération du Geolocator...");
       Position position = await Geolocator.getCurrentPosition(
         locationSettings: locationSettings,
       );
+      print("position retournée : $position");
       return position;
     } catch (e) {
       debugPrint('Erreur lors de la récupération de la position : $e');
