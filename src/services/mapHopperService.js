@@ -8,7 +8,6 @@ exports.getRoute = async (start, end, mode) => {
         const response = await axios.get(URL);
 
         console.log('response', response.data);
-        console.log('response', response.data.paths[0].bbox);
 
         return {
             status: 'success',

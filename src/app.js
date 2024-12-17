@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Middleware pour les routes
-app.use('/api/route', routeRoutes); // itinéraires
+app.use('/api', routeRoutes); // itinéraires
 app.use('/api/data', dataRoutes); //données
 
 // Gestion des erreurs
