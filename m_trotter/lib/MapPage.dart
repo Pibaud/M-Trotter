@@ -23,23 +23,14 @@ class _MapPageState extends State<MapPage> {
 
   // Fonction pour obtenir la position de l'utilisateur
   Future<void> _getUserLocation() async {
-    print("Début de la récupération de la localisation...");
-    // Instancier la classe LocationService
     LocationService locationService = LocationService();
 
-    // Récupérer la position actuelle
     var position = await locationService.getCurrentPosition();
-    print("Retour dans MapPage.dart...");
     if (position != null) {
-      print("Setting de l'attribut...");
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
-      print("Attribut set");
-      // Centrer la carte sur la position actuelle
-      print("Déplacement de la carte...");
       _mapController.move(LatLng(position.latitude, position.longitude), 13.0);
-      print("Fin du déplacement de la carte");
     } else {
       debugPrint('Impossible d\'obtenir la position de l\'utilisateur.');
     }
