@@ -14,7 +14,7 @@ class SearchPageState extends State<SearchPage> {
   Future<void> sendDataToServer(String input) async {
     
     final String url =
-        'http://192.168.0.49:3000/api/data';
+        'http://192.168.0.49:3000/api/places';
 
     try {
       final response = await http.post(

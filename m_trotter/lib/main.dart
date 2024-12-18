@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'HomePage.dart';
 import 'MapPage.dart';
+import 'SearchPage.dart';
+import 'NewsPage.dart';
+import 'ProfilePage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,13 +18,20 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   int _selectedIndex = 0;
-  final List<Widget> _pages = [
-    HomePage(),
-    Center(child: Text('Rechercher', style: TextStyle(fontSize: 24))),
-    MapPage(),
-    Center(child: Text('Actualités', style: TextStyle(fontSize: 24))),
-    Center(child: Text('Profil', style: TextStyle(fontSize: 24))),
-  ];
+
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomePage(onTabChange: _onItemTapped), // Passez le callback ici
+      const SearchPage(),
+      const MapPage(),
+      const NewsPage(),
+      const ProfilePage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {

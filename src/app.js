@@ -1,5 +1,5 @@
 const express = require('express');
-const dataRoutes = require('./routes/dataRoutes');
+const placesRoutes = require('./routes/placesRoutes');
 const routeRoutes = require('./routes/routeRoutes');
 require('dotenv').config();
 
@@ -9,7 +9,7 @@ app.use(express.json());
 
 // Middleware pour les routes
 app.use('/api', routeRoutes); // itinéraires
-app.use('/api/data', dataRoutes); //données
+app.use('/api', placesRoutes); //données
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {

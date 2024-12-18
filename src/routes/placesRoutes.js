@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { getData, postData } = require('../controllers/dataController');
+const { getPlaces, postPlaces } = require('../controllers/placesController');
 
 // GET pour récupérer des données
-router.get('/', getData);
+router.get('/places/', getPlaces);
 
 // POST pour envoyer des données
-router.post('/', postData);
+router.post('/places/', postPlaces);
 
 module.exports = router;

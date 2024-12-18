@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'LocationService.dart';
+import 'dart:async';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -15,6 +16,7 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
+  Timer? _debounce;
   double _rotationAngle = 0.0; // Initialiser l'angle de rotation
 
   @override
@@ -54,10 +56,8 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  Future<void> sendDataToServer(String input) async {
-    print("appel à sendDatra");
-
-    final String url = 'http://192.168.0.49:3000/api/data';
+  Future<void> getPlaces(String input) async {
+    final String url = 'http://192.168.0.49:3000/api/places';
 
     try {
       final response = await http.post(
@@ -74,6 +74,22 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       print('Erreur lors de l\'envoi de la requête : $e');
     }
+  }
+
+  // Gestion du debounce pour éviter les appels multiples
+  void _onTextChanged(String value) {
+    // Annuler le timer existant si l'utilisateur continue à taper
+    if (_debounce?.isActive ?? false) {
+      _debounce?.cancel();
+    }
+
+    // Définir un nouveau timer de 500ms
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      // Vérifier si le champ n'est pas vide avant d'envoyer
+      if (value.trim().isNotEmpty) {
+        getPlaces(value.trim());
+      }
+    });
   }
 
   @override
@@ -129,9 +145,7 @@ class _MapPageState extends State<MapPage> {
                       BorderRadius.circular(20.0), // Rayon des coins agrandi
                 ),
               ),
-              onChanged: (String value) {
-                sendDataToServer(value);
-              },
+              onChanged: _onTextChanged, // Appeler la fonction debounce
             ),
           ),
           Positioned(

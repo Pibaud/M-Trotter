@@ -4,14 +4,15 @@ import 'dart:convert';
 import 'SearchPage.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final void Function(int) onTabChange;
+
+  const HomePage({super.key, required this.onTabChange});
 
   @override
   HomePageState createState() => HomePageState();
 }
 
 class HomePageState extends State<HomePage> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,12 +36,7 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SearchPage(),
-                  ),
-                );
+                widget.onTabChange(1); // Change l'onglet vers "SearchPage"
               },
             ),
           ),
