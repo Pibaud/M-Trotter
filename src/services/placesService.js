@@ -58,23 +58,21 @@ exports.LPlaces = async (Char) => {
     
       for (let elem of ListeLieux) {
         let mot = true;
-    
-        for (let lettre of Char) {
-          let lett = false;
-    
-          for (let le of elem) {
-            if (le == lettre) {
-              lett = true;
-              break;
-            }
+        let charIndex = 0;
+      
+        for (let le of elem) {
+          if (le == Char[charIndex]) {
+            charIndex++;
           }
-    
-          if (!lett) {
-            mot = false;
+          if (charIndex == Char.length) {
             break;
           }
         }
-    
+      
+        if (charIndex != Char.length) {
+          mot = false;
+        }
+      
         if (mot) {
           rendu.push(elem);
           if (rendu.length >= 11) {
