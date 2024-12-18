@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'LocationService.dart';
 
 class MapPage extends StatefulWidget {
@@ -13,7 +15,7 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
-  double _rotationAngle = 0.0;  // Initialiser l'angle de rotation
+  double _rotationAngle = 0.0; // Initialiser l'angle de rotation
 
   @override
   void initState() {
@@ -39,7 +41,7 @@ class _MapPageState extends State<MapPage> {
   void _resetMapOrientation() {
     setState(() {
       _mapController.rotate(0); // Remet la rotation à 0° (nord en haut)
-      _rotationAngle = 0.0;  // Mettre à jour l'angle de rotation
+      _rotationAngle = 0.0; // Mettre à jour l'angle de rotation
     });
   }
 
@@ -49,6 +51,28 @@ class _MapPageState extends State<MapPage> {
       _mapController.move(_currentLocation!, 14.5);
     } else {
       print("Position actuelle non disponible.");
+    }
+  }
+
+  Future<void> sendDataToServer(String input) async {
+    print("appel à sendDatra");
+
+    final String url = 'http://192.168.0.49:3000/api/data';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'data': input}),
+      );
+
+      if (response.statusCode == 200) {
+        print('Réponse du serveur : ${response.body}');
+      } else {
+        print('Erreur du serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erreur lors de l\'envoi de la requête : $e');
     }
   }
 
@@ -105,6 +129,9 @@ class _MapPageState extends State<MapPage> {
                       BorderRadius.circular(20.0), // Rayon des coins agrandi
                 ),
               ),
+              onChanged: (String value) {
+                sendDataToServer(value);
+              },
             ),
           ),
           Positioned(
@@ -135,10 +162,10 @@ class _MapPageState extends State<MapPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _centerOnCurrentLocation, // Action pour recentrer sur la position
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.near_me)
-      ),
+          onPressed:
+              _centerOnCurrentLocation, // Action pour recentrer sur la position
+          backgroundColor: Colors.blue,
+          child: const Icon(Icons.near_me)),
     );
   }
 }

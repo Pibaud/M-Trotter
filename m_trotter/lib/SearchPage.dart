@@ -10,13 +10,11 @@ class SearchPage extends StatefulWidget {
 }
 
 class SearchPageState extends State<SearchPage> {
-  final TextEditingController _controller = TextEditingController();
-
-  // Fonction pour envoyer la requête au serveur
+  
   Future<void> sendDataToServer(String input) async {
-    // L'URL de votre serveur (local ou distant)
+    
     final String url =
-        'http://192.168.1.11:3000/api/data'; // Changez l'URL si nécessaire
+        'http://192.168.0.49:3000/api/data';
 
     try {
       final response = await http.post(
@@ -24,7 +22,7 @@ class SearchPageState extends State<SearchPage> {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'data': input
-        }), // Assure-toi d'envoyer la donnée sous forme de clé 'data'
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -41,9 +39,8 @@ class SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Center(
-        child: Text('M\'Trotter'),
-      )),
+          title: Center(child: Text('M\'Trotter'),)
+          ),
       body: Column(
         children: [
           Padding(
@@ -53,7 +50,7 @@ class SearchPageState extends State<SearchPage> {
                 hintText: 'Où voulez-vous aller ?',
                 hintStyle: TextStyle(
                   color: Color.fromRGBO(
-                      0, 0, 0, 0.35), // Réduit l'opacité à 50% avec RGB
+                      0, 0, 0, 0.35),
                 ),
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(
@@ -61,8 +58,7 @@ class SearchPageState extends State<SearchPage> {
                 ),
               ),
               onChanged: (String value) {
-                // Appelé à chaque modification du texte
-                sendDataToServer(value); // Envoie les données au serveur
+                sendDataToServer(value);
               },
             ),
           ),
