@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'HomePage.dart';
 import 'MapPage.dart';
-import 'SearchPage.dart';
-import 'NewsPage.dart';
 import 'ProfilePage.dart';
 
 void main() {
@@ -26,9 +24,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _pages = [
       HomePage(onTabChange: _onItemTapped), // Passez le callback ici
-      const SearchPage(),
       const MapPage(),
-      const NewsPage(),
       const ProfilePage(),
     ];
   }
@@ -51,16 +47,8 @@ class _MyAppState extends State<MyApp> {
               label: 'Accueil',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'Rechercher',
-            ),
-            BottomNavigationBarItem(
               icon: Icon(Icons.map),
               label: 'Map',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.article),
-              label: 'Actualités',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),

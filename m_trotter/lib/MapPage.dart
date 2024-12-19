@@ -14,15 +14,21 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  final FocusNode _focusNode = FocusNode(); // FocusNode pour le TextField
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
   Timer? _debounce;
   double _rotationAngle = 0.0; // Initialiser l'angle de rotation
+  TextEditingController _controller = TextEditingController();
+  List<String> _suggestions = [];
 
   @override
   void initState() {
     super.initState();
     _getUserLocation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
   }
 
   // Fonction pour obtenir la position de l'utilisateur
@@ -135,6 +141,8 @@ class _MapPageState extends State<MapPage> {
             padding: const EdgeInsets.only(
                 top: 30.0, left: 8.0, right: 8.0), // Augmente la marge en haut
             child: TextField(
+              controller: _controller,  // Utiliser le contrôleur
+              focusNode: _focusNode, // Associe le TextField au FocusNode
               decoration: InputDecoration(
                 hintText: 'Où voulez-vous aller ?',
                 prefixIcon: Icon(Icons.search),
@@ -148,6 +156,24 @@ class _MapPageState extends State<MapPage> {
               onChanged: _onTextChanged, // Appeler la fonction debounce
             ),
           ),
+          if (_suggestions.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                itemCount: _suggestions.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                      title: Text(_suggestions[index]),
+                      onTap: () {
+                        _controller.text = _suggestions[index]; // en fait plutot redirect sur la map
+                        _focusNode.unfocus();
+                        setState(() {
+                          _suggestions.clear();
+                        });
+                        _focusNode.requestFocus();
+                      });
+                },
+              ),
+            ),
           Positioned(
             top: 120.0, // Déplacer plus bas
             right: 10.0,
@@ -181,5 +207,11 @@ class _MapPageState extends State<MapPage> {
           backgroundColor: Colors.blue,
           child: const Icon(Icons.near_me)),
     );
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose(); // Libère le FocusNode
+    super.dispose();
   }
 }

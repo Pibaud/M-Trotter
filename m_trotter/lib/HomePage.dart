@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'SearchPage.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(int) onTabChange;
@@ -36,11 +33,11 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-                widget.onTabChange(1); // Change l'onglet vers "SearchPage"
+                widget.onTabChange(1);
               },
             ),
           ),
-          Text("Favoris"),
+          Text("Favoris"), //tester si le boug est connecté
           Expanded(
             child: ListView(
               scrollDirection: Axis.horizontal, // Scroll de droite à gauche.
