@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'AuthPage.dart';
+import 'AuthPopup.dart';
 class HomePage extends StatefulWidget {
   final void Function(int) onTabChange;
 
@@ -12,6 +14,7 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
+    final authState = Provider.of<AuthState>(context, listen: true);
     return Scaffold(
       appBar: AppBar(
           title: Center(
@@ -39,8 +42,9 @@ class HomePageState extends State<HomePage> {
           ),
           Text("Favoris"), //tester si le boug est connecté
           Expanded(
-            child: ListView(
-              scrollDirection: Axis.horizontal, // Scroll de droite à gauche.
+            child: authState.isLoggedIn
+                ? ListView(
+              scrollDirection: Axis.horizontal,
               children: [
                 for (var i = 1; i <= 10; i++)
                   Padding(
@@ -49,12 +53,25 @@ class HomePageState extends State<HomePage> {
                       width: 150,
                       color: Colors.blue[100 * (i % 9)],
                       child: Center(
-                        child:
-                            Text('Élément $i', style: TextStyle(fontSize: 18)),
+                        child: Text('Favori $i',
+                            style: const TextStyle(fontSize: 18)),
                       ),
                     ),
                   ),
               ],
+            )
+                : Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AuthDialog(authState);
+                    },
+                  );
+                },
+                child: const Text("Se connecter pour voir vos favoris"),
+              ),
             ),
           ),
           Text("Populaires en ce moment"),

@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'HomePage.dart';
 import 'MapPage.dart';
 import 'ProfilePage.dart';
+import 'package:provider/provider.dart';
+import 'AuthPage.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AuthState(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
