@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'HomePage.dart';
 import 'MapPage.dart';
 import 'ProfilePage.dart';
 import 'package:provider/provider.dart';
 import 'AuthPage.dart';
 
-void main() {
+Future<void> main() async {
+  try {
+    print("récupération du .env...");
+    await dotenv.load(fileName: "../../.env");  // chemin correct
+    print(".env récupéré");
+  } catch (e) {
+    print("Erreur lors du chargement du fichier .env : $e");
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthState(),
@@ -63,9 +72,12 @@ class _MyAppState extends State<MyApp> {
             ),
           ],
           currentIndex: _selectedIndex, // Indique quel onglet est sélectionné
-          selectedItemColor: Colors.blue, // Couleur de l'icône/texte sélectionné
-          unselectedItemColor: Colors.grey, // Couleur des icônes non sélectionnées
-          onTap: _onItemTapped, // Appelle cette fonction lorsqu'un onglet est tapé
+          selectedItemColor:
+              Colors.blue, // Couleur de l'icône/texte sélectionné
+          unselectedItemColor:
+              Colors.grey, // Couleur des icônes non sélectionnées
+          onTap:
+              _onItemTapped, // Appelle cette fonction lorsqu'un onglet est tapé
         ),
       ),
     );
