@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'HomePage.dart';
 import 'MapPage.dart';
 import 'ProfilePage.dart';
 import 'package:provider/provider.dart';
 import 'AuthPage.dart';
 
-Future<void> main() async {
-  try {
-    print("récupération du .env...");
-    await dotenv.load(fileName: "../../.env");  // chemin correct
-    print(".env récupéré");
-  } catch (e) {
-    print("Erreur lors du chargement du fichier .env : $e");
-  }
-
+void main(){
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthState(),
