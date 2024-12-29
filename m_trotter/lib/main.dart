@@ -23,6 +23,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   int _selectedIndex = 0;
+  bool _focusOnSearch = false; // Indique si le focus doit être activé
 
   late final List<Widget> _pages;
 
@@ -30,15 +31,19 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _pages = [
-      HomePage(onTabChange: _onItemTapped), // Passez le callback ici
-      const MapPage(),
+      HomePage(onTabChange: _onItemTapped),
+      MapPage(focusOnSearch: _focusOnSearch),
       const ProfilePage(),
     ];
   }
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      print("Tab selected: $index");
+      print("I come from tab: $index");
+      _focusOnSearch = (index == 1 && _selectedIndex == 0); // Activer le focus uniquement si on vient de HomePage
+      _selectedIndex = index; // Met à jour l'onglet sélectionné
+      _pages[1] = MapPage(focusOnSearch: _focusOnSearch); // Recharge MapPage avec le bon état
     });
   }
 

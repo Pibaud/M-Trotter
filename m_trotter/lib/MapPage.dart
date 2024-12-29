@@ -8,7 +8,9 @@ import 'LocationService.dart';
 import 'dart:async';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final bool focusOnSearch;
+
+  const MapPage({super.key, required this.focusOnSearch});
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -26,10 +28,13 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _getUserLocation();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
+    print("MapPage initState called. focusOnSearch = ${widget.focusOnSearch}");
+    // Si le paramètre focusOnSearch est vrai, activer le focus
+    if (widget.focusOnSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNode.requestFocus(); // Donne le focus au TextField
+      });
+    }
   }
 
   // Fonction pour obtenir la position de l'utilisateur
@@ -142,7 +147,7 @@ class _MapPageState extends State<MapPage> {
             padding: const EdgeInsets.only(
                 top: 30.0, left: 8.0, right: 8.0), // Augmente la marge en haut
             child: TextField(
-              controller: _controller,  // Utiliser le contrôleur
+              controller: _controller, // Utiliser le contrôleur
               focusNode: _focusNode, // Associe le TextField au FocusNode
               decoration: InputDecoration(
                 hintText: 'Où voulez-vous aller ?',
@@ -165,7 +170,8 @@ class _MapPageState extends State<MapPage> {
                   return ListTile(
                       title: Text(_suggestions[index]),
                       onTap: () {
-                        _controller.text = _suggestions[index]; // en fait plutot redirect sur la map
+                        _controller.text = _suggestions[
+                            index]; // en fait plutot redirect sur la map
                         _focusNode.unfocus();
                         setState(() {
                           _suggestions.clear();
@@ -176,7 +182,7 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
           Positioned(
-            top: 120.0, // Déplacer plus bas
+            top: 120.0,
             right: 10.0,
             child: Container(
               decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'AuthPage.dart';
 import 'AuthPopup.dart';
+
 class HomePage extends StatefulWidget {
   final void Function(int) onTabChange;
 
@@ -36,43 +37,44 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-                widget.onTabChange(1);
+                print("Navigating to MapPage with focusOnSearch = true");
+                widget.onTabChange(1); // Simule un clic sur l'onglet Map
               },
             ),
           ),
-          Text("Favoris"), //tester si le boug est connecté
+          Text("Favoris"),
           Expanded(
             child: authState.isLoggedIn
                 ? ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (var i = 1; i <= 10; i++)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 150,
-                      color: Colors.blue[100 * (i % 9)],
-                      child: Center(
-                        child: Text('Favori $i',
-                            style: const TextStyle(fontSize: 18)),
-                      ),
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      for (var i = 1; i <= 10; i++)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: 150,
+                            color: Colors.blue[100 * (i % 9)],
+                            child: Center(
+                              child: Text('Favori $i',
+                                  style: const TextStyle(fontSize: 18)),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                : Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AuthDialog(authState);
+                          },
+                        );
+                      },
+                      child: const Text("Se connecter pour voir vos favoris"),
                     ),
                   ),
-              ],
-            )
-                : Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AuthDialog(authState);
-                    },
-                  );
-                },
-                child: const Text("Se connecter pour voir vos favoris"),
-              ),
-            ),
           ),
           Text("Populaires en ce moment"),
           Expanded(
