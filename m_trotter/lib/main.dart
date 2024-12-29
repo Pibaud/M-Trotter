@@ -5,11 +5,13 @@ import 'ProfilePage.dart';
 import 'package:provider/provider.dart';
 import 'AuthPage.dart';
 
-void main(){
+final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
+
+void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthState(),
-      child: const MyApp(),
+      child: MyApp(key: myAppKey), // Assignez la clé ici
     ),
   );
 }
@@ -27,6 +29,14 @@ class _MyAppState extends State<MyApp> {
 
   late final List<Widget> _pages;
 
+  void navigateToMapWithFocus() {
+    setState(() {
+      _focusOnSearch = true;
+      _selectedIndex = 1; // Naviguer vers la page Map
+      _pages[1] = MapPage(focusOnSearch: _focusOnSearch); // Actualiser la MapPage
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -38,9 +48,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _onItemTapped(int index) {
+    print("Tab selected: $index");
+    print("I come from tab: $_selectedIndex");
     setState(() {
-      print("Tab selected: $index");
-      print("I come from tab: $index");
       _focusOnSearch = (index == 1 && _selectedIndex == 0); // Activer le focus uniquement si on vient de HomePage
       _selectedIndex = index; // Met à jour l'onglet sélectionné
       _pages[1] = MapPage(focusOnSearch: _focusOnSearch); // Recharge MapPage avec le bon état
@@ -72,8 +82,12 @@ class _MyAppState extends State<MyApp> {
               Colors.blue, // Couleur de l'icône/texte sélectionné
           unselectedItemColor:
               Colors.grey, // Couleur des icônes non sélectionnées
-          onTap:
-              _onItemTapped, // Appelle cette fonction lorsqu'un onglet est tapé
+          onTap: (int index) {
+            setState(() {
+              _focusOnSearch = false; // Désactiver le focus par défaut
+              _selectedIndex = index;
+            });
+          },
         ),
       ),
     );

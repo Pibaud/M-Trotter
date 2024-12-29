@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'AuthPage.dart';
 import 'AuthPopup.dart';
+import 'main.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(int) onTabChange;
@@ -37,8 +38,8 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-                print("Navigating to MapPage with focusOnSearch = true");
-                widget.onTabChange(1); // Simule un clic sur l'onglet Map
+                print("Navigation vers MapPage avec focusOnSearch = true");
+                myAppKey.currentState?.navigateToMapWithFocus();
               },
             ),
           ),
