@@ -26,6 +26,14 @@ class _MapPageState extends State<MapPage> {
   List<String> _suggestions = [];
   bool _isSearchFocused = false;
 
+  final Map<String, LatLng> _lieuxCoordonnees = {
+    'tokyoburger': LatLng(43.611, 3.876),
+    'mcdonaldsComedie': LatLng(43.6115, 3.8765),
+    'leclocher': LatLng(43.612, 3.877),
+    'laopportunite': LatLng(43.613, 3.878),
+    // Ajoutez d'autres lieux ici...
+  };
+
   @override
   void initState() {
     super.initState();
@@ -75,7 +83,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> getPlaces(String input) async {
-    final String url = 'http://192.168.1.58:3000/api/places';
+    final String url = 'http://192.168.0.49:3000/api/places';
 
     try {
       final response = await http.post(
@@ -118,6 +126,35 @@ class _MapPageState extends State<MapPage> {
         getPlaces(value.trim());
       }
     });
+  }
+
+  void _onSuggestionTap(String lieu) async {
+    // Coordonnées de départ (Montpellier)
+    LatLng depart = LatLng(43.610769, 3.876716);
+
+    // Coordonnées du lieu sélectionné
+    LatLng destination = _lieuxCoordonnees[lieu]!;
+
+    // Construire l'URL avec les paramètres de la requête
+    String url = 'http://192.168.0.49:3000/api/routes?'
+        'startLat=${depart.latitude}&startLon=${depart.longitude}&'
+        'endLat=${destination.latitude}&endLon=${destination.longitude}&'
+        'mode=foot';
+
+    // Envoi de la requête HTTP avec l'URL contenant les paramètres de la requête
+    try {
+      final response = await http
+          .get(Uri.parse(url)); // Utiliser http.get au lieu de http.post
+
+      if (response.statusCode == 200) {
+        print('Réponse du serveur : ${response.body}');
+        // Traite la réponse du serveur pour afficher l'itinéraire ou autre action
+      } else {
+        print('Erreur du serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erreur lors de l\'envoi de la requête : $e');
+    }
   }
 
   @override
@@ -188,12 +225,10 @@ class _MapPageState extends State<MapPage> {
               top: 100.0,
               left: 8.0,
               right: 8.0,
-              bottom:
-                  0.0, // Ajouter la contrainte pour occuper tout l'espace restant
+              bottom: 0.0,
               child: Material(
                 color: Colors.transparent,
                 child: Expanded(
-                  // Utilisez Expanded pour occuper tout l'espace disponible
                   child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: _suggestions.length,
@@ -201,6 +236,10 @@ class _MapPageState extends State<MapPage> {
                       return ListTile(
                         title: Text(_suggestions[index]),
                         onTap: () {
+                          // Appeler la fonction pour envoyer la requête avec le lieu sélectionné
+                          _onSuggestionTap(_suggestions[index]);
+
+                          // Mettre à jour le champ de recherche
                           _controller.text = _suggestions[index];
                           _focusNode.unfocus();
                           setState(() {
