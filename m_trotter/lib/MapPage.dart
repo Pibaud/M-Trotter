@@ -24,6 +24,7 @@ class _MapPageState extends State<MapPage> {
   double _rotationAngle = 0.0; // Initialiser l'angle de rotation
   TextEditingController _controller = TextEditingController();
   List<String> _suggestions = [];
+  bool _isSearchFocused = false;
 
   @override
   void initState() {
@@ -35,6 +36,11 @@ class _MapPageState extends State<MapPage> {
         _focusNode.requestFocus(); // Donne le focus au TextField
       });
     }
+
+    // Ajouter un listener pour détecter le focus sur le TextField
+    _focusNode.addListener(() {
+      setState(() {});
+    });
   }
 
   // Fonction pour obtenir la position de l'utilisateur
@@ -69,7 +75,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> getPlaces(String input) async {
-    final String url = 'http://192.168.0.49:3000/api/places';
+    final String url = 'http://192.168.1.58:3000/api/places';
 
     try {
       final response = await http.post(
@@ -80,6 +86,16 @@ class _MapPageState extends State<MapPage> {
 
       if (response.statusCode == 200) {
         print('Réponse du serveur : ${response.body}');
+
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        if (responseData.containsKey('places')) {
+          setState(() {
+            _suggestions = List<String>.from(responseData['places']);
+          });
+        } else {
+          print('Aucune liste de places trouvée.');
+        }
       } else {
         print('Erreur du serveur : ${response.statusCode}');
       }
@@ -114,8 +130,8 @@ class _MapPageState extends State<MapPage> {
             options: MapOptions(
               initialCenter: LatLng(43.611, 3.876), // Montpellier
               initialZoom: 13.0,
-              minZoom: 12.0, // Zoom minimal
-              maxZoom: 20.0, // Zoom maximal
+              minZoom: 12.0,
+              maxZoom: 20.0,
               cameraConstraint: CameraConstraint.contain(
                 bounds: LatLngBounds(
                   LatLng(43.51483, 3.69367), // Montbazin (Sud-Ouest)
@@ -143,9 +159,13 @@ class _MapPageState extends State<MapPage> {
                 ),
             ],
           ),
+          // Layer blanc lorsque la recherche est active
+          if (_focusNode.hasFocus)
+            Container(
+              color: Colors.white.withOpacity(0.8), // Blanc avec opacité
+            ),
           Padding(
-            padding: const EdgeInsets.only(
-                top: 30.0, left: 8.0, right: 8.0), // Augmente la marge en haut
+            padding: const EdgeInsets.only(top: 30.0, left: 8.0, right: 8.0),
             child: TextField(
               controller: _controller, // Utiliser le contrôleur
               focusNode: _focusNode, // Associe le TextField au FocusNode
@@ -162,23 +182,35 @@ class _MapPageState extends State<MapPage> {
               onChanged: _onTextChanged, // Appeler la fonction debounce
             ),
           ),
+          // Affichage des suggestions
           if (_suggestions.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: _suggestions.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                      title: Text(_suggestions[index]),
-                      onTap: () {
-                        _controller.text = _suggestions[
-                            index]; // en fait plutot redirect sur la map
-                        _focusNode.unfocus();
-                        setState(() {
-                          _suggestions.clear();
-                        });
-                        _focusNode.requestFocus();
-                      });
-                },
+            Positioned(
+              top: 100.0,
+              left: 8.0,
+              right: 8.0,
+              bottom:
+                  0.0, // Ajouter la contrainte pour occuper tout l'espace restant
+              child: Material(
+                color: Colors.transparent,
+                child: Expanded(
+                  // Utilisez Expanded pour occuper tout l'espace disponible
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _suggestions.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(_suggestions[index]),
+                        onTap: () {
+                          _controller.text = _suggestions[index];
+                          _focusNode.unfocus();
+                          setState(() {
+                            _suggestions.clear();
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           Positioned(
@@ -186,8 +218,8 @@ class _MapPageState extends State<MapPage> {
             right: 10.0,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Fond blanc
-                borderRadius: BorderRadius.circular(30.0), // Coins arrondis
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30.0),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
