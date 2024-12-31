@@ -19,4 +19,3 @@ exports.calculateRoute = async (req, res, next) => {
         next(error);
     }
 };
-

@@ -24,11 +24,13 @@ class _MapPageState extends State<MapPage> {
   double _rotationAngle = 0.0; // Initialiser l'angle de rotation
   TextEditingController _controller = TextEditingController();
   List<String> _suggestions = [];
-  bool _isSearchFocused = false;
+  bool _isLayerVisible =
+      false; // Booléen pour contrôler l'affichage du layer blanc
+  List<LatLng> _routePoints = []; // Liste pour stocker les points du trajet
 
   final Map<String, LatLng> _lieuxCoordonnees = {
     'tokyoburger': LatLng(43.611, 3.876),
-    'mcdonaldsComedie': LatLng(43.6115, 3.8765),
+    'mcdonaldsComedie': LatLng(43.8, 3.9765),
     'leclocher': LatLng(43.612, 3.877),
     'laopportunite': LatLng(43.613, 3.878),
     // Ajoutez d'autres lieux ici...
@@ -37,18 +39,14 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    print("MapPage initState called. focusOnSearch = ${widget.focusOnSearch}");
-    // Si le paramètre focusOnSearch est vrai, activer le focus
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus(); // Donne le focus au TextField
+        setState(() {
+          _isLayerVisible = true; // Affiche le layer blanc au début
+        });
       });
     }
-
-    // Ajouter un listener pour détecter le focus sur le TextField
-    _focusNode.addListener(() {
-      setState(() {});
-    });
   }
 
   // Fonction pour obtenir la position de l'utilisateur
@@ -83,7 +81,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> getPlaces(String input) async {
-    final String url = 'http://192.168.0.49:3000/api/places';
+    final String url = 'http://192.168.1.58:3000/api/places';
 
     try {
       final response = await http.post(
@@ -129,26 +127,35 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _onSuggestionTap(String lieu) async {
-    // Coordonnées de départ (Montpellier)
     LatLng depart = LatLng(43.610769, 3.876716);
-
-    // Coordonnées du lieu sélectionné
     LatLng destination = _lieuxCoordonnees[lieu]!;
-
-    // Construire l'URL avec les paramètres de la requête
-    String url = 'http://192.168.0.49:3000/api/routes?'
+    print("je vais à ${destination} en partant de ${depart}");
+    String url = 'http://192.168.1.58:3000/api/routes?'
         'startLat=${depart.latitude}&startLon=${depart.longitude}&'
         'endLat=${destination.latitude}&endLon=${destination.longitude}&'
         'mode=foot';
 
-    // Envoi de la requête HTTP avec l'URL contenant les paramètres de la requête
     try {
-      final response = await http
-          .get(Uri.parse(url)); // Utiliser http.get au lieu de http.post
+      final response = await http.post(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        print('Réponse du serveur : ${response.body}');
-        // Traite la réponse du serveur pour afficher l'itinéraire ou autre action
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          // Extraire les points du trajet et les convertir en LatLng
+          List<dynamic> path = responseData['path'];
+          List<LatLng> routePoints = [];
+
+          for (var point in path) {
+            var coords = point; // [longitude, latitude]
+            LatLng latLng = LatLng(coords[1], coords[0]);
+            routePoints.add(latLng);
+          }
+
+          // Mettre à jour l'état pour afficher la polyligne
+          setState(() {
+            _routePoints = routePoints; // Liste des points du trajet
+          });
+        }
       } else {
         print('Erreur du serveur : ${response.statusCode}');
       }
@@ -194,18 +201,34 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ],
                 ),
+              if (_routePoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _routePoints, // Liste des points du trajet
+                      strokeWidth: 7.0,
+                      color: Colors.blue, // Couleur de la polyligne
+                    ),
+                  ],
+                ),
             ],
           ),
           // Layer blanc lorsque la recherche est active
-          if (_focusNode.hasFocus)
+          if (_isLayerVisible)
             Container(
-              color: Colors.white.withOpacity(0.8), // Blanc avec opacité
+              color: Colors.white, // Blanc avec opacité
             ),
           Padding(
             padding: const EdgeInsets.only(top: 30.0, left: 8.0, right: 8.0),
             child: TextField(
               controller: _controller, // Utiliser le contrôleur
               focusNode: _focusNode, // Associe le TextField au FocusNode
+              onTap: () {
+                // Affiche le layer blanc lorsque l'utilisateur tape sur le TextField
+                setState(() {
+                  _isLayerVisible = true;
+                });
+              },
               decoration: InputDecoration(
                 hintText: 'Où voulez-vous aller ?',
                 prefixIcon: Icon(Icons.search),
@@ -220,34 +243,42 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
           // Affichage des suggestions
+          // Ajouter un GestureDetector autour de la partie contenant la ListView
           if (_suggestions.isNotEmpty)
             Positioned(
               top: 100.0,
               left: 8.0,
               right: 8.0,
               bottom: 0.0,
-              child: Material(
-                color: Colors.transparent,
-                child: Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _suggestions.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_suggestions[index]),
-                        onTap: () {
-                          // Appeler la fonction pour envoyer la requête avec le lieu sélectionné
-                          _onSuggestionTap(_suggestions[index]);
+              child: GestureDetector(
+                onVerticalDragUpdate: (_) {
+                  // Perdre le focus dès que l'utilisateur commence à faire défiler
+                  _focusNode.unfocus();
+                  print("scroll détecté");
+                },
+                child: Material(
+                  color: Colors.transparent,
+                  child: Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _suggestions.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(_suggestions[index]),
+                          onTap: () {
+                            // Appeler la fonction pour envoyer la requête avec le lieu sélectionné
+                            _onSuggestionTap(_suggestions[index]);
 
-                          // Mettre à jour le champ de recherche
-                          _controller.text = _suggestions[index];
-                          _focusNode.unfocus();
-                          setState(() {
-                            _suggestions.clear();
-                          });
-                        },
-                      );
-                    },
+                            // Mettre à jour le champ de recherche
+                            _controller.text = _suggestions[index];
+                            _focusNode.unfocus();
+                            setState(() {
+                              _suggestions.clear();
+                            });
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
