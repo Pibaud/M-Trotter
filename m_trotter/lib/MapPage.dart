@@ -258,7 +258,7 @@ class _MapPageState extends State<MapPage> {
               onChanged: _onTextChanged, // Appeler la fonction debounce
             ),
           ),
-          if (_suggestions.isNotEmpty)
+          if (_suggestions.isNotEmpty && _isLayerVisible)
             Positioned(
               top: 85.0,
               left: 8.0,
