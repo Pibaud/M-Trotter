@@ -26,7 +26,10 @@ class _MapPageState extends State<MapPage> {
   List<String> _suggestions = [];
   bool _isLayerVisible =
       false; // Booléen pour contrôler l'affichage du layer blanc
+  LatLng?
+      _lieuSelectionne; // Variable pour stocker la localisation du lieu sélectionné
   List<LatLng> _routePoints = []; // Liste pour stocker les points du trajet
+  double _bottomSheetHeight = 100.0; // Hauteur initiale de la "modal"
 
   final Map<String, LatLng> _lieuxCoordonnees = {
     'tokyoburger': LatLng(43.611, 3.876),
@@ -81,7 +84,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> getPlaces(String input) async {
-    final String url = 'http://192.168.1.58:3000/api/places';
+    final String url = 'http://192.168.0.49:3000/api/places';
 
     try {
       final response = await http.post(
@@ -126,11 +129,27 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  void _onSuggestionTap(String lieu) async {
+  void _onSuggestionTap(String lieu) {
+    _controller.text = lieu; // Mise à jour du champ texte
+    _focusNode.unfocus();
+    setState(() {
+      _suggestions.clear();
+      _isLayerVisible = false;
+    });
+    LatLng? destination = _lieuxCoordonnees[lieu];
+    if (destination != null) {
+      setState(() {
+        _lieuSelectionne = destination; // Mettre à jour le lieu sélectionné
+        _mapController.move(destination, 15.0); // Centrer la carte sur le lieu
+      });
+    }
+  }
+
+  void _itineraire(String lieu) async {
     LatLng depart = LatLng(43.610769, 3.876716);
     LatLng destination = _lieuxCoordonnees[lieu]!;
     print("je vais à ${destination} en partant de ${depart}");
-    String url = 'http://192.168.1.58:3000/api/routes?'
+    String url = 'http://192.168.0.49:3000/api/routes?'
         'startLat=${depart.latitude}&startLon=${depart.longitude}&'
         'endLat=${destination.latitude}&endLon=${destination.longitude}&'
         'mode=foot';
@@ -201,6 +220,19 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ],
                 ),
+              if (_lieuSelectionne != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _lieuSelectionne!,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 30.0,
+                      ),
+                    ),
+                  ],
+                ),
               if (_routePoints.isNotEmpty)
                 PolylineLayer(
                   polylines: [
@@ -213,6 +245,72 @@ class _MapPageState extends State<MapPage> {
                 ),
             ],
           ),
+          if (_lieuSelectionne != null)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: GestureDetector(
+                onVerticalDragUpdate: (details) {
+                  setState(() {
+                    // Ajuste la hauteur du conteneur en glissant
+                    _bottomSheetHeight = (_bottomSheetHeight - details.delta.dy)
+                        .clamp(100.0, MediaQuery.of(context).size.height * 0.7);
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: _bottomSheetHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20.0),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black,
+                        blurRadius: 10.0,
+                        spreadRadius: 2.0,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      // Poignée pour indiquer la possibilité de glisser
+                      Container(
+                        width: 40.0,
+                        height: 6.0,
+                        margin: const EdgeInsets.symmetric(vertical: 10.0),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(3.0),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Informations sur le lieu',
+                              ),
+                              const SizedBox(height: 10.0),
+                              Text(
+                                'Nom : ${_lieuxCoordonnees.entries.firstWhere((entry) => entry.value == _lieuSelectionne).key}',
+                              ),
+                              const SizedBox(height: 10.0),
+                              const Text(
+                                  'Description : Ce lieu est exceptionnel...'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           // Layer blanc lorsque la recherche est active
           if (_isLayerVisible)
             Container(
@@ -287,14 +385,6 @@ class _MapPageState extends State<MapPage> {
                         onTap: () {
                           // Appeler la fonction pour envoyer la requête avec le lieu sélectionné
                           _onSuggestionTap(_suggestions[index]);
-
-                          // Mettre à jour le champ de recherche
-                          _controller.text = _suggestions[index];
-                          _focusNode.unfocus();
-                          setState(() {
-                            _suggestions.clear();
-                            _isLayerVisible = false;
-                          });
                         },
                       );
                     },
