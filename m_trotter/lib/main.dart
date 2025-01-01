@@ -33,7 +33,8 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _focusOnSearch = true;
       _selectedIndex = 1; // Naviguer vers la page Map
-      _pages[1] = MapPage(focusOnSearch: _focusOnSearch); // Actualiser la MapPage
+      _pages[1] =
+          MapPage(focusOnSearch: _focusOnSearch); // Actualiser la MapPage
     });
   }
 
@@ -48,12 +49,13 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _onItemTapped(int index) {
-    print("Tab selected: $index");
-    print("I come from tab: $_selectedIndex");
     setState(() {
-      _focusOnSearch = (index == 1 && _selectedIndex == 0); // Activer le focus uniquement si on vient de HomePage
+      if (index == 1) {
+        // Naviguer vers MapPage sans activer le focus
+        _focusOnSearch = false;
+      }
       _selectedIndex = index; // Met à jour l'onglet sélectionné
-      _pages[1] = MapPage(focusOnSearch: _focusOnSearch); // Recharge MapPage avec le bon état
+      _pages[1] = MapPage(focusOnSearch: _focusOnSearch); // Recharge MapPage
     });
   }
 
@@ -82,12 +84,7 @@ class _MyAppState extends State<MyApp> {
               Colors.blue, // Couleur de l'icône/texte sélectionné
           unselectedItemColor:
               Colors.grey, // Couleur des icônes non sélectionnées
-          onTap: (int index) {
-            setState(() {
-              _focusOnSearch = false; // Désactiver le focus par défaut
-              _selectedIndex = index;
-            });
-          },
+          onTap: _onItemTapped,
         ),
       ),
     );

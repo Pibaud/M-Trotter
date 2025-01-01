@@ -231,54 +231,73 @@ class _MapPageState extends State<MapPage> {
               },
               decoration: InputDecoration(
                 hintText: 'Où voulez-vous aller ?',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: GestureDetector(
+                  onTap: () {
+                    if (_isLayerVisible) {
+                      setState(() {
+                        _isLayerVisible = false; // Désactiver le layer blanc
+                        _focusNode.unfocus(); // Perdre le focus
+                        _controller.clear();
+                        _suggestions.clear();
+                      });
+                    }
+                  },
+                  child: Icon(
+                    _isLayerVisible
+                        ? Icons.arrow_back
+                        : Icons.search, // Icône conditionnelle
+                  ),
+                ),
                 filled: true, // Permet de remplir le fond avec une couleur
                 fillColor: Colors.white, // Couleur de fond blanc
                 border: OutlineInputBorder(
                   borderRadius:
-                      BorderRadius.circular(20.0), // Rayon des coins agrandi
+                      BorderRadius.circular(20.0), // Rayon des coins arrondi
                 ),
               ),
               onChanged: _onTextChanged, // Appeler la fonction debounce
             ),
           ),
-          // Affichage des suggestions
-          // Ajouter un GestureDetector autour de la partie contenant la ListView
           if (_suggestions.isNotEmpty)
             Positioned(
-              top: 100.0,
+              top: 85.0,
               left: 8.0,
               right: 8.0,
               bottom: 0.0,
-              child: GestureDetector(
-                onVerticalDragUpdate: (_) {
-                  // Perdre le focus dès que l'utilisateur commence à faire défiler
-                  _focusNode.unfocus();
-                  print("scroll détecté");
-                },
-                child: Material(
-                  color: Colors.transparent,
-                  child: Expanded(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _suggestions.length,
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          title: Text(_suggestions[index]),
-                          onTap: () {
-                            // Appeler la fonction pour envoyer la requête avec le lieu sélectionné
-                            _onSuggestionTap(_suggestions[index]);
+              child: Material(
+                color: Colors.transparent,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification notification) {
+                    if (notification is ScrollStartNotification) {
+                      if (_focusNode.hasFocus) {
+                        // Vérifie explicitement si le TextField a encore le focus
+                        _focusNode
+                            .unfocus(); // Retire le focus dès qu'un défilement commence
+                        print("scroll détecté avec focus actif");
+                      }
+                    }
+                    return false; // Continue à propager l'événement
+                  },
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _suggestions.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(_suggestions[index]),
+                        onTap: () {
+                          // Appeler la fonction pour envoyer la requête avec le lieu sélectionné
+                          _onSuggestionTap(_suggestions[index]);
 
-                            // Mettre à jour le champ de recherche
-                            _controller.text = _suggestions[index];
-                            _focusNode.unfocus();
-                            setState(() {
-                              _suggestions.clear();
-                            });
-                          },
-                        );
-                      },
-                    ),
+                          // Mettre à jour le champ de recherche
+                          _controller.text = _suggestions[index];
+                          _focusNode.unfocus();
+                          setState(() {
+                            _suggestions.clear();
+                            _isLayerVisible = false;
+                          });
+                        },
+                      );
+                    },
                   ),
                 ),
               ),
