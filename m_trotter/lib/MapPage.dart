@@ -32,6 +32,8 @@ class _MapPageState extends State<MapPage> {
       _lieuSelectionne; // Variable pour stocker la localisation du lieu sélectionné
   List<LatLng> _routePoints = []; // Liste pour stocker les points du trajet
   double _bottomSheetHeight = 100.0; // Hauteur initiale de la "modal"
+  late double _distance;
+  late double _duration;
 
   final Map<String, LatLng> _lieuxCoordonnees = {
     'tokyoburger': LatLng(43.611, 3.876),
@@ -151,14 +153,13 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _itineraire(String lieu) async {
+  void _itineraire(String lieu, {String mode = 'car'}) async {
     LatLng depart = LatLng(43.610769, 3.876716);
     LatLng destination = _lieuxCoordonnees[lieu]!;
-    print("je vais à ${destination} en partant de ${depart}");
     String url = 'http://192.168.0.49:3000/api/routes?'
         'startLat=${depart.latitude}&startLon=${depart.longitude}&'
         'endLat=${destination.latitude}&endLon=${destination.longitude}&'
-        'mode=foot';
+        'mode=$mode';
 
     try {
       final response = await http.post(Uri.parse(url));
@@ -166,19 +167,18 @@ class _MapPageState extends State<MapPage> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
-          // Extraire les points du trajet et les convertir en LatLng
           List<dynamic> path = responseData['path'];
           List<LatLng> routePoints = [];
-
           for (var point in path) {
-            var coords = point; // [longitude, latitude]
+            var coords = point;
             LatLng latLng = LatLng(coords[1], coords[0]);
             routePoints.add(latLng);
           }
 
-          // Mettre à jour l'état pour afficher la polyligne
           setState(() {
-            _routePoints = routePoints; // Liste des points du trajet
+            _routePoints = routePoints;
+            _distance = responseData['distance'];
+            _duration = responseData['duration'];
           });
         }
       } else {
@@ -251,7 +251,7 @@ class _MapPageState extends State<MapPage> {
                 ),
             ],
           ),
-          if (_lieuSelectionne != null)
+          if (_lieuSelectionne != null && _routePoints.isEmpty)
             Positioned(
               bottom: 0,
               left: 0,
@@ -266,7 +266,7 @@ class _MapPageState extends State<MapPage> {
                   // Liste des hauteurs prédéfinies
                   final List<double> positions = [
                     100.0, // Version réduite
-                    MediaQuery.of(context).size.height * 0.4, // Milieu
+                    MediaQuery.of(context).size.height * 0.45, // Milieu
                     MediaQuery.of(context).size.height, // Plein écran
                   ];
 
@@ -369,6 +369,162 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
 
+          if (_routePoints.isNotEmpty)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: GestureDetector(
+                onVerticalDragUpdate: (details) {
+                  setState(() {
+                    _bottomSheetHeight -= details.delta.dy;
+                  });
+                },
+                onVerticalDragEnd: (details) {
+                  final List<double> positions = [
+                    100.0, // Version réduite
+                    MediaQuery.of(context).size.height * 0.45, // Milieu
+                    MediaQuery.of(context).size.height, // Plein écran
+                  ];
+
+                  double closestPosition = positions.reduce((a, b) =>
+                      (a - _bottomSheetHeight).abs() <
+                              (b - _bottomSheetHeight).abs()
+                          ? a
+                          : b);
+
+                  setState(() {
+                    _bottomSheetHeight = closestPosition;
+                  });
+                },
+                child: Stack(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      height: _bottomSheetHeight,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20.0),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black,
+                            blurRadius: 10.0,
+                            spreadRadius: 2.0,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Poignée pour glisser
+                          Container(
+                            width: 40.0,
+                            height: 6.0,
+                            margin: const EdgeInsets.symmetric(vertical: 10.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(3.0),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Itinéraire',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 10.0),
+                                  Text(
+                                    'Distance : ${_distance < 1000 ? '${_distance} m' : '${(_distance / 1000).toStringAsFixed(2)} km'}',
+                                  ),
+                                  Text(
+                                      'Durée : ${(_duration / 60).toStringAsFixed(0)} minutes'),
+                                  const SizedBox(height: 20.0),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.directions_car),
+                                        onPressed: () {
+                                          _itineraire(
+                                              _lieuxCoordonnees.entries
+                                                  .firstWhere((entry) =>
+                                                      entry.value ==
+                                                      _lieuSelectionne)
+                                                  .key,
+                                              mode: 'car');
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.directions_walk),
+                                        onPressed: () {
+                                          _itineraire(
+                                              _lieuxCoordonnees.entries
+                                                  .firstWhere((entry) =>
+                                                      entry.value ==
+                                                      _lieuSelectionne)
+                                                  .key,
+                                              mode: 'foot');
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.directions_bike),
+                                        onPressed: () {
+                                          _itineraire(
+                                              _lieuxCoordonnees.entries
+                                                  .firstWhere((entry) =>
+                                                      entry.value ==
+                                                      _lieuSelectionne)
+                                                  .key,
+                                              mode: 'bike');
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                            Icons.directions_transit),
+                                        onPressed: () {
+                                          _itineraire(
+                                              _lieuxCoordonnees.entries
+                                                  .firstWhere((entry) =>
+                                                      entry.value ==
+                                                      _lieuSelectionne)
+                                                  .key,
+                                              mode: 'transit');
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Ajout de la croix pour fermer
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _routePoints = [];
+                          });
+                        },
+                        child: const Icon(Icons.close, color: Colors.black),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           // Layer blanc lorsque la recherche est active
           if (_isLayerVisible)
             Container(
@@ -399,7 +555,13 @@ class _MapPageState extends State<MapPage> {
                         _focusNode.unfocus(); // Perdre le focus
                         _controller.clear();
                         _suggestions.clear();
+                        _lieuSelectionne = null;
                       });
+
+                      // Réafficher la BottomNavigationBar
+                      Provider.of<BottomNavBarVisibilityProvider>(context,
+                              listen: false)
+                          .showBottomNav();
                     }
                   },
                   child: Icon(
