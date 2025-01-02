@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'LocationService.dart';
 import 'dart:async';
+import 'BottomNavBarVisibilityProvider.dart';
+import 'package:provider/provider.dart';
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
@@ -136,6 +138,10 @@ class _MapPageState extends State<MapPage> {
       _suggestions.clear();
       _isLayerVisible = false;
     });
+
+    Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
+        .hideBottomNav();
+
     LatLng? destination = _lieuxCoordonnees[lieu];
     if (destination != null) {
       setState(() {
@@ -253,13 +259,31 @@ class _MapPageState extends State<MapPage> {
               child: GestureDetector(
                 onVerticalDragUpdate: (details) {
                   setState(() {
-                    // Ajuste la hauteur du conteneur en glissant
-                    _bottomSheetHeight = (_bottomSheetHeight - details.delta.dy)
-                        .clamp(100.0, MediaQuery.of(context).size.height * 0.7);
+                    _bottomSheetHeight -= details.delta.dy;
+                  });
+                },
+                onVerticalDragEnd: (details) {
+                  // Liste des hauteurs prédéfinies
+                  final List<double> positions = [
+                    100.0, // Version réduite
+                    MediaQuery.of(context).size.height * 0.4, // Milieu
+                    MediaQuery.of(context).size.height, // Plein écran
+                  ];
+
+                  // Trouver la position la plus proche
+                  double closestPosition = positions.reduce((a, b) =>
+                      (a - _bottomSheetHeight).abs() <
+                              (b - _bottomSheetHeight).abs()
+                          ? a
+                          : b);
+
+                  // Ajuster la hauteur à la position la plus proche
+                  setState(() {
+                    _bottomSheetHeight = closestPosition;
                   });
                 },
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 300),
                   height: _bottomSheetHeight,
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -288,20 +312,53 @@ class _MapPageState extends State<MapPage> {
                       ),
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(10.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Informations sur le lieu',
-                              ),
-                              const SizedBox(height: 10.0),
-                              Text(
-                                'Nom : ${_lieuxCoordonnees.entries.firstWhere((entry) => entry.value == _lieuSelectionne).key}',
+                                _lieuxCoordonnees.entries
+                                    .firstWhere((entry) =>
+                                        entry.value == _lieuSelectionne)
+                                    .key,
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 10.0),
                               const Text(
-                                  'Description : Ce lieu est exceptionnel...'),
+                                'Type du lieu',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(height: 20.0),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      String lieuNom = _lieuxCoordonnees.entries
+                                          .firstWhere((entry) =>
+                                              entry.value == _lieuSelectionne)
+                                          .key;
+                                      _itineraire(lieuNom);
+                                    },
+                                    child: const Text('Itinéraire'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      print("Appeler le lieu sélectionné");
+                                    },
+                                    child: const Text('Appeler'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      print(
+                                          "Ouvrir le site web du lieu sélectionné");
+                                    },
+                                    child: const Text('Site Web'),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -311,6 +368,7 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
+
           // Layer blanc lorsque la recherche est active
           if (_isLayerVisible)
             Container(
@@ -326,6 +384,10 @@ class _MapPageState extends State<MapPage> {
                 setState(() {
                   _isLayerVisible = true;
                 });
+
+                Provider.of<BottomNavBarVisibilityProvider>(context,
+                        listen: false)
+                    .hideBottomNav();
               },
               decoration: InputDecoration(
                 hintText: 'Où voulez-vous aller ?',
@@ -346,6 +408,24 @@ class _MapPageState extends State<MapPage> {
                         : Icons.search, // Icône conditionnelle
                   ),
                 ),
+                suffixIcon: _lieuSelectionne != null
+                    ? GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _lieuSelectionne =
+                                null; // Réinitialiser le lieu sélectionné
+                            _controller
+                                .clear(); // Réinitialiser le texte de la barre
+                            _routePoints = [];
+                          });
+                          // Montrer la BottomNavigationBar lorsque la sélection est réinitialisée
+                          Provider.of<BottomNavBarVisibilityProvider>(context,
+                                  listen: false)
+                              .showBottomNav();
+                        },
+                        child: const Icon(Icons.clear), // Icône de croix
+                      )
+                    : null,
                 filled: true, // Permet de remplir le fond avec une couleur
                 fillColor: Colors.white, // Couleur de fond blanc
                 border: OutlineInputBorder(

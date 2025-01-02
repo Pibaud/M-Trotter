@@ -4,14 +4,18 @@ import 'MapPage.dart';
 import 'ProfilePage.dart';
 import 'package:provider/provider.dart';
 import 'AuthPage.dart';
+import 'BottomNavBarVisibilityProvider.dart';
 
 final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 
 void main() {
   runApp(
     ChangeNotifierProvider(
-      create: (_) => AuthState(),
-      child: MyApp(key: myAppKey), // Assignez la clé ici
+      create: (_) => BottomNavBarVisibilityProvider(),
+      child: ChangeNotifierProvider(
+        create: (_) => AuthState(),
+        child: MyApp(key: myAppKey), // Assignez la clé ici
+      ),
     ),
   );
 }
@@ -64,27 +68,31 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         body: _pages[_selectedIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Accueil',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.map),
-              label: 'Map',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
-          currentIndex: _selectedIndex, // Indique quel onglet est sélectionné
-          selectedItemColor:
-              Colors.blue, // Couleur de l'icône/texte sélectionné
-          unselectedItemColor:
-              Colors.grey, // Couleur des icônes non sélectionnées
-          onTap: _onItemTapped,
+        bottomNavigationBar: Consumer<BottomNavBarVisibilityProvider>(
+          builder: (context, bottomNavBarVisibility, child) {
+            return bottomNavBarVisibility.isBottomNavVisible
+                ? BottomNavigationBar(
+                    items: const <BottomNavigationBarItem>[
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.home),
+                        label: 'Accueil',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.map),
+                        label: 'Map',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.person),
+                        label: 'Profil',
+                      ),
+                    ],
+                    currentIndex: _selectedIndex,
+                    selectedItemColor: Colors.blue,
+                    unselectedItemColor: Colors.grey,
+                    onTap: _onItemTapped,
+                  )
+                : SizedBox.shrink(); // Si BottomNav est caché, ne rien afficher
+          },
         ),
       ),
     );
