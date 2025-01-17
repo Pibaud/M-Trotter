@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'HomePage.dart';
-import 'MapPage.dart';
-import 'ProfilePage.dart';
+import 'pages/HomePage.dart';
+import 'pages/MapPage.dart';
+import 'pages/ProfilePage.dart';
 import 'package:provider/provider.dart';
-import 'AuthPage.dart';
-import 'BottomNavBarVisibilityProvider.dart';
+import 'providers/AuthNotifier.dart';
+import 'providers/BottomNavBarVisibilityProvider.dart';
 
 final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 

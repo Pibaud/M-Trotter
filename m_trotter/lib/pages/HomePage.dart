@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'AuthPage.dart';
-import 'AuthPopup.dart';
-import 'main.dart';
+import '../providers/AuthNotifier.dart';
+import '../widgets/AuthPopup.dart';
+import '../main.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(int) onTabChange;

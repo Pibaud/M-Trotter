@@ -4,9 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'LocationService.dart';
+import '../services/LocationService.dart';
 import 'dart:async';
-import 'BottomNavBarVisibilityProvider.dart';
+import '../providers/BottomNavBarVisibilityProvider.dart';
 import 'package:provider/provider.dart';
 
 class MapPage extends StatefulWidget {
@@ -88,7 +88,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> getPlaces(String input) async {
-    final String url = 'http://192.168.0.49:3000/api/places';
+    final String url = 'http://192.168.1.46:3000/api/places';
 
     try {
       final response = await http.post(
@@ -156,7 +156,7 @@ class _MapPageState extends State<MapPage> {
   void _itineraire(String lieu, {String mode = 'car'}) async {
     LatLng depart = LatLng(43.610769, 3.876716);
     LatLng destination = _lieuxCoordonnees[lieu]!;
-    String url = 'http://192.168.0.49:3000/api/routes?'
+    String url = 'http://192.168.1.46:3000/api/routes?'
         'startLat=${depart.latitude}&startLon=${depart.longitude}&'
         'endLat=${destination.latitude}&endLon=${destination.longitude}&'
         'mode=$mode';
