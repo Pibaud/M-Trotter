@@ -8,6 +8,7 @@ import '../services/LocationService.dart';
 import 'dart:async';
 import '../providers/BottomNavBarVisibilityProvider.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
@@ -26,38 +27,51 @@ class _MapPageState extends State<MapPage> {
   double _rotationAngle = 0.0; // Initialiser l'angle de rotation
   TextEditingController _controller = TextEditingController();
   List<String> _suggestions = [];
-  bool _isLayerVisible =
-      false; // Booléen pour contrôler l'affichage du layer blanc
-  LatLng?
-      _lieuSelectionne; // Variable pour stocker la localisation du lieu sélectionné
+  bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
+  LatLng? _lieuSelectionne;
   List<LatLng> _routePoints = []; // Liste pour stocker les points du trajet
   double _bottomSheetHeight = 100.0; // Hauteur initiale de la "modal"
   late double _distance;
   late double _duration;
+  late LocationService _locationService;
+  StreamSubscription<Position>? _positionSubscription;
 
   final Map<String, LatLng> _lieuxCoordonnees = {
     'tokyoburger': LatLng(43.611, 3.876),
-    'mcdonaldsComedie': LatLng(43.8, 3.9765),
+    'mcdonaldsComedie': LatLng(43.63, 3.886),
     'leclocher': LatLng(43.612, 3.877),
-    'laopportunite': LatLng(43.613, 3.878),
+    'laopportunite': LatLng(43.613, 3.868),
     // Ajoutez d'autres lieux ici...
   };
 
   @override
   void initState() {
     super.initState();
+    _locationService = LocationService();
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _focusNode.requestFocus(); // Donne le focus au TextField
+        _focusNode.requestFocus();
         setState(() {
-          _isLayerVisible = true; // Affiche le layer blanc au début
+          _isLayerVisible = true;
         });
       });
     }
+    getUserLocation();
+    // Démarre l'écoute des changements de position
+    _positionSubscription = _locationService.listenToPositionChanges(
+      onPositionUpdate: (Position position) {
+        setState(() {
+          _currentLocation = LatLng(position.latitude, position.longitude);
+        });
+        print('Nouvelle position : $_currentLocation');
+      },
+      onError: (dynamic error) {
+        debugPrint('Erreur de localisation : $error');
+      },
+    );
   }
 
-  // Fonction pour obtenir la position de l'utilisateur
-  Future<void> _getUserLocation() async {
+  Future<void> getUserLocation() async {
     LocationService locationService = LocationService();
 
     var position = await locationService.getCurrentPosition();
@@ -71,7 +85,7 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _resetMapOrientation() {
+  void _resetMapOrientation() { //Mapinteractions
     setState(() {
       _mapController.rotate(0); // Remet la rotation à 0° (nord en haut)
       _rotationAngle = 0.0; // Mettre à jour l'angle de rotation
@@ -79,7 +93,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   // Fonction pour recentrer la carte sur la position actuelle
-  void _centerOnCurrentLocation() {
+  void _centerOnCurrentLocation() { //Mapinteractions
     if (_currentLocation != null) {
       _mapController.move(_currentLocation!, 14.5);
     } else {
@@ -672,6 +686,7 @@ class _MapPageState extends State<MapPage> {
   @override
   void dispose() {
     _focusNode.dispose(); // Libère le FocusNode
+    _positionSubscription?.cancel();
     super.dispose();
   }
 }

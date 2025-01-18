@@ -1,7 +1,9 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 class LocationService {
+  StreamSubscription<Position>? _positionStreamSubscription;
 
   /// Vérifie et demande les permissions nécessaires
   Future<bool> _handleLocationPermission() async {
@@ -61,5 +63,30 @@ class LocationService {
       debugPrint('Erreur lors de la récupération de la position : $e');
       return null;
     }
+  }
+
+  /// Écoute les changements de position
+  StreamSubscription<Position> listenToPositionChanges({
+    required Function(Position) onPositionUpdate,
+    required Function(dynamic) onError,
+  }) {
+    LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high, // Précision élevée
+      distanceFilter: 10, // Mise à jour après un déplacement de 10 mètres
+    );
+
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen(
+      onPositionUpdate,
+      onError: onError,
+    );
+
+    return _positionStreamSubscription!;
+  }
+
+  /// Arrête le suivi de la position
+  void stopListening() {
+    _positionStreamSubscription?.cancel();
   }
 }
