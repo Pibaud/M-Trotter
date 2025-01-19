@@ -8,7 +8,8 @@ import '../services/LocationService.dart';
 import '../services/MapInteractions.dart';
 import '../services/ApiService.dart';
 import 'dart:async';
-import '../widgets/placeInfoSheet.dart';
+import '../widgets/PlaceInfoSheet.dart';
+import '../widgets/ItinerarySheet.dart';
 import '../providers/BottomNavBarVisibilityProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -53,7 +54,7 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _locationService = LocationService(); // service de localisation
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
-    _apiService = ApiService(baseUrl: 'http://192.168.1.46:3000'); // requêtes
+    _apiService = ApiService(baseUrl: 'http://172.20.10.2:3000'); // requêtes
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
@@ -124,12 +125,16 @@ class _MapPageState extends State<MapPage> {
 
     LatLng? destination = _lieuxCoordonnees[lieu];
     if (destination != null) {
-      final double mapHeightInDegrees = 360 /
-          (2 << (_mapController.getZoom().toInt() - 1)); // Conversion zoom -> degrés
+      // Accéder au zoom actuel via mapController.camera.zoom
+      double zoom = _mapController.camera.zoom;
+
+      // Calculer le décalage en latitude basé sur le zoom
+      final double mapHeightInDegrees =
+          360 / (2 << (zoom.toInt() - 1)); // Conversion zoom -> degrés
       final double offsetInDegrees = mapHeightInDegrees *
           (_bottomSheetHeight / MediaQuery.of(context).size.height);
 
-      // Ajuster la caméra pour tenir compte de la sheet
+      // Ajuster la latitude du lieu sélectionné
       LatLng adjustedDestination =
           LatLng(destination.latitude - offsetInDegrees, destination.longitude);
 
@@ -139,8 +144,8 @@ class _MapPageState extends State<MapPage> {
         _isLayerVisible = false;
       });
 
-      // Centrer la carte sur la destination ajustée
-      _mapController.move(adjustedDestination, 15.0);
+      // Déplacer la carte vers la destination ajustée
+      _mapController.move(adjustedDestination, zoom);
     }
 
     // Masquer la barre de navigation inférieure
@@ -289,155 +294,27 @@ class _MapPageState extends State<MapPage> {
               bottom: 0,
               left: 0,
               right: 0,
-              child: GestureDetector(
-                onVerticalDragUpdate: (details) {
+              child: ItinerarySheet(
+                initialHeight: MediaQuery.of(context).size.height * 0.45,
+                fullHeight: MediaQuery.of(context).size.height,
+                midHeight: MediaQuery.of(context).size.height *
+                    0.45, // Hauteur moyenne
+                collapsedHeight: 100.0, // Hauteur réduite
+                distance: _distance, // Distance calculée
+                duration: _duration, // Durée calculée
+                onItineraryModeSelected: (String mode) {
+                  _itineraire(
+                    _lieuxCoordonnees.entries
+                        .firstWhere((entry) => entry.value == _lieuSelectionne)
+                        .key,
+                    mode: mode,
+                  );
+                },
+                onClose: () {
                   setState(() {
-                    _bottomSheetHeight -= details.delta.dy;
+                    _routePoints = [];
                   });
                 },
-                onVerticalDragEnd: (details) {
-                  final List<double> positions = [
-                    100.0, // Version réduite
-                    MediaQuery.of(context).size.height * 0.45, // Milieu
-                    MediaQuery.of(context).size.height, // Plein écran
-                  ];
-
-                  double closestPosition = positions.reduce((a, b) =>
-                      (a - _bottomSheetHeight).abs() <
-                              (b - _bottomSheetHeight).abs()
-                          ? a
-                          : b);
-
-                  setState(() {
-                    _bottomSheetHeight = closestPosition;
-                  });
-                },
-                child: Stack(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      height: _bottomSheetHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(20.0),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black,
-                            blurRadius: 10.0,
-                            spreadRadius: 2.0,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Poignée pour glisser
-                          Container(
-                            width: 40.0,
-                            height: 6.0,
-                            margin: const EdgeInsets.symmetric(vertical: 10.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(3.0),
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Itinéraire',
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 10.0),
-                                  Text(
-                                    'Distance : ${_distance < 1000 ? '${_distance} m' : '${(_distance / 1000).toStringAsFixed(2)} km'}',
-                                  ),
-                                  Text(
-                                      'Durée : ${(_duration / 60).toStringAsFixed(0)} minutes'),
-                                  const SizedBox(height: 20.0),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.directions_car),
-                                        onPressed: () {
-                                          _itineraire(
-                                              _lieuxCoordonnees.entries
-                                                  .firstWhere((entry) =>
-                                                      entry.value ==
-                                                      _lieuSelectionne)
-                                                  .key,
-                                              mode: 'car');
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.directions_walk),
-                                        onPressed: () {
-                                          _itineraire(
-                                              _lieuxCoordonnees.entries
-                                                  .firstWhere((entry) =>
-                                                      entry.value ==
-                                                      _lieuSelectionne)
-                                                  .key,
-                                              mode: 'foot');
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.directions_bike),
-                                        onPressed: () {
-                                          _itineraire(
-                                              _lieuxCoordonnees.entries
-                                                  .firstWhere((entry) =>
-                                                      entry.value ==
-                                                      _lieuSelectionne)
-                                                  .key,
-                                              mode: 'bike');
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                            Icons.directions_transit),
-                                        onPressed: () {
-                                          _itineraire(
-                                              _lieuxCoordonnees.entries
-                                                  .firstWhere((entry) =>
-                                                      entry.value ==
-                                                      _lieuSelectionne)
-                                                  .key,
-                                              mode: 'transit');
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Ajout de la croix pour fermer
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _routePoints = [];
-                          });
-                        },
-                        child: const Icon(Icons.close, color: Colors.black),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           // Layer blanc lorsque la recherche est active
@@ -547,37 +424,60 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          Positioned(
-            top: 120.0,
-            right: 10.0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6.0,
-                    spreadRadius: 2.0,
-                  ),
-                ],
+          if (!_isLayerVisible)
+            Positioned(
+              top: 120.0,
+              right: 10.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 6.0,
+                      spreadRadius: 2.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                    icon: Icon(
+                      Icons.explore,
+                      size: 30.0,
+                      color: Colors.black,
+                    ),
+                    onPressed: () => _mapInteractions.resetMapOrientation()),
               ),
-              child: IconButton(
-                  icon: Icon(
-                    Icons.explore,
-                    size: 30.0,
-                    color: Colors.black,
-                  ),
-                  onPressed: () => _mapInteractions.resetMapOrientation()),
             ),
-          ),
+          if (!_isLayerVisible)
+            Positioned(
+              bottom: 20.0,
+              right: 10.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 6.0,
+                      spreadRadius: 2.0,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.near_me,
+                    size: 30.0,
+                    color: Colors.blue,
+                  ),
+                  onPressed: () => _mapInteractions
+                      .centerOnCurrentLocation(_currentLocation),
+                ),
+              ),
+            ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-          onPressed: () =>
-              _mapInteractions.centerOnCurrentLocation(_currentLocation),
-          backgroundColor: Colors.blue,
-          child: const Icon(Icons.near_me)),
     );
   }
 
