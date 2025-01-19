@@ -5,7 +5,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../services/LocationService.dart';
+import '../services/MapInteractions.dart';
+import '../services/ApiService.dart';
 import 'dart:async';
+import '../widgets/placeInfoSheet.dart';
 import '../providers/BottomNavBarVisibilityProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -24,7 +27,6 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
   Timer? _debounce;
-  double _rotationAngle = 0.0; // Initialiser l'angle de rotation
   TextEditingController _controller = TextEditingController();
   List<String> _suggestions = [];
   bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
@@ -34,6 +36,8 @@ class _MapPageState extends State<MapPage> {
   late double _distance;
   late double _duration;
   late LocationService _locationService;
+  late MapInteractions _mapInteractions;
+  late ApiService _apiService;
   StreamSubscription<Position>? _positionSubscription;
 
   final Map<String, LatLng> _lieuxCoordonnees = {
@@ -47,7 +51,9 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _locationService = LocationService();
+    _locationService = LocationService(); // service de localisation
+    _mapInteractions = MapInteractions(_mapController); // interactions de carte
+    _apiService = ApiService(baseUrl: 'http://192.168.1.46:3000'); // requêtes
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
@@ -57,7 +63,6 @@ class _MapPageState extends State<MapPage> {
       });
     }
     getUserLocation();
-    // Démarre l'écoute des changements de position
     _positionSubscription = _locationService.listenToPositionChanges(
       onPositionUpdate: (Position position) {
         setState(() {
@@ -85,49 +90,14 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _resetMapOrientation() { //Mapinteractions
-    setState(() {
-      _mapController.rotate(0); // Remet la rotation à 0° (nord en haut)
-      _rotationAngle = 0.0; // Mettre à jour l'angle de rotation
-    });
-  }
-
-  // Fonction pour recentrer la carte sur la position actuelle
-  void _centerOnCurrentLocation() { //Mapinteractions
-    if (_currentLocation != null) {
-      _mapController.move(_currentLocation!, 14.5);
-    } else {
-      print("Position actuelle non disponible.");
-    }
-  }
-
   Future<void> getPlaces(String input) async {
-    final String url = 'http://192.168.1.46:3000/api/places';
-
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'data': input}),
-      );
-
-      if (response.statusCode == 200) {
-        print('Réponse du serveur : ${response.body}');
-
-        final Map<String, dynamic> responseData = json.decode(response.body);
-
-        if (responseData.containsKey('places')) {
-          setState(() {
-            _suggestions = List<String>.from(responseData['places']);
-          });
-        } else {
-          print('Aucune liste de places trouvée.');
-        }
-      } else {
-        print('Erreur du serveur : ${response.statusCode}');
-      }
+      final suggestions = await _apiService.fetchPlaces(input);
+      setState(() {
+        _suggestions = suggestions;
+      });
     } catch (e) {
-      print('Erreur lors de l\'envoi de la requête : $e');
+      print('Erreur lors de la récupération des places : $e');
     }
   }
 
@@ -148,58 +118,64 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _onSuggestionTap(String lieu) {
+    _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
     _controller.text = lieu; // Mise à jour du champ texte
     _focusNode.unfocus();
-    setState(() {
-      _suggestions.clear();
-      _isLayerVisible = false;
-    });
-
-    Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
-        .hideBottomNav();
 
     LatLng? destination = _lieuxCoordonnees[lieu];
     if (destination != null) {
+      final double mapHeightInDegrees = 360 /
+          (2 << (_mapController.getZoom().toInt() - 1)); // Conversion zoom -> degrés
+      final double offsetInDegrees = mapHeightInDegrees *
+          (_bottomSheetHeight / MediaQuery.of(context).size.height);
+
+      // Ajuster la caméra pour tenir compte de la sheet
+      LatLng adjustedDestination =
+          LatLng(destination.latitude - offsetInDegrees, destination.longitude);
+
       setState(() {
         _lieuSelectionne = destination; // Mettre à jour le lieu sélectionné
-        _mapController.move(destination, 15.0); // Centrer la carte sur le lieu
+        _suggestions.clear();
+        _isLayerVisible = false;
       });
+
+      // Centrer la carte sur la destination ajustée
+      _mapController.move(adjustedDestination, 15.0);
     }
+
+    // Masquer la barre de navigation inférieure
+    Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
+        .hideBottomNav();
   }
 
   void _itineraire(String lieu, {String mode = 'car'}) async {
     LatLng depart = LatLng(43.610769, 3.876716);
-    LatLng destination = _lieuxCoordonnees[lieu]!;
-    String url = 'http://192.168.1.46:3000/api/routes?'
-        'startLat=${depart.latitude}&startLon=${depart.longitude}&'
-        'endLat=${destination.latitude}&endLon=${destination.longitude}&'
-        'mode=$mode';
+    LatLng? destination = _lieuxCoordonnees[lieu];
 
-    try {
-      final response = await http.post(Uri.parse(url));
+    if (destination != null) {
+      try {
+        final routeData = await _apiService.fetchRoute(
+          startLat: depart.latitude,
+          startLon: depart.longitude,
+          endLat: destination.latitude,
+          endLon: destination.longitude,
+          mode: mode,
+        );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        if (responseData['status'] == 'success') {
-          List<dynamic> path = responseData['path'];
-          List<LatLng> routePoints = [];
-          for (var point in path) {
-            var coords = point;
-            LatLng latLng = LatLng(coords[1], coords[0]);
-            routePoints.add(latLng);
-          }
+        List<LatLng> routePoints = (routeData['path'] as List)
+            .map((point) => LatLng(point[1], point[0]))
+            .toList();
 
-          setState(() {
-            _routePoints = routePoints;
-            _distance = responseData['distance'];
-            _duration = responseData['duration'];
-          });
-        }
-      } else {
-        print('Erreur du serveur : ${response.statusCode}');
+        setState(() {
+          _routePoints = routePoints;
+          _distance = routeData['distance'];
+          _duration = routeData['duration'];
+        });
+      } catch (e) {
+        print('Erreur lors de la récupération de l\'itinéraire : $e');
       }
-    } catch (e) {
-      print('Erreur lors de l\'envoi de la requête : $e');
+    } else {
+      print('Destination introuvable.');
     }
   }
 
@@ -266,121 +242,46 @@ class _MapPageState extends State<MapPage> {
             ],
           ),
           if (_lieuSelectionne != null && _routePoints.isEmpty)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: GestureDetector(
-                onVerticalDragUpdate: (details) {
-                  setState(() {
-                    _bottomSheetHeight -= details.delta.dy;
-                  });
-                },
-                onVerticalDragEnd: (details) {
-                  // Liste des hauteurs prédéfinies
-                  final List<double> positions = [
-                    100.0, // Version réduite
-                    MediaQuery.of(context).size.height * 0.45, // Milieu
-                    MediaQuery.of(context).size.height, // Plein écran
-                  ];
+            PlaceInfoSheet(
+              height: _bottomSheetHeight,
+              onDragUpdate: (dy) {
+                setState(() {
+                  _bottomSheetHeight -= dy;
+                });
+              },
+              onDragEnd: () {
+                final List<double> positions = [
+                  100.0, // Version réduite
+                  MediaQuery.of(context).size.height * 0.45, // Milieu
+                  MediaQuery.of(context).size.height, // Plein écran
+                ];
 
-                  // Trouver la position la plus proche
-                  double closestPosition = positions.reduce((a, b) =>
-                      (a - _bottomSheetHeight).abs() <
-                              (b - _bottomSheetHeight).abs()
-                          ? a
-                          : b);
+                double closestPosition = positions.reduce((a, b) =>
+                    (a - _bottomSheetHeight).abs() <
+                            (b - _bottomSheetHeight).abs()
+                        ? a
+                        : b);
 
-                  // Ajuster la hauteur à la position la plus proche
-                  setState(() {
-                    _bottomSheetHeight = closestPosition;
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  height: _bottomSheetHeight,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20.0),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black,
-                        blurRadius: 10.0,
-                        spreadRadius: 2.0,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Poignée pour indiquer la possibilité de glisser
-                      Container(
-                        width: 40.0,
-                        height: 6.0,
-                        margin: const EdgeInsets.symmetric(vertical: 10.0),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(3.0),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _lieuxCoordonnees.entries
-                                    .firstWhere((entry) =>
-                                        entry.value == _lieuSelectionne)
-                                    .key,
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 10.0),
-                              const Text(
-                                'Type du lieu',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                              const SizedBox(height: 20.0),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  TextButton(
-                                    onPressed: () {
-                                      String lieuNom = _lieuxCoordonnees.entries
-                                          .firstWhere((entry) =>
-                                              entry.value == _lieuSelectionne)
-                                          .key;
-                                      _itineraire(lieuNom);
-                                    },
-                                    child: const Text('Itinéraire'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      print("Appeler le lieu sélectionné");
-                                    },
-                                    child: const Text('Appeler'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      print(
-                                          "Ouvrir le site web du lieu sélectionné");
-                                    },
-                                    child: const Text('Site Web'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                setState(() {
+                  _bottomSheetHeight = closestPosition;
+                });
+              },
+              placeName: _lieuxCoordonnees.entries
+                  .firstWhere((entry) => entry.value == _lieuSelectionne)
+                  .key,
+              placeType: "Type du lieu",
+              onItineraryTap: () {
+                String lieuNom = _lieuxCoordonnees.entries
+                    .firstWhere((entry) => entry.value == _lieuSelectionne)
+                    .key;
+                _itineraire(lieuNom);
+              },
+              onCallTap: () {
+                print("Appeler le lieu sélectionné");
+              },
+              onWebsiteTap: () {
+                print("Ouvrir le site web du lieu sélectionné");
+              },
             ),
 
           if (_routePoints.isNotEmpty)
@@ -588,10 +489,8 @@ class _MapPageState extends State<MapPage> {
                     ? GestureDetector(
                         onTap: () {
                           setState(() {
-                            _lieuSelectionne =
-                                null; // Réinitialiser le lieu sélectionné
-                            _controller
-                                .clear(); // Réinitialiser le texte de la barre
+                            _lieuSelectionne = null;
+                            _controller.clear();
                             _routePoints = [];
                           });
                           // Montrer la BottomNavigationBar lorsque la sélection est réinitialisée
@@ -664,20 +563,19 @@ class _MapPageState extends State<MapPage> {
                 ],
               ),
               child: IconButton(
-                icon: Icon(
-                  Icons.explore,
-                  size: 30.0,
-                  color: Colors.black,
-                ),
-                onPressed: _resetMapOrientation,
-              ),
+                  icon: Icon(
+                    Icons.explore,
+                    size: 30.0,
+                    color: Colors.black,
+                  ),
+                  onPressed: () => _mapInteractions.resetMapOrientation()),
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-          onPressed:
-              _centerOnCurrentLocation, // Action pour recentrer sur la position
+          onPressed: () =>
+              _mapInteractions.centerOnCurrentLocation(_currentLocation),
           backgroundColor: Colors.blue,
           child: const Icon(Icons.near_me)),
     );
