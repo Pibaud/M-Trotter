@@ -7,6 +7,7 @@ class CustomSearchBar extends StatefulWidget {
   final bool isLayerVisible;
   final Function(bool) onLayerToggle;
   final VoidCallback onClear;
+  final VoidCallback onTextClear;
   final Function(String) onTextChanged;
 
   const CustomSearchBar({
@@ -17,6 +18,7 @@ class CustomSearchBar extends StatefulWidget {
     required this.isLayerVisible,
     required this.onLayerToggle,
     required this.onClear,
+    required this.onTextClear,
     required this.onTextChanged,
   }) : super(key: key);
 
@@ -73,6 +75,8 @@ class CustomSearchBarState extends State<CustomSearchBar> {
               ? GestureDetector(
                   onTap: () {
                     widget.onClear(); // Réinitialiser en appuyant sur la croix
+                    widget.onTextClear(); // Réinitialiser en appuyant sur la croix
+                    widget.focusNode.unfocus();
                   },
                   child: const Icon(Icons.clear),
                 )

@@ -337,7 +337,7 @@ class _MapPageState extends State<MapPage> {
             isLayerVisible: _isLayerVisible,
             onLayerToggle: (isVisible) {
               if (_isLayerVisible != isVisible) {
-                setState(() { 
+                setState(() {
                   _isLayerVisible = isVisible;
                 });
               }
@@ -345,6 +345,11 @@ class _MapPageState extends State<MapPage> {
             onClear: () {
               setState(() {
                 _isLayerVisible = false;
+              });
+            },
+            onTextClear: () {
+              setState(() {
+                _controller.clear();
               });
             },
             onTextChanged: _onTextChanged,
