@@ -10,6 +10,7 @@ import '../services/ApiService.dart';
 import 'dart:async';
 import '../widgets/PlaceInfoSheet.dart';
 import '../widgets/ItinerarySheet.dart';
+import '../widgets/CustomSearchBar.dart';
 import '../providers/BottomNavBarVisibilityProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -24,6 +25,7 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  final GlobalKey<CustomSearchBarState> _searchBarKey = GlobalKey();
   final FocusNode _focusNode = FocusNode(); // FocusNode pour le TextField
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
@@ -54,10 +56,11 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _locationService = LocationService(); // service de localisation
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
-    _apiService = ApiService(baseUrl: 'http://172.20.10.2:3000'); // requêtes
+    _apiService = ApiService(baseUrl: 'http://192.168.1.72:3000'); // requêtes
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
+        print("le focus est sur le TextField");
         setState(() {
           _isLayerVisible = true;
         });
@@ -121,6 +124,7 @@ class _MapPageState extends State<MapPage> {
   void _onSuggestionTap(String lieu) {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
     _controller.text = lieu; // Mise à jour du champ texte
+    print("perte de focus car appui sur suggestion");
     _focusNode.unfocus();
 
     LatLng? destination = _lieuxCoordonnees[lieu];
@@ -154,7 +158,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _itineraire(String lieu, {String mode = 'car'}) async {
-    LatLng depart = LatLng(43.610769, 3.876716);
+    LatLng depart = _currentLocation!;
     LatLng? destination = _lieuxCoordonnees[lieu];
 
     if (destination != null) {
@@ -184,8 +188,13 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  void _toggleSearchFocus(bool focus) {
+    CustomSearchBar.toggleFocus(_searchBarKey, focus);
+  }
+
   @override
   Widget build(BuildContext context) {
+    print("Build appelé pour mappage");
     return Scaffold(
       body: Stack(
         children: [
@@ -288,7 +297,6 @@ class _MapPageState extends State<MapPage> {
                 print("Ouvrir le site web du lieu sélectionné");
               },
             ),
-
           if (_routePoints.isNotEmpty)
             Positioned(
               bottom: 0,
@@ -317,76 +325,29 @@ class _MapPageState extends State<MapPage> {
                 },
               ),
             ),
-          // Layer blanc lorsque la recherche est active
           if (_isLayerVisible)
             Container(
-              color: Colors.white, // Blanc avec opacité
+              color: Colors.white,
             ),
-          Padding(
-            padding: const EdgeInsets.only(top: 30.0, left: 8.0, right: 8.0),
-            child: TextField(
-              controller: _controller, // Utiliser le contrôleur
-              focusNode: _focusNode, // Associe le TextField au FocusNode
-              onTap: () {
-                // Affiche le layer blanc lorsque l'utilisateur tape sur le TextField
-                setState(() {
-                  _isLayerVisible = true;
+          CustomSearchBar(
+            key: _searchBarKey,
+            controller: _controller,
+            focusNode: _focusNode,
+            initialFocus: widget.focusOnSearch,
+            isLayerVisible: _isLayerVisible,
+            onLayerToggle: (isVisible) {
+              if (_isLayerVisible != isVisible) {
+                setState(() { 
+                  _isLayerVisible = isVisible;
                 });
-
-                Provider.of<BottomNavBarVisibilityProvider>(context,
-                        listen: false)
-                    .hideBottomNav();
-              },
-              decoration: InputDecoration(
-                hintText: 'Où voulez-vous aller ?',
-                prefixIcon: GestureDetector(
-                  onTap: () {
-                    if (_isLayerVisible) {
-                      setState(() {
-                        _isLayerVisible = false; // Désactiver le layer blanc
-                        _focusNode.unfocus(); // Perdre le focus
-                        _controller.clear();
-                        _suggestions.clear();
-                        _lieuSelectionne = null;
-                      });
-
-                      // Réafficher la BottomNavigationBar
-                      Provider.of<BottomNavBarVisibilityProvider>(context,
-                              listen: false)
-                          .showBottomNav();
-                    }
-                  },
-                  child: Icon(
-                    _isLayerVisible
-                        ? Icons.arrow_back
-                        : Icons.search, // Icône conditionnelle
-                  ),
-                ),
-                suffixIcon: _lieuSelectionne != null
-                    ? GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _lieuSelectionne = null;
-                            _controller.clear();
-                            _routePoints = [];
-                          });
-                          // Montrer la BottomNavigationBar lorsque la sélection est réinitialisée
-                          Provider.of<BottomNavBarVisibilityProvider>(context,
-                                  listen: false)
-                              .showBottomNav();
-                        },
-                        child: const Icon(Icons.clear), // Icône de croix
-                      )
-                    : null,
-                filled: true, // Permet de remplir le fond avec une couleur
-                fillColor: Colors.white, // Couleur de fond blanc
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(20.0), // Rayon des coins arrondi
-                ),
-              ),
-              onChanged: _onTextChanged, // Appeler la fonction debounce
-            ),
+              }
+            },
+            onClear: () {
+              setState(() {
+                _isLayerVisible = false;
+              });
+            },
+            onTextChanged: _onTextChanged,
           ),
           if (_suggestions.isNotEmpty && _isLayerVisible)
             Positioned(
@@ -401,8 +362,7 @@ class _MapPageState extends State<MapPage> {
                     if (notification is ScrollStartNotification) {
                       if (_focusNode.hasFocus) {
                         // Vérifie explicitement si le TextField a encore le focus
-                        _focusNode
-                            .unfocus(); // Retire le focus dès qu'un défilement commence
+                        _focusNode.unfocus();
                         print("scroll détecté avec focus actif");
                       }
                     }
