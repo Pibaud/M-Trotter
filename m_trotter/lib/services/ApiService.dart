@@ -64,7 +64,7 @@ class ApiService {
   //Inscription
   Future<Map<String, dynamic>> signUp(String email, String username, String password) async {
     try {
-      final url = Uri.parse('$baseUrl/compte/inscription');
+      final url = Uri.parse('$baseUrl/comptes/inscription');
       final body = jsonEncode({
         'email': email,
         'username': username,
@@ -93,7 +93,7 @@ class ApiService {
   // Connexion
   Future<Map<String, dynamic>> logIn(String email, String password) async {
     try {
-      final url = Uri.parse('$baseUrl/compte/connexion');
+      final url = Uri.parse('$baseUrl/comptes/connexion');
       final body = jsonEncode({
         'email': email,
         'password': password,
