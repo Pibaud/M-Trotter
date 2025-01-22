@@ -1,7 +1,17 @@
 const { LPlaces } = require('../services/placesService'); // Assure-toi que l'importation est correcte
 
-exports.getPlaces = (req, res) => {
-    res.json({ message: "Hello, client! Voici des données du serveur." });
+exports.getPlaces = async (req, res) => {
+    const { search } = req.query; // Récupère le paramètre `search`
+    if (!search) {
+        return res.status(400).json({ message: "Le paramètre 'search' est requis." });
+    }
+    try {
+        const lieux = await LPlaces(search);
+        res.json(lieux);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
+    }
 };
 
 exports.postPlaces = async (req, res) => {

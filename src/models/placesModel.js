@@ -1,6 +1,6 @@
-exports.ListeLieux = (req,res) => {
+exports.ListePlaces = () => {
 
-    let ListeLieux = [
+    let ListeLieu = [
         'cavapizza',
         'tokyoburger',
         'mcdonaldsComedie',
@@ -55,6 +55,6 @@ exports.ListeLieux = (req,res) => {
         'laluneblanche',
     ];
 
-    return ListeLieux;
+    return ListeLieu;
 
 };

@@ -1,9 +1,9 @@
 // Vérifie que LPlaces est bien exportée comme fonction
-const {ListeLieux} = require('../models/placesModel');
+const {ListePlaces} = require('../models/placesModel');
 
 exports.LPlaces = async (Char) => {
 
-  let ListeLieux = await ListeLieux();
+  let ListeLieux = await ListePlaces();
     
   let rendu = [];
     
