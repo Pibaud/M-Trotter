@@ -12,7 +12,7 @@ exports.inscription = async (req, res) => {
     }
  };
 
-exports.connexion = async (req, res) => {
+exports.connexions = async (req, res) => {
     const {data} = req.body;
     console.log("Données reçues du client pour la connexion:", data);
     try {

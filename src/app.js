@@ -2,7 +2,7 @@ const express = require('express');
 const placesRoutes = require('./routes/placesRoutes');
 const routeRoutes = require('./routes/routeRoutes');
 const inscritpions = require('./routes/inscriptions');
-const connexion = require('./routes/connexions');
+const connexions = require('./routes/connexions');
 require('dotenv').config();
 
 const app = express();
