@@ -61,4 +61,62 @@ class ApiService {
       throw Exception('Erreur lors de la requête : $e');
     }
   }
+  //Inscription
+  Future<Map<String, dynamic>> signUp(String email, String username, String password) async {
+    try {
+      final url = Uri.parse('$baseUrl/compte/inscription');
+      final body = jsonEncode({
+        'email': email,
+        'username': username,
+        'password': password,
+      });
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        final error = jsonDecode(response.body);
+        return {'success': false, 'error': error['message'] ?? 'Erreur inconnue'};
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
+  // Connexion
+  Future<Map<String, dynamic>> logIn(String email, String password) async {
+    try {
+      final url = Uri.parse('$baseUrl/compte/connexion');
+      final body = jsonEncode({
+        'email': email,
+        'password': password,
+      });
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        final error = jsonDecode(response.body);
+        return {'success': false, 'error': error['message'] ?? 'Erreur inconnue'};
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
 }
+
+

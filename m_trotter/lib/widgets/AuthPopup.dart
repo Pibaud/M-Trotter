@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/AuthNotifier.dart';
+import '../services/ApiService.dart';
+
+
 class AuthDialog extends StatefulWidget {
   final AuthState authState;
 
