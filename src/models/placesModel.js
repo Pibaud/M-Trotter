@@ -1,3 +1,5 @@
+const pool = require('../config/db');
+
 exports.ListePlaces = () => {
 
     let ListeLieu = [
