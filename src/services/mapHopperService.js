@@ -20,7 +20,7 @@ exports.getRoute = async (start, end, mode) => {
 
         };
     } catch (error) {
-        console.error('Error fetching route:', error.response?.data || error.message);
+        console.error('Error fetching route:', error.response.data || error.message);
         throw new Error('Failed to fetch route from MapHopper');
     }
 };
