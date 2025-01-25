@@ -1,35 +1,13 @@
-// Vérifie que LPlaces est bien exportée comme fonction
-const {ListePlaces} = require('../models/placesModel');
+const { ListePlaces } = require('../models/placesModel');
 
-exports.LPlaces = async (Char) => {
-
-  let ListeLieux = await ListePlaces();
-    
-  let rendu = [];
-    
-  for (let elem of ListeLieux) {
-    let mot = true;
-    let charIndex = 0;
-      
-    for (let le of elem) {
-      if (le == Char[charIndex]) {
-        charIndex++;
-      }
-      if (charIndex == Char.length) {
-        break;
-      }
+// GET pour récupérer des lieux
+exports.LPlaces = async (req, res) => {
+    try {
+        const search = req.query.search || '';
+        const lieux = await ListePlaces(search);
+        return lieux;
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
     }
-      
-    if (charIndex != Char.length) {
-        mot = false;
-      }
-      
-    if (mot) {
-      rendu.push(elem);
-      if (rendu.length >= 11) {
-        break; // Arrête la boucle une fois que la limite de 11 est atteinte
-      }
-    }
-  }
-  return rendu;
 };
