@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/HomePage.dart';
 import 'pages/MapPage.dart';
 import 'pages/ProfilePage.dart';
+import 'pages/IntroSlides.dart';
+import 'pages/AuthPage.dart'; // Page d'authentification complète
 import 'package:provider/provider.dart';
 import 'providers/AuthNotifier.dart';
 import 'providers/BottomNavBarVisibilityProvider.dart';
@@ -10,14 +13,99 @@ final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => BottomNavBarVisibilityProvider(),
-      child: ChangeNotifierProvider(
-        create: (_) => AuthState(),
-        child: MyApp(key: myAppKey), // Assignez la clé ici
-      ),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BottomNavBarVisibilityProvider()),
+        ChangeNotifierProvider(create: (_) => AuthState()),
+      ],
+      child: const MyAppWrapper(),
     ),
   );
+}
+
+class MyAppWrapper extends StatelessWidget {
+  const MyAppWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getAppState(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const MaterialApp(
+            home: Center(child: CircularProgressIndicator()), // Encapsulation dans MaterialApp
+          );
+        }
+
+        if (snapshot.hasError) {
+          return const MaterialApp(
+            home: Center(child: Text("Une erreur est survenue !")),
+          );
+        }
+
+        if (snapshot.hasData) {
+          final appState = snapshot.data!;
+          final isFirstLaunch = appState['isFirstLaunch'] as bool;
+          final isLoggedIn = appState['isLoggedIn'] as bool;
+
+          if (isFirstLaunch) {
+            // Afficher les slides d'introduction
+            return MaterialApp(
+              home: IntroSlides(onFinish: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('isFirstLaunch', false);
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => isLoggedIn ? const MyApp() : AuthPage(),
+                    ),
+                  );
+                });
+              }),
+            );
+          }
+
+          // Afficher l'application principale si l'utilisateur est connecté
+          if (isLoggedIn) {
+            return const MyApp();
+          }
+
+          // Rediriger vers la page d'authentification si l'utilisateur n'est pas connecté
+          return MaterialApp(
+            home: AuthPage(), // Encapsulation dans MaterialApp
+          );
+        }
+
+        return const MaterialApp(
+          home: Center(child: Text("Chargement...")),
+        );
+      },
+    );
+  }
+
+  // Vérifie l'état global de l'application
+  Future<Map<String, dynamic>> _getAppState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    return {'isFirstLaunch': isFirstLaunch, 'isLoggedIn': isLoggedIn};
+  }
+}
+
+
+// Vérifie si l'utilisateur est authentifié
+class AuthCheck extends StatelessWidget {
+  const AuthCheck({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = Provider.of<AuthState>(context);
+
+    // Afficher une page différente selon le statut de connexion
+    return authState.isLoggedIn ? const MyApp() : AuthPage();
+  }
 }
 
 class MyApp extends StatefulWidget {
