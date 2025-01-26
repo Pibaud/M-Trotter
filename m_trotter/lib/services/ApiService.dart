@@ -61,8 +61,11 @@ class ApiService {
       throw Exception('Erreur lors de la requête : $e');
     }
   }
+
   //Inscription
-  Future<Map<String, dynamic>> signUp(String email, String username, String password) async {
+  Future<Map<String, dynamic>> signUp(
+      String email, String username, String password) async {
+    print("demande d'inscription du service à $baseUrl");
     try {
       final url = Uri.parse('$baseUrl/comptes/inscription');
       final body = jsonEncode({
@@ -83,7 +86,10 @@ class ApiService {
         return {'success': true, 'data': jsonDecode(response.body)};
       } else {
         final error = jsonDecode(response.body);
-        return {'success': false, 'error': error['message'] ?? 'Erreur inconnue'};
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
@@ -111,12 +117,13 @@ class ApiService {
         return {'success': true, 'data': jsonDecode(response.body)};
       } else {
         final error = jsonDecode(response.body);
-        return {'success': false, 'error': error['message'] ?? 'Erreur inconnue'};
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
     }
   }
 }
-
-
