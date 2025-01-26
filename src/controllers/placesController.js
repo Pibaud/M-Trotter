@@ -12,13 +12,11 @@ exports.getPlaces = async (req, res) => {
 
 
 exports.postPlaces = async (req, res) => {
-    const { data } = req.body;
-    console.log("Données reçues du client :", data);
     try {
-        const reponse = await LPlaces(data);  // Assure-toi que LPlaces est bien une fonction
-        console.log("resto conseillé : ", reponse);
-        res.json({ status: "Données bien reçues", places: reponse });
+        const lieux = await LPlaces(req,res); // Appel au service
+        res.status(200).json(lieux); // Envoi de la réponse au client
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("Erreur dans postPlaces :", error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
     }
 };

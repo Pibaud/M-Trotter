@@ -1,3 +1,5 @@
+const pool = require('../config/db');
+
 async function inscription(userData) {
     // exemple de code qui interagirait avec une base de données
     // const result = await database.insert('users', userData);
