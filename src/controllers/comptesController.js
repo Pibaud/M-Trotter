@@ -13,6 +13,13 @@ exports.inscription = async (req, res) => {
 
     console.log("Données reçues du client pour l'inscription:", { email, username, password });
 
+    if (typeof password !== "string") {
+        console.error("Erreur : Le mot de passe n'est pas une chaîne de caractères.");
+        return res.status(400).json({
+          error: "Le mot de passe doit être une chaîne de caractères.",
+        });
+    }
+
     try {
         const reussite = await inscription({ email, username, password }); // Appel du service avec les données
         console.log("Inscription réussie :", reussite);

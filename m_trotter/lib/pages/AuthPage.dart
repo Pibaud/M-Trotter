@@ -18,7 +18,8 @@ class _AuthPageState extends State<AuthPage> {
   String? _usernameError;
 
   bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{1,}$');
+    final emailRegex =
+        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{1,}$');
     return emailRegex.hasMatch(email);
   }
 
@@ -46,7 +47,7 @@ class _AuthPageState extends State<AuthPage> {
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: "Email",
+                  labelText: "Email ou Nom d'Utilisateur",
                   errorText: _emailError,
                 ),
                 keyboardType: TextInputType.emailAddress,
@@ -62,9 +63,15 @@ class _AuthPageState extends State<AuthPage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  final email = _emailController.text;
-                  final password = _passwordController.text;
-                  final username = _usernameController.text;
+                  final email = _emailController.text.trim();
+                  final password = _passwordController.text.trim().toString();
+                  final username = _usernameController.text.trim();
+
+                  setState(() {
+                    _emailError = null;
+                    _passwordError = null;
+                    _usernameError = null;
+                  });
 
                   if (!_isValidEmail(email)) {
                     setState(() {
@@ -80,9 +87,18 @@ class _AuthPageState extends State<AuthPage> {
                     return;
                   }
 
+                  if (password.runtimeType != String) {
+                    setState(() {
+                      _passwordError =
+                          "Le mot de passe doit être une chaîne de caractères.";
+                    });
+                    return;
+                  }
+
                   if (!_isLoginMode && username.isEmpty) {
                     setState(() {
-                      _usernameError = "Le nom d'utilisateur ne peut pas être vide.";
+                      _usernameError =
+                          "Le nom d'utilisateur ne peut pas être vide.";
                     });
                     return;
                   }
@@ -93,6 +109,7 @@ class _AuthPageState extends State<AuthPage> {
                       password: password,
                     );
                   } else {
+                    print("Données envoyées au backend : $email, $username, $password");
                     authState.signUp(
                       email: email,
                       username: username,

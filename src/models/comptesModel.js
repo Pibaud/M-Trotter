@@ -4,6 +4,10 @@ const pool = require('../config/db');
 async function inscription(userData) {
     const { email, username, password } = userData;
 
+    if (typeof password !== "string") {
+        throw new Error("Le mot de passe doit être une chaîne de caractères.");
+    }
+
     try {
         // Hash du mot de passe
         const passwordHash = await bcrypt.hash(password, 10);
