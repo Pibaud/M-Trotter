@@ -8,10 +8,12 @@ import 'pages/AuthPage.dart'; // Page d'authentification complète
 import 'package:provider/provider.dart';
 import 'providers/AuthNotifier.dart';
 import 'providers/BottomNavBarVisibilityProvider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: "assets/.env");
   runApp(
     MultiProvider(
       providers: [
@@ -33,7 +35,9 @@ class MyAppWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const MaterialApp(
-            home: Center(child: CircularProgressIndicator()), // Encapsulation dans MaterialApp
+            home: Center(
+                child:
+                    CircularProgressIndicator()), // Encapsulation dans MaterialApp
           );
         }
 
@@ -59,23 +63,24 @@ class MyAppWrapper extends StatelessWidget {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => isLoggedIn ? const MyApp() : AuthPage(),
+                      builder: (context) =>
+                          isLoggedIn ? const MyApp() : AuthPage(),
                     ),
                   );
                 });
               }),
             );
           }
-
-          // Afficher l'application principale si l'utilisateur est connecté
           if (isLoggedIn) {
-            return const MyApp();
+            return const MaterialApp(
+              home:
+                  MyApp(), // Assurez-vous que MyApp est également dans un MaterialApp
+            );
+          } else {
+            return MaterialApp(
+              home: AuthPage(), // Encapsulez AuthPage dans MaterialApp
+            );
           }
-
-          // Rediriger vers la page d'authentification si l'utilisateur n'est pas connecté
-          return MaterialApp(
-            home: AuthPage(), // Encapsulation dans MaterialApp
-          );
         }
 
         return const MaterialApp(
@@ -93,7 +98,6 @@ class MyAppWrapper extends StatelessWidget {
     return {'isFirstLaunch': isFirstLaunch, 'isLoggedIn': isLoggedIn};
   }
 }
-
 
 // Vérifie si l'utilisateur est authentifié
 class AuthCheck extends StatelessWidget {

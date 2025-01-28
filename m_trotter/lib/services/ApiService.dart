@@ -5,8 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiService {
   final String baseUrl;
 
-  ApiService({String? baseUrl})
-      : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
+  ApiService({String? baseUrl}) : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
   Future<List<String>> fetchPlaces(String input) async {
     final String url = '$baseUrl/api/places/';
@@ -100,10 +99,11 @@ class ApiService {
 
   // Connexion
   Future<Map<String, dynamic>> logIn(String email, String password) async {
+    print("demande de connexion du service à $baseUrl");
     try {
       final url = Uri.parse('$baseUrl/comptes/connexion');
       final body = jsonEncode({
-        'email': email,
+        'EorU': email,
         'password': password,
       });
 

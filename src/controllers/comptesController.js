@@ -30,10 +30,8 @@ exports.inscription = async (req, res) => {
     }
 };
 
-
-
 exports.connexions = async (req, res) => {
-    const { EorU, password } = req.query; // On récupère depuis req.query
+    const { EorU, password } = req.body; // On récupère depuis req.query
     console.log("Tentative de connexion :", { EorU });
 
     if (!EorU || !password) {
