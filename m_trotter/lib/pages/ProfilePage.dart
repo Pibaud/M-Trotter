@@ -22,8 +22,7 @@ class ProfilePageState extends State<ProfilePage> {
           child: Text('Votre profil'),
         ),
       ),
-      body: authState.isLoggedIn
-          ? Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -36,26 +35,6 @@ class ProfilePageState extends State<ProfilePage> {
                 authState.logOut(); // Déconnecte l'utilisateur.
               },
               child: const Text("Se déconnecter"),
-            ),
-          ],
-        ),
-      )
-          : Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-                'Vous devez vous connecter pour voir votre profil'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Affiche le popup de connexion/inscription
-                showDialog(
-                  context: context,
-                  builder: (context) => AuthDialog(authState),
-                );
-              },
-              child: const Text('Se connecter / S\'inscrire'),
             ),
           ],
         ),
