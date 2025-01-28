@@ -3,14 +3,12 @@ import 'package:flutter/foundation.dart';
 import '../services/ApiService.dart';
 
 class AuthState with ChangeNotifier {
-  final ApiService _apiService = ApiService(baseUrl: '');
+  final ApiService _apiService = ApiService(baseUrl: 'http://192.168.1.72:3000');
   bool _isLoggedIn = false;
 
   bool get isLoggedIn => _isLoggedIn;
 
-
   String? _errorMessage;
-
 
   String? get errorMessage => _errorMessage;
 
@@ -30,7 +28,11 @@ class AuthState with ChangeNotifier {
     }
   }
 
-  Future<void> signUp({required String email, required String username, required String password}) async {
+  Future<void> signUp(
+      {required String email,
+      required String username,
+      required String password}) async {
+    print("demande d'inscription");
     try {
       final result = await _apiService.signUp(email, username, password);
       if (result['success']) {
@@ -50,4 +52,3 @@ class AuthState with ChangeNotifier {
     notifyListeners();
   }
 }
-

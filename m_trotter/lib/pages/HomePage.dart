@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/AuthNotifier.dart';
-import '../widgets/AuthPopup.dart';
 import '../main.dart';
 
 class HomePage extends StatefulWidget {
@@ -45,8 +44,7 @@ class HomePageState extends State<HomePage> {
           ),
           Text("Favoris"),
           Expanded(
-            child: authState.isLoggedIn
-                ? ListView(
+            child:  ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
                       for (var i = 1; i <= 10; i++)
@@ -63,19 +61,6 @@ class HomePageState extends State<HomePage> {
                         ),
                     ],
                   )
-                : Center(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AuthDialog(authState);
-                          },
-                        );
-                      },
-                      child: const Text("Se connecter pour voir vos favoris"),
-                    ),
-                  ),
           ),
           Text("Populaires en ce moment"),
           Expanded(
