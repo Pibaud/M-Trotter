@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
   final String baseUrl;
 
-  ApiService({required this.baseUrl});
+  ApiService({String? baseUrl})
+      : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
   Future<List<String>> fetchPlaces(String input) async {
-    final String url = '$baseUrl/api/places';
+    final String url = '$baseUrl/api/places/';
 
     try {
       final response = await http.post(

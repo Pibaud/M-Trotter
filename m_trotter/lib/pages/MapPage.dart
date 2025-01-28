@@ -56,7 +56,7 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _locationService = LocationService(); // service de localisation
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
-    _apiService = ApiService(baseUrl: 'http://192.168.1.72:3000'); // requêtes
+    _apiService = ApiService(); // requêtes
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
