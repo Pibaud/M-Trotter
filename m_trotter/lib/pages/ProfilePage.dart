@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/AuthNotifier.dart';
-import '../widgets/AuthPopup.dart';
 import 'SettingsPage.dart'; // Assurez-vous d'importer la page des paramètres
 
 class ProfilePage extends StatefulWidget {
