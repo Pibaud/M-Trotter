@@ -9,16 +9,25 @@ import 'package:provider/provider.dart';
 import 'providers/AuthNotifier.dart';
 import 'providers/BottomNavBarVisibilityProvider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'providers/ThemeNotifier.dart';
+import 'providers/LanguageNotifier.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'services/NotificationsService.dart';
+import 'pages/SettingsPage.dart';
+
 
 final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 
 void main() async {
   await dotenv.load(fileName: "assets/.env");
+  await NotificationService.init();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BottomNavBarVisibilityProvider()),
         ChangeNotifierProvider(create: (_) => AuthState()),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        ChangeNotifierProvider(create: (_) => LanguageNotifier()),
       ],
       child: const MyAppWrapper(),
     ),
@@ -157,7 +166,24 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final languageNotifier = Provider.of<LanguageNotifier>(context);
+
     return MaterialApp(
+      themeMode: themeNotifier.themeMode,
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      locale: languageNotifier.currentLocale, // Utiliser la langue choisie
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
+        Locale('es', 'ES'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: Scaffold(
         body: _pages[_selectedIndex],
         bottomNavigationBar: Consumer<BottomNavBarVisibilityProvider>(
