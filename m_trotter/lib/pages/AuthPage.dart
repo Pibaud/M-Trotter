@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/AuthNotifier.dart';
+import '../myapp.dart'; // Import de MyApp
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthPage extends StatefulWidget {
   @override
@@ -26,6 +28,17 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     final authState = Provider.of<AuthState>(context);
+
+    // Listener pour détecter le changement d'état de la connexion
+    if (authState.isLoggedIn) {
+      // Si l'utilisateur est connecté, rediriger vers MyApp
+      Future.delayed(Duration.zero, () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MyApp()),
+        );
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
