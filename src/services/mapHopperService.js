@@ -1,4 +1,5 @@
 const axios = require('axios');
+const puppeteer = require('puppeteer');
 
 const API_URL = 'https://graphhopper.com/api/1/route';
 
@@ -26,8 +27,13 @@ exports.getRoute = async (start, end, mode) => {
 };
 
 exports.getTransit = async (start, end) => {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+
     try {
-        const URL = `${API_URL}?point=${start[0]},${start[1]}&point=${end[0]},${end[1]}&profile=${mode}&locale=fr&instructions=true&calc_points=true&points_encoded=false&key=${process.env.MAPHOPPER_API_KEY}`;
+        // URL de la page de recherche de trajets sur le site TaM
+        const url = `https://www.tam-voyages.com/itineraires/index.asp?orig=${start[0]},${start[1]}&dest=${end[0]},${end[1]}`;
+        await page.goto(url, { waitUntil: 'networkidle2' });
         const response = await axios.get(URL);
 
         console.log('response', response.data);

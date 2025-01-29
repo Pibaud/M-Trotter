@@ -12,8 +12,13 @@ exports.calculateRoute = async (req, res, next) => {
 
         const start = [parseFloat(startLat), parseFloat(startLon)];
         const end = [parseFloat(endLat), parseFloat(endLon)];
-        const route = await getRoute(start, end, mode || 'foot');
-        res.status(200).json(route);
+        if (mode != "transit") {
+            const route = await getRoute(start, end, mode || 'foot');
+            res.status(200).json(route);
+        } else {
+            const transitRoute = await getTransit(start, end);
+            res.status(200).json(transitRoute);
+        }
     } catch (error) {
         next(error);
     }
