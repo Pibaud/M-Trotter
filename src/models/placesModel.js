@@ -2,6 +2,7 @@ const pool = require('../config/db');
 
 exports.ListePlaces = async (search) => {
     try {
+        console.log("Recherche de :", search);
         const result = await pool.query(
             'SELECT DISTINCT name FROM planet_osm_point WHERE name ILIKE $1 LIMIT 10;', 
             [`%${search}%`] // Le % permet de chercher partout dans le nom
