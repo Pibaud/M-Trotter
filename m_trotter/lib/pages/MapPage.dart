@@ -12,6 +12,7 @@ import '../widgets/PlaceInfoSheet.dart';
 import '../widgets/ItinerarySheet.dart';
 import '../widgets/CustomSearchBar.dart';
 import '../providers/BottomNavBarVisibilityProvider.dart';
+import '../models/Place.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -32,8 +33,9 @@ class _MapPageState extends State<MapPage> {
   Timer? _debounce;
   TextEditingController _controller = TextEditingController();
   List<String> _suggestions = [];
+  List<Place> suggestedPlaces = [];
   bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
-  LatLng? _lieuSelectionne;
+  Place? _selectedPlace;
   List<LatLng> _routePoints = []; // Liste pour stocker les points du trajet
   double _bottomSheetHeight = 100.0; // Hauteur initiale de la "modal"
   late double _distance;
@@ -42,14 +44,6 @@ class _MapPageState extends State<MapPage> {
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
   StreamSubscription<Position>? _positionSubscription;
-
-  final Map<String, LatLng> _lieuxCoordonnees = {
-    'tokyoburger': LatLng(43.611, 3.876),
-    'mcdonaldsComedie': LatLng(43.63, 3.886),
-    'leclocher': LatLng(43.612, 3.877),
-    'laopportunite': LatLng(43.613, 3.868),
-    // Ajoutez d'autres lieux ici...
-  };
 
   @override
   void initState() {
@@ -96,9 +90,11 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> getPlaces(String input) async {
     try {
-      final suggestions = await _apiService.fetchPlaces(input);
+      final res = await _apiService.fetchPlaces(input);
       setState(() {
-        _suggestions = suggestions;
+        // Mapper les suggestions en objets Place
+        suggestedPlaces =
+            res.map<Place>((data) => Place.fromJson(data)).toList();
       });
     } catch (e) {
       print('Erreur lors de la récupération des places : $e');
@@ -121,42 +117,44 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  void _onSuggestionTap(String lieu) {
+  void _onSuggestionTap(Place place) {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
-    _controller.text = lieu; // Mise à jour du champ texte
-    print("perte de focus car appui sur suggestion");
+    _controller.text =
+        place.name; // Mise à jour du champ texte avec le nom du lieu
+    print("Perte de focus car appui sur suggestion");
     _focusNode.unfocus();
 
-    LatLng? destination = _lieuxCoordonnees[lieu];
-    if (destination != null) {
-      // Accéder au zoom actuel via mapController.camera.zoom
-      double zoom = _mapController.camera.zoom;
+    // Vérification des coordonnées disponibles dans l'objet Place
+    LatLng? destination;
+    destination = LatLng(place.latitude!, place.longitude!);
 
-      // Calculer le décalage en latitude basé sur le zoom
-      final double mapHeightInDegrees =
-          360 / (2 << (zoom.toInt() - 1)); // Conversion zoom -> degrés
-      final double offsetInDegrees = mapHeightInDegrees *
-          (_bottomSheetHeight / MediaQuery.of(context).size.height);
+    // Accéder au zoom actuel via mapController.camera.zoom
+    double zoom = _mapController.camera.zoom;
 
-      // Ajuster la latitude du lieu sélectionné
-      LatLng adjustedDestination =
-          LatLng(destination.latitude - offsetInDegrees, destination.longitude);
+    // Calculer le décalage en latitude basé sur le zoom
+    final double mapHeightInDegrees =
+        360 / (2 << (zoom.toInt() - 1)); // Conversion zoom -> degrés
+    final double offsetInDegrees = mapHeightInDegrees *
+        (_bottomSheetHeight / MediaQuery.of(context).size.height);
 
-      setState(() {
-        _lieuSelectionne = destination; // Mettre à jour le lieu sélectionné
-        _suggestions.clear();
-        _isLayerVisible = false;
-      });
+    // Ajuster la latitude du lieu sélectionné
+    LatLng adjustedDestination =
+        LatLng(destination.latitude - offsetInDegrees, destination.longitude);
 
-      // Déplacer la carte vers la destination ajustée
-      _mapController.move(adjustedDestination, zoom);
-    }
+    setState(() {
+      _selectedPlace = place; // Mettre à jour le lieu sélectionné
+      suggestedPlaces.clear(); // Vide la liste des suggestions
+      _isLayerVisible = false;
+    });
+
+    // Déplacer la carte vers la destination ajustée
+    _mapController.move(adjustedDestination, zoom);
 
     // Masquer la barre de navigation inférieure
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
         .hideBottomNav();
   }
-
+/*
   void _itineraire(String lieu, {String mode = 'car'}) async {
     LatLng depart = _currentLocation!;
     LatLng? destination = _lieuxCoordonnees[lieu];
@@ -187,7 +185,7 @@ class _MapPageState extends State<MapPage> {
       print('Destination introuvable.');
     }
   }
-
+*/
   @override
   Widget build(BuildContext context) {
     print("Build appelé pour mappage");
@@ -226,11 +224,11 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ],
                 ),
-              if (_lieuSelectionne != null)
+              if (_selectedPlace != null)
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: _lieuSelectionne!,
+                      point: LatLng(_selectedPlace!.latitude, _selectedPlace!.longitude),
                       child: const Icon(
                         Icons.location_on,
                         color: Colors.red,
@@ -250,8 +248,8 @@ class _MapPageState extends State<MapPage> {
                   ],
                 ),
             ],
-          ),
-          if (_lieuSelectionne != null && _routePoints.isEmpty)
+          ),/*
+          if (_selectedPlace != null && _routePoints.isEmpty)
             PlaceInfoSheet(
               height: _bottomSheetHeight,
               onDragUpdate: (dy) {
@@ -277,12 +275,12 @@ class _MapPageState extends State<MapPage> {
                 });
               },
               placeName: _lieuxCoordonnees.entries
-                  .firstWhere((entry) => entry.value == _lieuSelectionne)
+                  .firstWhere((entry) => entry.value == _selectedPlace)
                   .key,
               placeType: "Type du lieu",
               onItineraryTap: () {
                 String lieuNom = _lieuxCoordonnees.entries
-                    .firstWhere((entry) => entry.value == _lieuSelectionne)
+                    .firstWhere((entry) => entry.value == _selectedPlace)
                     .key;
                 _itineraire(lieuNom);
               },
@@ -309,7 +307,7 @@ class _MapPageState extends State<MapPage> {
                 onItineraryModeSelected: (String mode) {
                   _itineraire(
                     _lieuxCoordonnees.entries
-                        .firstWhere((entry) => entry.value == _lieuSelectionne)
+                        .firstWhere((entry) => entry.value == _selectedPlace)
                         .key,
                     mode: mode,
                   );
@@ -320,7 +318,7 @@ class _MapPageState extends State<MapPage> {
                   });
                 },
               ),
-            ),
+            ),*/
           if (_isLayerVisible)
             Container(
               color: Colors.white,
@@ -350,7 +348,7 @@ class _MapPageState extends State<MapPage> {
             },
             onTextChanged: _onTextChanged,
           ),
-          if (_suggestions.isNotEmpty && _isLayerVisible)
+          if (suggestedPlaces.isNotEmpty && _isLayerVisible)
             Positioned(
               top: 85.0,
               left: 8.0,
@@ -362,22 +360,25 @@ class _MapPageState extends State<MapPage> {
                   onNotification: (ScrollNotification notification) {
                     if (notification is ScrollStartNotification) {
                       if (_focusNode.hasFocus) {
-                        // Vérifie explicitement si le TextField a encore le focus
                         _focusNode.unfocus();
                         print("scroll détecté avec focus actif");
                       }
                     }
-                    return false; // Continue à propager l'événement
+                    return false;
                   },
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: _suggestions.length,
+                    itemCount: suggestedPlaces.length,
                     itemBuilder: (context, index) {
+                      final place = suggestedPlaces[index];
                       return ListTile(
-                        title: Text(_suggestions[index]),
+                        title: Text(place
+                            .name), // Utilisation directe de l'attribut name
+                        subtitle: Text(place.amenity ??
+                            ''), // Affiche éventuellement la catégorie
                         onTap: () {
-                          // Appeler la fonction pour envoyer la requête avec le lieu sélectionné
-                          _onSuggestionTap(_suggestions[index]);
+                          _onSuggestionTap(
+                              place); // Appelle la fonction avec l'objet Place
                         },
                       );
                     },

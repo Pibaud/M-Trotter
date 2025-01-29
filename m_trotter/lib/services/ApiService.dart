@@ -7,7 +7,7 @@ class ApiService {
 
   ApiService({String? baseUrl}) : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
-  Future<List<String>> fetchPlaces(String input) async {
+  Future<List<dynamic>> fetchPlaces(String input) async {
   final String url = '$baseUrl/api/places/';
 
   try {
@@ -18,9 +18,8 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> responseData = json.decode(response.body);  // change ici : c'est une liste
-      // Extraire les valeurs de 'name' de chaque objet dans la liste
-      return responseData.map<String>((place) => place['name'] as String).toList();
+      final List<dynamic> responseData = json.decode(response.body);
+      return responseData;
     } else {
       throw Exception('Erreur serveur : ${response.statusCode}');
     }
