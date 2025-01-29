@@ -3,6 +3,8 @@ const router = express.Router();
 const routeController = require('../controllers/routeController');
 
 // Définition de la route pour calculer un itinéraire
+router.get('/route', routeController.calculateRoute);
+// Définition de la route pour calculer un itinéraire
 router.post('/routes', routeController.calculateRoute);
 
 module.exports = router;
