@@ -54,7 +54,7 @@ class HomePageState extends State<HomePage> {
               ),
               onTap: () {
                 print("Navigation vers MapPage avec focusOnSearch = true");
-                myAppKey.currentState?.navigateToMapWithFocus();
+                //myAppKey.currentState?.navigateToMapWithFocus();
               },
             ),
           ),
