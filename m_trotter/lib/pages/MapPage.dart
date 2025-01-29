@@ -188,10 +188,6 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _toggleSearchFocus(bool focus) {
-    CustomSearchBar.toggleFocus(_searchBarKey, focus);
-  }
-
   @override
   Widget build(BuildContext context) {
     print("Build appelé pour mappage");

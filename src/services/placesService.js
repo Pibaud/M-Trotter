@@ -3,7 +3,7 @@ const { ListePlaces, BoxPlaces } = require('../models/placesModel');
 // GET pour récupérer des lieux
 exports.LPlaces = async (req, res) => {
     try {
-        const search = req.query.search || '';
+        const search = req.body.search;
         const lieux = await ListePlaces(search);
         return lieux;
     } catch (error) {

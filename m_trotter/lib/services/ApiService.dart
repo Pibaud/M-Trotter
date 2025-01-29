@@ -8,28 +8,26 @@ class ApiService {
   ApiService({String? baseUrl}) : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
   Future<List<String>> fetchPlaces(String input) async {
-    final String url = '$baseUrl/api/places/';
+  final String url = '$baseUrl/api/places/';
 
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'data': input}),
-      );
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'search': input}),
+    );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        if (responseData.containsKey('places')) {
-          return List<String>.from(responseData['places']);
-        }
-        return [];
-      } else {
-        throw Exception('Erreur serveur : ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Erreur lors de la requête : $e');
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);  // change ici : c'est une liste
+      // Extraire les valeurs de 'name' de chaque objet dans la liste
+      return responseData.map<String>((place) => place['name'] as String).toList();
+    } else {
+      throw Exception('Erreur serveur : ${response.statusCode}');
     }
+  } catch (e) {
+    throw Exception('Erreur lors de la requête : $e');
   }
+}
 
   Future<Map<String, dynamic>> fetchRoute({
     required double startLat,
