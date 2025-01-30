@@ -6,9 +6,10 @@ exports.ListePlaces = async (search) => {
         const result = await pool.query(
             'SELECT DISTINCT name, amenity, ST_X(ST_Transform(way, 4326)) AS longitude, ST_Y(ST_Transform(way, 4326)) AS latitude, tags ' +
             'FROM planet_osm_point ' +
-            'WHERE name IS NOT NULL AND amenity IS NOT NULL AND similarity(name, $1) > 0.3 ' + // Seuil de similarité ajustable
+            'WHERE name IS NOT NULL AND amenity IS NOT NULL AND similarity(name, $1) > 0.3 ' +
+            'ORDER BY similarity(name, $1) DESC ' + // Trie par score de similarité décroissant
             'LIMIT 10;', 
-            [`${search}`] // Recherche approximative
+            [`${search}`]
         );
         
         console.log(result.rows);
