@@ -12,6 +12,8 @@ import 'providers/ThemeNotifier.dart';
 import 'providers/LanguageNotifier.dart';
 import 'myapp.dart';
 
+final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
+
 void main() async {
   await dotenv.load(fileName: "assets/.env");
   await NotificationService.init();
@@ -56,7 +58,9 @@ class MyAppWrapper extends StatelessWidget {
           if (isFirstLaunch) {
             return MaterialApp(home: IntroSlides());
           }
-          return isLoggedIn ? const MyApp() : MaterialApp(home: AuthPage());
+          return isLoggedIn
+              ? MyApp(key: myAppKey) // Assigner la clé ici
+              : MaterialApp(home: AuthPage());
         }
 
         return const MaterialApp(

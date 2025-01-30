@@ -8,25 +8,25 @@ class ApiService {
   ApiService({String? baseUrl}) : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
   Future<List<dynamic>> fetchPlaces(String input) async {
-  final String url = '$baseUrl/api/places/';
+    final String url = '$baseUrl/api/places/';
 
-  try {
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'search': input}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'search': input}),
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> responseData = json.decode(response.body);
-      return responseData;
-    } else {
-      throw Exception('Erreur serveur : ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
     }
-  } catch (e) {
-    throw Exception('Erreur lors de la requête : $e');
   }
-}
 
   Future<Map<String, dynamic>> fetchRoute({
     required double startLat,
@@ -40,7 +40,6 @@ class ApiService {
 
     try {
       final response = await http.post(Uri.parse(url));
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {

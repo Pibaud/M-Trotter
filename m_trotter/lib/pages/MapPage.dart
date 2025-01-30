@@ -32,18 +32,16 @@ class _MapPageState extends State<MapPage> {
   LatLng? _currentLocation;
   Timer? _debounce;
   TextEditingController _controller = TextEditingController();
-  List<String> _suggestions = [];
   List<Place> suggestedPlaces = [];
   bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
   Place? _selectedPlace;
-  List<LatLng> _routePoints = []; // Liste pour stocker les points du trajet
   double _bottomSheetHeight = 100.0; // Hauteur initiale de la "modal"
-  late double _distance;
-  late double _duration;
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
   StreamSubscription<Position>? _positionSubscription;
+  late Map<String, Map<String, dynamic>> _routes;
+  List<LatLng> _routePoints = [];
 
   @override
   void initState() {
@@ -51,6 +49,7 @@ class _MapPageState extends State<MapPage> {
     _locationService = LocationService(); // service de localisation
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
     _apiService = ApiService(); // requêtes
+    _routes = {};
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
@@ -92,7 +91,6 @@ class _MapPageState extends State<MapPage> {
     try {
       final res = await _apiService.fetchPlaces(input);
       setState(() {
-        // Mapper les suggestions en objets Place
         suggestedPlaces =
             res.map<Place>((data) => Place.fromJson(data)).toList();
       });
@@ -101,16 +99,11 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  // Gestion du debounce pour éviter les appels multiples
   void _onTextChanged(String value) {
-    // Annuler le timer existant si l'utilisateur continue à taper
     if (_debounce?.isActive ?? false) {
       _debounce?.cancel();
     }
-
-    // Définir un nouveau timer de 500ms
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      // Vérifier si le champ n'est pas vide avant d'envoyer
       if (value.trim().isNotEmpty) {
         getPlaces(value.trim());
       }
@@ -155,31 +148,38 @@ class _MapPageState extends State<MapPage> {
         .hideBottomNav();
   }
 
-  void _itineraire(Place place, {String mode = 'car'}) async {
+  Future<void> _fetchRoutesForAllModes(Place place) async {
+    if (_currentLocation == null)
+      return; // S'assurer que la position est disponible
+
     LatLng depart = _currentLocation!;
     LatLng destination = LatLng(place.latitude, place.longitude);
+    final modes = ['car', 'foot', 'bike']; //rajouter transit plus tard
+    for (var mode in modes) {
+      try {
+        // Envoyer une seule requête pour tous les modes
+        final routeData = await _apiService.fetchRoute(
+            startLat: depart.latitude,
+            startLon: depart.longitude,
+            endLat: destination.latitude,
+            endLon: destination.longitude,
+            mode: mode);
 
-    try {
-      final routeData = await _apiService.fetchRoute(
-        startLat: depart.latitude,
-        startLon: depart.longitude,
-        endLat: destination.latitude,
-        endLon: destination.longitude,
-        mode: mode,
-      );
+        print("routeData pour le mode $mode :");
+        print(routeData['path']);
+        print("type de la routeData : ${routeData['path'].runtimeType}");
+        print(
+            "type d'un élément de la routeData : ${routeData['path'][0].runtimeType}");
 
-      List<LatLng> routePoints = (routeData['path'] as List)
-          .map((point) => LatLng(point[1], point[0]))
-          .toList();
-
-      setState(() {
-        _routePoints = routePoints;
-        _distance = routeData['distance'];
-        _duration = routeData['duration'];
-      });
-    } catch (e) {
-      print('Erreur lors de la récupération de l\'itinéraire : $e');
+        setState(() {
+          _routes[mode] = routeData;
+        });
+      } catch (e) {
+        print(
+            'Erreur lors de la récupération des itinéraires pour tous les modes : $e');
+      }
     }
+    print("route car : ${_routes['car']}");
   }
 
   @override
@@ -256,11 +256,10 @@ class _MapPageState extends State<MapPage> {
               },
               onDragEnd: () {
                 final List<double> positions = [
-                  100.0, // Version réduite
-                  MediaQuery.of(context).size.height * 0.45, // Milieu
-                  MediaQuery.of(context).size.height, // Plein écran
+                  100.0,
+                  MediaQuery.of(context).size.height * 0.45,
+                  MediaQuery.of(context).size.height,
                 ];
-
                 double closestPosition = positions.reduce((a, b) =>
                     (a - _bottomSheetHeight).abs() <
                             (b - _bottomSheetHeight).abs()
@@ -274,7 +273,7 @@ class _MapPageState extends State<MapPage> {
               placeName: _selectedPlace!.name,
               placeType: _selectedPlace!.amenity,
               onItineraryTap: () {
-                _itineraire(_selectedPlace!);
+                _fetchRoutesForAllModes(_selectedPlace!);
               },
               onCallTap: () {
                 print("Appeler le lieu sélectionné");
@@ -282,17 +281,26 @@ class _MapPageState extends State<MapPage> {
               onWebsiteTap: () {
                 print("Ouvrir le site web du lieu sélectionné");
               },
+              onClose: () {
+                setState(() {
+                  _selectedPlace = null;
+                  _controller.text = "";
+                });
+              },
             ),
-          if (_routePoints.isNotEmpty)
+          if (_routes.isNotEmpty)
             ItinerarySheet(
               initialHeight: MediaQuery.of(context).size.height * 0.45,
               fullHeight: MediaQuery.of(context).size.height,
               midHeight: MediaQuery.of(context).size.height * 0.45,
               collapsedHeight: 100.0,
-              distance: _distance,
-              duration: _duration,
+              routes: _routes, // Routes pour tous les modes
+              initialDistance: _routes['car']!['distance'],
+              initialDuration: _routes['car']!['duration'],
               onItineraryModeSelected: (String mode) {
-                _itineraire(_selectedPlace!, mode: mode);
+                setState(() {
+                  _routePoints = _routes[mode]!['path'];// ERREUR SUREMENT LA
+                });
               },
               onClose: () {
                 setState(() {

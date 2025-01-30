@@ -7,8 +7,9 @@ class ItinerarySheet extends StatefulWidget {
   final double collapsedHeight;
   final Function(String mode) onItineraryModeSelected;
   final Function onClose;
-  final double distance;
-  final double duration;
+  final Map<String, dynamic> routes; // Stocke tous les itinéraires
+  final double initialDistance;
+  final double initialDuration;
 
   const ItinerarySheet({
     Key? key,
@@ -18,8 +19,9 @@ class ItinerarySheet extends StatefulWidget {
     required this.collapsedHeight,
     required this.onItineraryModeSelected,
     required this.onClose,
-    required this.distance,
-    required this.duration,
+    required this.routes, // Routes pour tous les modes
+    required this.initialDistance,
+    required this.initialDuration,
   }) : super(key: key);
 
   @override
@@ -28,11 +30,17 @@ class ItinerarySheet extends StatefulWidget {
 
 class _ItinerarySheetState extends State<ItinerarySheet> {
   late double _currentHeight;
+  late double _distance;
+  late double _duration;
+  late Map<String, dynamic> _routes;
 
   @override
   void initState() {
     super.initState();
     _currentHeight = widget.initialHeight;
+    _distance = widget.initialDistance;
+    _duration = widget.initialDuration;
+    _routes = widget.routes; // Initialiser les routes pour tous les modes
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -106,11 +114,13 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 10.0),
+                          // Affichage de la distance
                           Text(
-                            'Distance : ${widget.distance < 1000 ? '${widget.distance} m' : '${(widget.distance / 1000).toStringAsFixed(2)} km'}',
+                            'Distance : ${_distance < 1000 ? '$_distance m' : '${(_distance / 1000).toStringAsFixed(2)} km'}',
                           ),
+                          // Affichage de la durée
                           Text(
-                            'Durée : ${(widget.duration / 60).toStringAsFixed(0)} minutes',
+                            'Durée : ${_duration / 60} minutes',
                           ),
                           const SizedBox(height: 20.0),
                           Row(
@@ -118,19 +128,24 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.directions_car),
-                                onPressed: () => widget.onItineraryModeSelected('car'),
+                                onPressed: () {
+                                  _updateItinerary('car');
+                                  widget.onItineraryModeSelected('car');
+                                },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.directions_walk),
-                                onPressed: () => widget.onItineraryModeSelected('foot'),
+                                onPressed: () {
+                                  _updateItinerary('foot');
+                                  widget.onItineraryModeSelected('foot');
+                                },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.directions_bike),
-                                onPressed: () => widget.onItineraryModeSelected('bike'),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.directions_transit),
-                                onPressed: () => widget.onItineraryModeSelected('transit'),
+                                onPressed: () {
+                                  _updateItinerary('bike');
+                                  widget.onItineraryModeSelected('bike');
+                                },
                               ),
                             ],
                           ),
@@ -153,5 +168,16 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
         ),
       ),
     );
+  }
+
+  // Mise à jour des informations d'itinéraire pour un mode donné
+  void _updateItinerary(String mode) {
+    final route = _routes[mode]; // Récupère les itinéraires pour le mode sélectionné
+    if (route != null) {
+      setState(() {
+        _distance = route['distance'];
+        _duration = route['duration'];
+      });
+    }
   }
 }

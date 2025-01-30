@@ -8,19 +8,22 @@ import 'providers/LanguageNotifier.dart';
 import 'providers/BottomNavBarVisibilityProvider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
+
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);  // Utilise le paramètre 'key' directement
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  MyAppState createState() => MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class MyAppState extends State<MyApp> {
   int _selectedIndex = 0;
   bool _focusOnSearch = false;
   late final List<Widget> _pages;
 
   void navigateToMapWithFocus() {
+    print("Navigating to MapPage...");
     setState(() {
       _focusOnSearch = true;
       _selectedIndex = 1;

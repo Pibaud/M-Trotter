@@ -53,8 +53,13 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-                print("Navigation vers MapPage avec focusOnSearch = true");
-                //myAppKey.currentState?.navigateToMapWithFocus();
+                print("Appui sur la barre de recherche");
+                if (myAppKey.currentState == null) {
+                  print("myAppKey.currentState est null");
+                } else {
+                  print("myAppKey.currentState est valide");
+                  myAppKey.currentState?.navigateToMapWithFocus();
+                }
               },
             ),
           ),
@@ -70,7 +75,8 @@ class HomePageState extends State<HomePage> {
                       width: 150,
                       color: Colors.blue[100 * (i % 9)],
                       child: Center(
-                        child: Text('Favori $i', style: const TextStyle(fontSize: 18)),
+                        child: Text('Favori $i',
+                            style: const TextStyle(fontSize: 18)),
                       ),
                     ),
                   ),
@@ -89,7 +95,8 @@ class HomePageState extends State<HomePage> {
                       width: 150,
                       color: Colors.blue[100 * (i % 9)],
                       child: Center(
-                        child: Text('Élément $i', style: TextStyle(fontSize: 18)),
+                        child:
+                            Text('Élément $i', style: TextStyle(fontSize: 18)),
                       ),
                     ),
                   ),
