@@ -126,7 +126,7 @@ class _MapPageState extends State<MapPage> {
 
     // Vérification des coordonnées disponibles dans l'objet Place
     LatLng? destination;
-    destination = LatLng(place.latitude!, place.longitude!);
+    destination = LatLng(place.latitude, place.longitude);
 
     // Accéder au zoom actuel via mapController.camera.zoom
     double zoom = _mapController.camera.zoom;
@@ -154,38 +154,34 @@ class _MapPageState extends State<MapPage> {
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
         .hideBottomNav();
   }
-/*
-  void _itineraire(String lieu, {String mode = 'car'}) async {
+
+  void _itineraire(Place place, {String mode = 'car'}) async {
     LatLng depart = _currentLocation!;
-    LatLng? destination = _lieuxCoordonnees[lieu];
+    LatLng destination = LatLng(place.latitude, place.longitude);
 
-    if (destination != null) {
-      try {
-        final routeData = await _apiService.fetchRoute(
-          startLat: depart.latitude,
-          startLon: depart.longitude,
-          endLat: destination.latitude,
-          endLon: destination.longitude,
-          mode: mode,
-        );
+    try {
+      final routeData = await _apiService.fetchRoute(
+        startLat: depart.latitude,
+        startLon: depart.longitude,
+        endLat: destination.latitude,
+        endLon: destination.longitude,
+        mode: mode,
+      );
 
-        List<LatLng> routePoints = (routeData['path'] as List)
-            .map((point) => LatLng(point[1], point[0]))
-            .toList();
+      List<LatLng> routePoints = (routeData['path'] as List)
+          .map((point) => LatLng(point[1], point[0]))
+          .toList();
 
-        setState(() {
-          _routePoints = routePoints;
-          _distance = routeData['distance'];
-          _duration = routeData['duration'];
-        });
-      } catch (e) {
-        print('Erreur lors de la récupération de l\'itinéraire : $e');
-      }
-    } else {
-      print('Destination introuvable.');
+      setState(() {
+        _routePoints = routePoints;
+        _distance = routeData['distance'];
+        _duration = routeData['duration'];
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération de l\'itinéraire : $e');
     }
   }
-*/
+
   @override
   Widget build(BuildContext context) {
     print("Build appelé pour mappage");
@@ -228,7 +224,8 @@ class _MapPageState extends State<MapPage> {
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: LatLng(_selectedPlace!.latitude, _selectedPlace!.longitude),
+                      point: LatLng(
+                          _selectedPlace!.latitude, _selectedPlace!.longitude),
                       child: const Icon(
                         Icons.location_on,
                         color: Colors.red,
@@ -248,7 +245,7 @@ class _MapPageState extends State<MapPage> {
                   ],
                 ),
             ],
-          ),/*
+          ),
           if (_selectedPlace != null && _routePoints.isEmpty)
             PlaceInfoSheet(
               height: _bottomSheetHeight,
@@ -274,15 +271,10 @@ class _MapPageState extends State<MapPage> {
                   _bottomSheetHeight = closestPosition;
                 });
               },
-              placeName: _lieuxCoordonnees.entries
-                  .firstWhere((entry) => entry.value == _selectedPlace)
-                  .key,
-              placeType: "Type du lieu",
+              placeName: _selectedPlace!.name,
+              placeType: _selectedPlace!.amenity,
               onItineraryTap: () {
-                String lieuNom = _lieuxCoordonnees.entries
-                    .firstWhere((entry) => entry.value == _selectedPlace)
-                    .key;
-                _itineraire(lieuNom);
+                _itineraire(_selectedPlace!);
               },
               onCallTap: () {
                 print("Appeler le lieu sélectionné");
@@ -292,33 +284,22 @@ class _MapPageState extends State<MapPage> {
               },
             ),
           if (_routePoints.isNotEmpty)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: ItinerarySheet(
-                initialHeight: MediaQuery.of(context).size.height * 0.45,
-                fullHeight: MediaQuery.of(context).size.height,
-                midHeight: MediaQuery.of(context).size.height *
-                    0.45, // Hauteur moyenne
-                collapsedHeight: 100.0, // Hauteur réduite
-                distance: _distance, // Distance calculée
-                duration: _duration, // Durée calculée
-                onItineraryModeSelected: (String mode) {
-                  _itineraire(
-                    _lieuxCoordonnees.entries
-                        .firstWhere((entry) => entry.value == _selectedPlace)
-                        .key,
-                    mode: mode,
-                  );
-                },
-                onClose: () {
-                  setState(() {
-                    _routePoints = [];
-                  });
-                },
-              ),
-            ),*/
+            ItinerarySheet(
+              initialHeight: MediaQuery.of(context).size.height * 0.45,
+              fullHeight: MediaQuery.of(context).size.height,
+              midHeight: MediaQuery.of(context).size.height * 0.45,
+              collapsedHeight: 100.0,
+              distance: _distance,
+              duration: _duration,
+              onItineraryModeSelected: (String mode) {
+                _itineraire(_selectedPlace!, mode: mode);
+              },
+              onClose: () {
+                setState(() {
+                  _routePoints = [];
+                });
+              },
+            ),
           if (_isLayerVisible)
             Container(
               color: Colors.white,
