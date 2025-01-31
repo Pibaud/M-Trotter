@@ -8,6 +8,7 @@ class ApiService {
   ApiService({String? baseUrl}) : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
   Future<List<dynamic>> fetchPlaces(String input) async {
+<<<<<<< HEAD
     final String url = '$baseUrl/api/places/';
 
     try {
@@ -25,8 +26,27 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
+=======
+  final String url = '$baseUrl/api/places/';
+
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'search': input}),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
+      return responseData;
+    } else {
+      throw Exception('Erreur serveur : ${response.statusCode}');
+>>>>>>> transit
     }
+  } catch (e) {
+    throw Exception('Erreur lors de la requête : $e');
   }
+}
 
   Future<Map<String, dynamic>> fetchRoute({
     required double startLat,

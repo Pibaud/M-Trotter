@@ -1,4 +1,5 @@
 const axios = require('axios');
+const puppeteer = require('puppeteer');
 
 const API_URL = 'https://graphhopper.com/api/1/route';
 
@@ -25,22 +26,39 @@ exports.getRoute = async (start, end, mode) => {
     }
 };
 
-exports.getTransit = async (start, end) => {
+const getTransit = async (startId, endId, date, time) => {
+    const url = "https://www.tam-voyages.com/WebServices/TransinfoService/api/TSI/v1/PlanTrip/json";
+
+    const params = {
+        key: "TAM",
+        DepId: startId,  // Identifiant de départ
+        DepType: "STOP_PLACE", // Vérifie si c'est bien STOP_PLACE
+        ArrId: endId,  // Identifiant d'arrivée
+        ArrType: "POI", // Vérifie si c'est bien POI
+        date: date,
+        DepartureTime: time, // Format HH-mm
+        Algorithm: "FASTEST",
+        Disruptions: 0,
+        MaxWalkDist: "",
+        Language: "FR",
+    };
+
+    console.log("URL de requête :", url);
+    console.log("Paramètres envoyés :", params);
+
     try {
-        const URL = `${API_URL}?point=${start[0]},${start[1]}&point=${end[0]},${end[1]}&profile=${mode}&locale=fr&instructions=true&calc_points=true&points_encoded=false&key=${process.env.MAPHOPPER_API_KEY}`;
-        const response = await axios.get(URL);
-
-        console.log('response', response.data);
-
-        return {
-            status: 'success',
-            start,
-            end,
-            distance: response.data.paths[0].distance,
-            duration: response.data.paths[0].time / 1000, // Conversion en secondes
-        }
+        const response = await axios.get(url, { params, headers: { "User-Agent": "Mozilla/5.0" } });
+        console.log("Réponse API :", response.data);
+        return response.data;
     } catch (error) {
-        console.error('Erreur du site Tam:', error.response.data || error.message);
-        throw new Error('Failed to fetch route from MapHopper');
+        console.error("Erreur lors de la récupération des trajets :", error.message);
+        return null;
     }
+};
+
+// 🔹 Test avec les valeurs qui fonctionnent sur le site
+getTransit("5572$0", "3000822$0", "2025-01-30", "18-00").then(console.log);
+
+module.exports = {
+    getTransit 
 };

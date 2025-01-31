@@ -32,16 +32,27 @@ class _MapPageState extends State<MapPage> {
   LatLng? _currentLocation;
   Timer? _debounce;
   TextEditingController _controller = TextEditingController();
+<<<<<<< HEAD
   List<Place> suggestedPlaces = [];
   bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
   Place? _selectedPlace;
+=======
+  List<String> _suggestions = [];
+  List<Place> suggestedPlaces = [];
+  bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
+  Place? _selectedPlace;
+  List<LatLng> _routePoints = []; // Liste pour stocker les points du trajet
+>>>>>>> transit
   double _bottomSheetHeight = 100.0; // Hauteur initiale de la "modal"
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
   StreamSubscription<Position>? _positionSubscription;
+<<<<<<< HEAD
   late Map<String, Map<String, dynamic>> _routes;
   List<LatLng> _routePoints = [];
+=======
+>>>>>>> transit
 
   @override
   void initState() {
@@ -91,6 +102,10 @@ class _MapPageState extends State<MapPage> {
     try {
       final res = await _apiService.fetchPlaces(input);
       setState(() {
+<<<<<<< HEAD
+=======
+        // Mapper les suggestions en objets Place
+>>>>>>> transit
         suggestedPlaces =
             res.map<Place>((data) => Place.fromJson(data)).toList();
       });
@@ -119,7 +134,11 @@ class _MapPageState extends State<MapPage> {
 
     // Vérification des coordonnées disponibles dans l'objet Place
     LatLng? destination;
+<<<<<<< HEAD
     destination = LatLng(place.latitude, place.longitude);
+=======
+    destination = LatLng(place.latitude!, place.longitude!);
+>>>>>>> transit
 
     // Accéder au zoom actuel via mapController.camera.zoom
     double zoom = _mapController.camera.zoom;
@@ -147,11 +166,16 @@ class _MapPageState extends State<MapPage> {
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
         .hideBottomNav();
   }
+<<<<<<< HEAD
 
   Future<void> _fetchRoutesForAllModes(Place place) async {
     if (_currentLocation == null)
       return; // S'assurer que la position est disponible
 
+=======
+/*
+  void _itineraire(String lieu, {String mode = 'car'}) async {
+>>>>>>> transit
     LatLng depart = _currentLocation!;
     LatLng destination = LatLng(place.latitude, place.longitude);
     final modes = ['car', 'foot', 'bike']; //rajouter transit plus tard
@@ -179,9 +203,14 @@ class _MapPageState extends State<MapPage> {
             'Erreur lors de la récupération des itinéraires pour tous les modes : $e');
       }
     }
+<<<<<<< HEAD
     print("route car : ${_routes['car']}");
   }
 
+=======
+  }
+*/
+>>>>>>> transit
   @override
   Widget build(BuildContext context) {
     print("Build appelé pour mappage");
@@ -224,8 +253,12 @@ class _MapPageState extends State<MapPage> {
                 MarkerLayer(
                   markers: [
                     Marker(
+<<<<<<< HEAD
                       point: LatLng(
                           _selectedPlace!.latitude, _selectedPlace!.longitude),
+=======
+                      point: LatLng(_selectedPlace!.latitude, _selectedPlace!.longitude),
+>>>>>>> transit
                       child: const Icon(
                         Icons.location_on,
                         color: Colors.red,
@@ -245,7 +278,11 @@ class _MapPageState extends State<MapPage> {
                   ],
                 ),
             ],
+<<<<<<< HEAD
           ),
+=======
+          ),/*
+>>>>>>> transit
           if (_selectedPlace != null && _routePoints.isEmpty)
             PlaceInfoSheet(
               height: _bottomSheetHeight,
@@ -270,10 +307,22 @@ class _MapPageState extends State<MapPage> {
                   _bottomSheetHeight = closestPosition;
                 });
               },
+<<<<<<< HEAD
               placeName: _selectedPlace!.name,
               placeType: _selectedPlace!.amenity,
               onItineraryTap: () {
                 _fetchRoutesForAllModes(_selectedPlace!);
+=======
+              placeName: _lieuxCoordonnees.entries
+                  .firstWhere((entry) => entry.value == _selectedPlace)
+                  .key,
+              placeType: "Type du lieu",
+              onItineraryTap: () {
+                String lieuNom = _lieuxCoordonnees.entries
+                    .firstWhere((entry) => entry.value == _selectedPlace)
+                    .key;
+                _itineraire(lieuNom);
+>>>>>>> transit
               },
               onCallTap: () {
                 print("Appeler le lieu sélectionné");
@@ -288,6 +337,7 @@ class _MapPageState extends State<MapPage> {
                 });
               },
             ),
+<<<<<<< HEAD
           if (_routes.isNotEmpty)
             ItinerarySheet(
               initialHeight: MediaQuery.of(context).size.height * 0.45,
@@ -308,6 +358,36 @@ class _MapPageState extends State<MapPage> {
                 });
               },
             ),
+=======
+          if (_routePoints.isNotEmpty)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: ItinerarySheet(
+                initialHeight: MediaQuery.of(context).size.height * 0.45,
+                fullHeight: MediaQuery.of(context).size.height,
+                midHeight: MediaQuery.of(context).size.height *
+                    0.45, // Hauteur moyenne
+                collapsedHeight: 100.0, // Hauteur réduite
+                distance: _distance, // Distance calculée
+                duration: _duration, // Durée calculée
+                onItineraryModeSelected: (String mode) {
+                  _itineraire(
+                    _lieuxCoordonnees.entries
+                        .firstWhere((entry) => entry.value == _selectedPlace)
+                        .key,
+                    mode: mode,
+                  );
+                },
+                onClose: () {
+                  setState(() {
+                    _routePoints = [];
+                  });
+                },
+              ),
+            ),*/
+>>>>>>> transit
           if (_isLayerVisible)
             Container(
               color: Colors.white,
