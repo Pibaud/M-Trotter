@@ -3,23 +3,53 @@ const pool = require('../config/db');
 exports.ListePlaces = async (search) => {
     try {
         console.log("Recherche de :", search);
-        const result = await pool.query(
-            `SELECT name, amenity, ST_X(ST_Transform(way, 4326)) AS longitude, ST_Y(ST_Transform(way, 4326)) AS latitude, tags,
-                    similarity(name, $1) AS sim
+
+        // Définition des requêtes
+        const pointsQuery = `
+            SELECT name, amenity, ST_X(ST_Transform(way, 4326)) AS longitude, 
+                   ST_Y(ST_Transform(way, 4326)) AS latitude, tags, 
+                   similarity(name, $1) AS sim, 'point' AS type
             FROM planet_osm_point
             WHERE name IS NOT NULL 
-              AND (name ILIKE $2 OR similarity(name, $1) > 0.4) -- Priorité à ILIKE, seuil plus strict pour similarity
+              AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
             ORDER BY CASE 
-                WHEN name ILIKE $2 THEN 2  -- Priorité aux résultats exacts (ILIKE)
-                ELSE similarity(name, $1)  -- Puis on trie par similarité
+                WHEN name ILIKE $2 THEN 2
+                ELSE similarity(name, $1)
             END DESC
-            LIMIT 10;`,
-            [search, `%${search}%`]
-        );
-        
-        
-        console.log(result.rows);
-        return result.rows; // Renvoie un tableau des noms
+            LIMIT 10;
+        `;
+
+        const roadsQuery = `
+            SELECT name, highway AS amenity, ST_AsGeoJSON(ST_Transform(way, 4326)) AS geojson, 'road' AS type
+            FROM planet_osm_line
+            WHERE highway IS NOT NULL AND name IS NOT NULL AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            LIMIT 5;
+        `;
+
+        const roadsQuery2 = `
+            SELECT name, highway AS amenity, ST_AsGeoJSON(ST_Transform(way, 4326)) AS geojson, 'road' AS type
+            FROM planet_osm_roads
+            WHERE highway IS NOT NULL AND name IS NOT NULL AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            LIMIT 5;
+        `;
+
+
+        // Exécution des requêtes en parallèle
+        const [pointsResult, roadsResult, roadsResult2] = await Promise.all([
+            pool.query(pointsQuery, [search, `%${search}%`]),
+            pool.query(roadsQuery, [search, `%${search}%`]),
+            pool.query(roadsQuery2, [search, `%${search}%`])
+        ]);
+
+        // Fusion des résultats
+        const finalResults = [
+            ...pointsResult.rows,
+            ...roadsResult.rows.map(row => ({ ...row, longitude: null, latitude: null, tags: null, sim: null })),
+            ...roadsResult2.rows.map(row => ({ ...row, longitude: null, latitude: null, tags: null, sim: null }))
+        ];
+
+        console.log(finalResults);
+        return finalResults; // Renvoie un tableau avec les résultats fusionnés
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);
         throw error;
@@ -39,4 +69,4 @@ exports.BoxPlaces = async (req, res) => {
         console.error("Erreur lors de la récupération des places :", error);
         throw error;
     }
-}
+};
