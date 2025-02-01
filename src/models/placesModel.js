@@ -4,29 +4,19 @@ exports.ListePlaces = async (search) => {
     try {
         console.log("Recherche de :", search);
         const result = await pool.query(
-            `(SELECT * FROM (
-                SELECT DISTINCT name, amenity, ST_X(ST_Transform(way, 4326)) AS longitude, 
-                                ST_Y(ST_Transform(way, 4326)) AS latitude, tags, 
-                                similarity(name, $1) AS sim
-                FROM planet_osm_point
-                WHERE name IS NOT NULL AND amenity IS NOT NULL 
-                AND similarity(name, $1) > 0.3
-            ) AS subquery
-            ORDER BY sim DESC 
-            LIMIT 5)
-        
-            UNION ALL
-        
-            (SELECT DISTINCT name, amenity, ST_X(ST_Transform(way, 4326)) AS longitude, 
-                             ST_Y(ST_Transform(way, 4326)) AS latitude, tags, 
-                             1.0 AS sim
-             FROM planet_osm_point
-             WHERE name IS NOT NULL AND amenity IS NOT NULL 
-             AND name ILIKE $2
-             ORDER BY name ASC 
-             LIMIT 5);`,
-            [`${search}`, `%${search}%`]
+            `SELECT name, amenity, ST_X(ST_Transform(way, 4326)) AS longitude, ST_Y(ST_Transform(way, 4326)) AS latitude, tags,
+                    similarity(name, $1) AS sim
+            FROM planet_osm_point
+            WHERE name IS NOT NULL 
+              AND (name ILIKE $2 OR similarity(name, $1) > 0.4) -- Priorité à ILIKE, seuil plus strict pour similarity
+            ORDER BY CASE 
+                WHEN name ILIKE $2 THEN 2  -- Priorité aux résultats exacts (ILIKE)
+                ELSE similarity(name, $1)  -- Puis on trie par similarité
+            END DESC
+            LIMIT 10;`,
+            [search, `%${search}%`]
         );
+        
         
         console.log(result.rows);
         return result.rows; // Renvoie un tableau des noms
