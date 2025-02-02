@@ -155,22 +155,30 @@ class _MapPageState extends State<MapPage> {
 
     LatLng depart = _currentLocation!;
     LatLng destination = LatLng(place.latitude, place.longitude);
-    final modes = ['car', 'foot', 'bike']; //rajouter transit plus tard
+    final modes = ['car', 'foot', 'bike']; // Ajouter transit
+
+    // Définir des variables pour le mode transit (si nécessaire)
+    String? startName =
+        'Universités des Sciences et Lettres'; // Remplacer par la logique d'obtention du nom du départ
+    String? endName = 'Odysseum';
+    String? date = '2025-02-02'; // Remplacer par la date réelle
+    String? time = '08-30'; // Remplacer par l'heure réelle
+
     for (var mode in modes) {
       try {
-        // Envoyer une seule requête pour tous les modes
+        // Envoie la requête pour tous les modes
         final routeData = await _apiService.fetchRoute(
-            startLat: depart.latitude,
-            startLon: depart.longitude,
-            endLat: destination.latitude,
-            endLon: destination.longitude,
-            mode: mode);
-
-        print("routeData pour le mode $mode :");
-        print(routeData['path']);
-        print("type de la routeData : ${routeData['path'].runtimeType}");
-        print(
-            "type d'un élément de la routeData : ${routeData['path'][0].runtimeType}");
+          startLat: depart.latitude,
+          startLon: depart.longitude,
+          endLat: destination.latitude,
+          endLon: destination.longitude,
+          mode: mode,
+          // Paramètres spécifiques au mode transit
+          startName: mode == 'transit' ? startName : null,
+          endName: mode == 'transit' ? endName : null,
+          date: mode == 'transit' ? date : null,
+          time: mode == 'transit' ? time : null,
+        );
 
         setState(() {
           _routes[mode] = routeData;
@@ -180,7 +188,33 @@ class _MapPageState extends State<MapPage> {
             'Erreur lors de la récupération des itinéraires pour tous les modes : $e');
       }
     }
-    print("route car : ${_routes['car']}");
+    try {
+      final routeData = await _apiService.fetchRoute(
+        startLat: depart.latitude,
+        startLon: depart.longitude,
+        endLat: destination.latitude,
+        endLon: destination.longitude,
+        mode: 'transit',
+        startName: startName,
+        endName: endName,
+        date: date,
+        time: time,
+      );
+
+      setState(() {
+        print("resultat de la requete pour le tram : $routeData");
+        _routes['transit'] = routeData;
+      });
+    } catch (e) {
+      print(
+          'Erreur lors de la récupération des itinéraires pour tous les modes : $e');
+    }
+    setState(() {
+      // initialisation du mode
+      _routePoints = (_routes['car']!['path'] as List)
+          .map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
+          .toList();
+    });
   }
 
   @override
@@ -208,6 +242,16 @@ class _MapPageState extends State<MapPage> {
                 urlTemplate:
                     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
               ),
+              if (_routePoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _routePoints, // Liste des points du trajet
+                      strokeWidth: 7.0,
+                      color: Colors.blue, // Couleur de la polyligne
+                    ),
+                  ],
+                ),
               if (_currentLocation != null)
                 MarkerLayer(
                   markers: [
@@ -232,16 +276,6 @@ class _MapPageState extends State<MapPage> {
                         color: Colors.red,
                         size: 30.0,
                       ),
-                    ),
-                  ],
-                ),
-              if (_routePoints.isNotEmpty)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _routePoints, // Liste des points du trajet
-                      strokeWidth: 7.0,
-                      color: Colors.blue, // Couleur de la polyligne
                     ),
                   ],
                 ),
@@ -298,14 +332,19 @@ class _MapPageState extends State<MapPage> {
               routes: _routes, // Routes pour tous les modes
               initialDistance: _routes['car']!['distance'],
               initialDuration: _routes['car']!['duration'],
+              initialMode: 'car',
               onItineraryModeSelected: (String mode) {
                 setState(() {
-                  _routePoints = _routes[mode]!['path'];// ERREUR SUREMENT LA
+                  _routePoints = (_routes[mode]!['path'] as List)
+                      .map((coord) =>
+                          LatLng(coord[1].toDouble(), coord[0].toDouble()))
+                      .toList();
                 });
               },
               onClose: () {
                 setState(() {
                   _routePoints = [];
+                  _routes = {};
                 });
               },
             ),

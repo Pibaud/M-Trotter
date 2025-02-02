@@ -10,6 +10,7 @@ class ItinerarySheet extends StatefulWidget {
   final Map<String, dynamic> routes; // Stocke tous les itinéraires
   final double initialDistance;
   final double initialDuration;
+  final String initialMode; // Ajout du mode initial (ex. "car")
 
   const ItinerarySheet({
     Key? key,
@@ -22,6 +23,7 @@ class ItinerarySheet extends StatefulWidget {
     required this.routes, // Routes pour tous les modes
     required this.initialDistance,
     required this.initialDuration,
+    required this.initialMode, // Nouveau paramètre pour le mode initial
   }) : super(key: key);
 
   @override
@@ -33,6 +35,7 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
   late double _distance;
   late double _duration;
   late Map<String, dynamic> _routes;
+  late String _selectedMode;
 
   @override
   void initState() {
@@ -41,6 +44,7 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
     _distance = widget.initialDistance;
     _duration = widget.initialDuration;
     _routes = widget.routes; // Initialiser les routes pour tous les modes
+    _selectedMode = widget.initialMode; // Initialiser le mode sélectionné
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -114,39 +118,24 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 10.0),
-                          // Affichage de la distance
+                          // Affichage de la distance (arrondi)
                           Text(
-                            'Distance : ${_distance < 1000 ? '$_distance m' : '${(_distance / 1000).toStringAsFixed(2)} km'}',
+                            'Distance : ${_distance < 1000 ? '${_distance.ceil()} m' : '${(_distance / 1000).ceil()} km'}',
                           ),
-                          // Affichage de la durée
+                          // Affichage de la durée (arrondi)
                           Text(
-                            'Durée : ${_duration / 60} minutes',
+                            'Durée : ${(_duration / 60).ceil()} minutes',
                           ),
                           const SizedBox(height: 20.0),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment
+                                .spaceEvenly, // Espacement des icônes
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.directions_car),
-                                onPressed: () {
-                                  _updateItinerary('car');
-                                  widget.onItineraryModeSelected('car');
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.directions_walk),
-                                onPressed: () {
-                                  _updateItinerary('foot');
-                                  widget.onItineraryModeSelected('foot');
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.directions_bike),
-                                onPressed: () {
-                                  _updateItinerary('bike');
-                                  widget.onItineraryModeSelected('bike');
-                                },
-                              ),
+                              _buildModeIcon('car', Icons.directions_car),
+                              _buildModeIcon('foot', Icons.directions_walk),
+                              _buildModeIcon('bike', Icons.directions_bike),
+                              _buildModeIcon(
+                                  'tram', Icons.train), // Icône du tram
                             ],
                           ),
                         ],
@@ -170,9 +159,41 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
     );
   }
 
-  // Mise à jour des informations d'itinéraire pour un mode donné
+// Construction d'un bouton pour chaque mode avec un contour bleu pour le mode sélectionné
+  Widget _buildModeIcon(String mode, IconData icon) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedMode = mode;
+          _updateItinerary(mode);
+        });
+        widget.onItineraryModeSelected(mode);
+      },
+      child: Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          decoration: BoxDecoration(
+            color: _selectedMode == mode
+                ? Colors.blue
+                : Colors
+                    .grey[300], // Remplissage gris clair pour non sélectionné
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Icon(
+            icon,
+            color: _selectedMode == mode
+                ? Colors.white
+                : Colors.grey[700], // Icône en gris foncé pour non sélectionné
+          ),
+        ),
+      ),
+    );
+  }
+
+// Mise à jour des informations d'itinéraire pour un mode donné
   void _updateItinerary(String mode) {
-    final route = _routes[mode]; // Récupère les itinéraires pour le mode sélectionné
+    final route =
+        _routes[mode]; // Récupère les itinéraires pour le mode sélectionné
     if (route != null) {
       setState(() {
         _distance = route['distance'];

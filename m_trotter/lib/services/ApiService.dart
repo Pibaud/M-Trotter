@@ -26,7 +26,7 @@ class ApiService {
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
     }
-}
+  }
 
   Future<Map<String, dynamic>> fetchRoute({
     required double startLat,
@@ -34,9 +34,27 @@ class ApiService {
     required double endLat,
     required double endLon,
     String mode = 'car',
+    String? startName,
+    String? endName,
+    String? date,
+    String? time,
   }) async {
-    final String url =
+    // URL de base
+    String url =
         '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon&endLat=$endLat&endLon=$endLon&mode=$mode';
+
+    // Si le mode est transit, on ajoute les paramètres supplémentaires
+    if (mode == 'transit') {
+      if (startName == null ||
+          endName == null ||
+          date == null ||
+          time == null) {
+        throw Exception('Missing parameters for transit mode');
+      }
+      url =
+          '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon&endLat=$endLat&endLon=$endLon'
+          '&mode=$mode&startName=$startName&endName=$endName&date=$date&time=$time';
+    }
 
     try {
       final response = await http.post(Uri.parse(url));
