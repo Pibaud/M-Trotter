@@ -1,12 +1,15 @@
 const { getRoute, getTransit } = require('../services/mapHopperService');
 const { getLocationId } = require('../services/tamIdService');
 
+console.log(typeof getRoute); // Devrait afficher "function"
+
 exports.calculateRoute = async (req, res, next) => {
     try {
         const { startName, startLat, startLon, endName, endLat, endLon, mode, date, time } = req.query;
 
-        if (!startName || !startLat || !startLon || !endName || !endLat || !endLon) {
-            return res.status(400).json({ error: 'Missing required parameters' });
+        // Vérification stricte uniquement pour les paramètres de localisation, nécessaires pour tous les modes
+        if (!startLat || !startLon || !endLat || !endLon) {
+            return res.status(400).json({ error: 'Missing required location parameters' });
         }
 
         console.log("Calculating route...");
@@ -15,6 +18,11 @@ exports.calculateRoute = async (req, res, next) => {
         const end = [parseFloat(endLat), parseFloat(endLon)];
 
         if (mode === 'transit') {
+            // Vérification spécifique pour les paramètres nécessaires au mode transit
+            if (!startName || !endName || !date || !time) {
+                return res.status(400).json({ error: 'Missing parameters for transit mode' });
+            }
+
             // Récupération des ID des lieux
             const startLocation = await getLocationId(startName, start[0], start[1]);
             const endLocation = await getLocationId(endName, end[0], end[1]);
