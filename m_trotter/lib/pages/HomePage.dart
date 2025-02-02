@@ -53,7 +53,6 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-<<<<<<< HEAD
                 print("Appui sur la barre de recherche");
                 if (myAppKey.currentState == null) {
                   print("myAppKey.currentState est null");
@@ -61,10 +60,6 @@ class HomePageState extends State<HomePage> {
                   print("myAppKey.currentState est valide");
                   myAppKey.currentState?.navigateToMapWithFocus();
                 }
-=======
-                print("Navigation vers MapPage avec focusOnSearch = true");
-                //myAppKey.currentState?.navigateToMapWithFocus();
->>>>>>> transit
               },
             ),
           ),

@@ -11,11 +11,8 @@ import 'providers/BottomNavBarVisibilityProvider.dart';
 import 'providers/ThemeNotifier.dart';
 import 'providers/LanguageNotifier.dart';
 import 'myapp.dart';
-<<<<<<< HEAD
 
 final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
-=======
->>>>>>> transit
 
 void main() async {
   await dotenv.load(fileName: "assets/.env");
@@ -61,13 +58,9 @@ class MyAppWrapper extends StatelessWidget {
           if (isFirstLaunch) {
             return MaterialApp(home: IntroSlides());
           }
-<<<<<<< HEAD
           return isLoggedIn
               ? MyApp(key: myAppKey) // Assigner la clé ici
               : MaterialApp(home: AuthPage());
-=======
-          return isLoggedIn ? const MyApp() : MaterialApp(home: AuthPage());
->>>>>>> transit
         }
 
         return const MaterialApp(
