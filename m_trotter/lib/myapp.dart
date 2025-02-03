@@ -11,7 +11,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);  // Utilise le paramètre 'key' directement
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   MyAppState createState() => MyAppState();
@@ -58,8 +58,16 @@ class MyAppState extends State<MyApp> {
 
     return MaterialApp(
       themeMode: themeNotifier.themeMode,
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
+      theme: ThemeData.light().copyWith(
+        textTheme: ThemeData.light().textTheme.apply(
+          fontFamily: 'Poppins', // Appliquer la police dans le textTheme
+        ),
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        textTheme: ThemeData.dark().textTheme.apply(
+          fontFamily: 'Poppins', // Appliquer la police en mode sombre aussi
+        ),
+      ),
       locale: languageNotifier.currentLocale,
       supportedLocales: const [
         Locale('en', 'US'),
@@ -84,7 +92,7 @@ class MyAppState extends State<MyApp> {
                       ),
                       BottomNavigationBarItem(
                         icon: Icon(Icons.map),
-                        label: 'Map',
+                        label: 'Carte',
                       ),
                       BottomNavigationBarItem(
                         icon: Icon(Icons.person),

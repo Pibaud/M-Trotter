@@ -100,6 +100,8 @@ class PlaceInfoSheet extends StatelessWidget {
                       ),
                     ),
                   ),
+                  //Expanded(
+                  //)
                 ],
               ),
             ),

@@ -17,8 +17,9 @@ const getRoute = async (start, end, mode) => {
             distance: response.data.paths[0].distance,
             duration: response.data.paths[0].time / 1000, // Conversion en secondes
             path: response.data.paths[0].points.coordinates,
-            instructions: response.data.paths[0].instructions
-
+            instructions: response.data.paths[0].instructions,
+            ascend: response.data.paths[0].ascend,
+            descend: response.data.paths[0].descend
         };
     } catch (error) {
         console.error('Erreur de graphHopper:', error.response.data || error.message);

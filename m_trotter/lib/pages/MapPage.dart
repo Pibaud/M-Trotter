@@ -15,6 +15,9 @@ import '../providers/BottomNavBarVisibilityProvider.dart';
 import '../models/Place.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:tuple/tuple.dart';
+import 'dart:ui';
+import 'package:intl/intl.dart';
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
@@ -43,6 +46,9 @@ class _MapPageState extends State<MapPage> {
   StreamSubscription<Position>? _positionSubscription;
   late Map<String, Map<String, dynamic>> _routes;
   List<LatLng> _routePoints = [];
+  Map<String, dynamic> _routesInstructions = {};
+  Map<String, Tuple2<double, double>> _elevationData = {};
+  late String _currentLocationName;
 
   @override
   void initState() {
@@ -79,9 +85,25 @@ class _MapPageState extends State<MapPage> {
 
     var position = await locationService.getCurrentPosition();
     if (position != null) {
+      print(
+          "nouvelle position : ${position.latitude}, ${position.longitude} nouvelle requete à l'api");
+
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
+
+      try {
+        if (_currentLocation != null) {
+          String value = await _apiService.getNameFromLatLng(_currentLocation!);
+          print("value : $value");
+          setState(() {
+            _currentLocationName = value;
+          });
+        }
+      } catch (error) {
+        print('erreur de requête : $error');
+      }
+
       _mapController.move(LatLng(position.latitude, position.longitude), 13.0);
     } else {
       debugPrint('Impossible d\'obtenir la position de l\'utilisateur.');
@@ -104,7 +126,7 @@ class _MapPageState extends State<MapPage> {
     if (_debounce?.isActive ?? false) {
       _debounce?.cancel();
     }
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 100), () {
       if (value.trim().isNotEmpty) {
         getPlaces(value.trim());
       }
@@ -115,7 +137,6 @@ class _MapPageState extends State<MapPage> {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
     _controller.text =
         place.name; // Mise à jour du champ texte avec le nom du lieu
-    print("Perte de focus car appui sur suggestion");
     _focusNode.unfocus();
 
     // Vérification des coordonnées disponibles dans l'objet Place
@@ -141,12 +162,11 @@ class _MapPageState extends State<MapPage> {
       _isLayerVisible = false;
     });
 
-    // Déplacer la carte vers la destination ajustée
-    _mapController.move(adjustedDestination, zoom);
-
-    // Masquer la barre de navigation inférieure
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
         .hideBottomNav();
+
+    // Déplacer la carte vers la destination ajustée
+    _mapController.move(adjustedDestination, zoom);
   }
 
   Future<void> _fetchRoutesForAllModes(Place place) async {
@@ -158,11 +178,10 @@ class _MapPageState extends State<MapPage> {
     final modes = ['car', 'foot', 'bike']; // Ajouter transit
 
     // Définir des variables pour le mode transit (si nécessaire)
-    String? startName =
-        'Universités des Sciences et Lettres'; // Remplacer par la logique d'obtention du nom du départ
-    String? endName = 'Odysseum';
-    String? date = '2025-02-02'; // Remplacer par la date réelle
-    String? time = '08-30'; // Remplacer par l'heure réelle
+    String? startName = _currentLocationName;
+    String? endName = _selectedPlace!.name;
+    String? date = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    String? time = DateFormat('HH-mm').format(DateTime.now());
 
     for (var mode in modes) {
       try {
@@ -182,12 +201,17 @@ class _MapPageState extends State<MapPage> {
 
         setState(() {
           _routes[mode] = routeData;
+          _routesInstructions[mode] = routeData['instructions'];
+          _elevationData[mode] =
+              Tuple2(routeData['ascend'], routeData['descend']);
         });
       } catch (e) {
         print(
             'Erreur lors de la récupération des itinéraires pour tous les modes : $e');
       }
     }
+    print(
+        "date : $date, time : $time, startName : $startName, endName : $endName");
     try {
       final routeData = await _apiService.fetchRoute(
         startLat: depart.latitude,
@@ -201,8 +225,9 @@ class _MapPageState extends State<MapPage> {
         time: time,
       );
 
+      debugPrint(jsonEncode(routeData['responseData']['trips']['Trip'][0]), wrapWidth: 1024);
+
       setState(() {
-        print("resultat de la requete pour le tram : $routeData");
         _routes['transit'] = routeData;
       });
     } catch (e) {
@@ -281,73 +306,6 @@ class _MapPageState extends State<MapPage> {
                 ),
             ],
           ),
-          if (_selectedPlace != null && _routePoints.isEmpty)
-            PlaceInfoSheet(
-              height: _bottomSheetHeight,
-              onDragUpdate: (dy) {
-                setState(() {
-                  _bottomSheetHeight -= dy;
-                });
-              },
-              onDragEnd: () {
-                final List<double> positions = [
-                  100.0,
-                  MediaQuery.of(context).size.height * 0.45,
-                  MediaQuery.of(context).size.height,
-                ];
-                double closestPosition = positions.reduce((a, b) =>
-                    (a - _bottomSheetHeight).abs() <
-                            (b - _bottomSheetHeight).abs()
-                        ? a
-                        : b);
-
-                setState(() {
-                  _bottomSheetHeight = closestPosition;
-                });
-              },
-              placeName: _selectedPlace!.name,
-              placeType: _selectedPlace!.amenity,
-              onItineraryTap: () {
-                _fetchRoutesForAllModes(_selectedPlace!);
-              },
-              onCallTap: () {
-                print("Appeler le lieu sélectionné");
-              },
-              onWebsiteTap: () {
-                print("Ouvrir le site web du lieu sélectionné");
-              },
-              onClose: () {
-                setState(() {
-                  _selectedPlace = null;
-                  _controller.text = "";
-                });
-              },
-            ),
-          if (_routes.isNotEmpty)
-            ItinerarySheet(
-              initialHeight: MediaQuery.of(context).size.height * 0.45,
-              fullHeight: MediaQuery.of(context).size.height,
-              midHeight: MediaQuery.of(context).size.height * 0.45,
-              collapsedHeight: 100.0,
-              routes: _routes, // Routes pour tous les modes
-              initialDistance: _routes['car']!['distance'],
-              initialDuration: _routes['car']!['duration'],
-              initialMode: 'car',
-              onItineraryModeSelected: (String mode) {
-                setState(() {
-                  _routePoints = (_routes[mode]!['path'] as List)
-                      .map((coord) =>
-                          LatLng(coord[1].toDouble(), coord[0].toDouble()))
-                      .toList();
-                });
-              },
-              onClose: () {
-                setState(() {
-                  _routePoints = [];
-                  _routes = {};
-                });
-              },
-            ),
           if (_isLayerVisible)
             Container(
               color: Colors.white,
@@ -419,53 +377,165 @@ class _MapPageState extends State<MapPage> {
             Positioned(
               top: 120.0,
               right: 10.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6.0,
-                      spreadRadius: 2.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10.0),
+                child: Stack(
+                  children: [
+                    // BackdropFilter pour le flou foncé
+                    Positioned.fill(
+                      child: BackdropFilter(
+                        filter:
+                            ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Flou
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color(
+                                0x10000000), // Fond semi-transparent foncé (alpha = 0.2)
+                            borderRadius: BorderRadius.circular(
+                                10.0), // Facultatif pour arrondir les coins
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(
+                                    0x10000000), // Légère ombre noire avec alpha = 0.2
+                                blurRadius: 5.0, // Flou de l'ombre
+                                spreadRadius: 2.0, // Espace de l'ombre
+                                offset: Offset(
+                                    0, 2), // Position de l'ombre (décalage)
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Contenu du Container avec les boutons
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 6.0,
+                            spreadRadius: 2.0,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment:
+                            MainAxisAlignment.center, // Centrer les icônes
+                        children: [
+                          // Bouton de reset de la carte
+                          IconButton(
+                            icon: Icon(
+                              Icons.explore,
+                              size: 30.0,
+                              color: Colors.white,
+                            ),
+                            onPressed: () =>
+                                _mapInteractions.resetMapOrientation(),
+                          ),
+                          // Barre séparatrice horizontale blanche avec espacement à gauche et à droite
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal:
+                                    10.0), // Espacement à gauche et à droite
+                            child: Container(
+                              height: 2.0, // Hauteur de la barre
+                              width:
+                                  30.0, // Largeur de la barre (moins que la largeur totale du conteneur)
+                              color:
+                                  Colors.white, // Couleur blanche pour la barre
+                            ),
+                          ),
+                          // Bouton de centrage sur la localisation actuelle
+                          IconButton(
+                            icon: Icon(
+                              Icons.near_me,
+                              size: 30.0,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => _mapInteractions
+                                .centerOnCurrentLocation(_currentLocation),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                child: IconButton(
-                    icon: Icon(
-                      Icons.explore,
-                      size: 30.0,
-                      color: Colors.black,
-                    ),
-                    onPressed: () => _mapInteractions.resetMapOrientation()),
               ),
             ),
-          if (!_isLayerVisible)
-            Positioned(
-              bottom: 20.0,
-              right: 10.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6.0,
-                      spreadRadius: 2.0,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.near_me,
-                    size: 30.0,
-                    color: Colors.blue,
-                  ),
-                  onPressed: () => _mapInteractions
-                      .centerOnCurrentLocation(_currentLocation),
-                ),
-              ),
+            if (_selectedPlace != null && _routePoints.isEmpty)
+            PlaceInfoSheet(
+              height: _bottomSheetHeight,
+              onDragUpdate: (dy) {
+                setState(() {
+                  _bottomSheetHeight -= dy;
+                });
+              },
+              onDragEnd: () {
+                final List<double> positions = [
+                  100.0,
+                  MediaQuery.of(context).size.height * 0.45,
+                  MediaQuery.of(context).size.height,
+                ];
+                double closestPosition = positions.reduce((a, b) =>
+                    (a - _bottomSheetHeight).abs() <
+                            (b - _bottomSheetHeight).abs()
+                        ? a
+                        : b);
+
+                setState(() {
+                  _bottomSheetHeight = closestPosition;
+                });
+              },
+              placeName: _selectedPlace!.name,
+              placeType: _selectedPlace!.amenity,
+              onItineraryTap: () {
+                _fetchRoutesForAllModes(_selectedPlace!);
+              },
+              onCallTap: () {
+                print("Appeler le lieu sélectionné");
+              },
+              onWebsiteTap: () {
+                print("Ouvrir le site web du lieu sélectionné");
+              },
+              onClose: () {
+                setState(() {
+                  _selectedPlace = null;
+                  _controller.text = "";
+                });
+
+                Provider.of<BottomNavBarVisibilityProvider>(context,
+                        listen: false)
+                    .showBottomNav();
+              },
+            ),
+          if (_routes.isNotEmpty)
+            ItinerarySheet(
+              initialHeight: MediaQuery.of(context).size.height * 0.45,
+              fullHeight: MediaQuery.of(context).size.height,
+              midHeight: MediaQuery.of(context).size.height * 0.45,
+              collapsedHeight: 100.0,
+              routes: _routes, // Routes pour tous les modes
+              routesInstructions: _routesInstructions,
+              elevationData: _elevationData,
+              initialDistance: _routes['car']!['distance'],
+              initialDuration: _routes['car']!['duration'],
+              initialMode: 'car',
+              onItineraryModeSelected: (String mode) {
+                setState(() {
+                  _routePoints = (_routes[mode]!['path'] as List)
+                      .map((coord) =>
+                          LatLng(coord[1].toDouble(), coord[0].toDouble()))
+                      .toList();
+                });
+              },
+              onClose: () {
+                setState(() {
+                  _routePoints = [];
+                  _routes = {};
+                  _routesInstructions = {};
+                });
+              },
             ),
         ],
       ),

@@ -71,7 +71,7 @@ class LocationService {
     required Function(dynamic) onError,
   }) {
     LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high, // Précision élevée
+      accuracy: LocationAccuracy.medium, // Précision élevée
       distanceFilter: 10, // Mise à jour après un déplacement de 10 mètres
     );
 

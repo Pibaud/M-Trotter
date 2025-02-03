@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:latlong2/latlong.dart';
 
 class ApiService {
   final String baseUrl;
@@ -19,6 +20,28 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
+  Future<String> getNameFromLatLng(LatLng coord) async {
+    print("appel à getNeamFromLatLong avec $coord");
+    final String url = '$baseUrl/api/depart';
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json
+            .encode({'latitude': coord.latitude, 'longitude': coord.longitude}),
+      );
+
+      if (response.statusCode == 200) {
+        final String responseData = json.decode(response.body);
         return responseData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
@@ -54,26 +77,49 @@ class ApiService {
       url =
           '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon&endLat=$endLat&endLon=$endLon'
           '&mode=$mode&startName=$startName&endName=$endName&date=$date&time=$time';
-    }
 
-    try {
-      final response = await http.post(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        if (responseData['status'] == 'success') {
-          return {
-            'path': responseData['path'],
-            'distance': responseData['distance'],
-            'duration': responseData['duration'],
-          };
+      try {
+        final response = await http.post(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> responseData = json.decode(response.body);
+          if (responseData['Status']['Code'] == 'OK') {
+            return {
+              'responseData': responseData
+            };
+          } else {
+            throw Exception(
+                'Erreur dans la réponse : ${responseData['Status']}');
+          }
         } else {
-          throw Exception('Erreur dans la réponse : ${responseData['status']}');
+          throw Exception('Erreur serveur : ${response.statusCode}');
         }
-      } else {
-        throw Exception('Erreur serveur : ${response.statusCode}');
+      } catch (e) {
+        throw Exception('Erreur lors de la requête : $e');
       }
-    } catch (e) {
-      throw Exception('Erreur lors de la requête : $e');
+    } else {
+      try {
+        final response = await http.post(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> responseData = json.decode(response.body);
+          if (responseData['status'] == 'success') {
+            return {
+              'path': responseData['path'],
+              'distance': responseData['distance'],
+              'duration': responseData['duration'],
+              'instructions': responseData['instructions'],
+              'ascend': responseData['ascend'],
+              'descend': responseData['descend']
+            };
+          } else {
+            throw Exception(
+                'Erreur dans la réponse : ${responseData['status']}');
+          }
+        } else {
+          throw Exception('Erreur serveur : ${response.statusCode}');
+        }
+      } catch (e) {
+        throw Exception('Erreur lors de la requête : $e');
+      }
     }
   }
 

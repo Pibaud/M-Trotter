@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuple/tuple.dart';
 
 class ItinerarySheet extends StatefulWidget {
   final double initialHeight;
@@ -8,6 +9,8 @@ class ItinerarySheet extends StatefulWidget {
   final Function(String mode) onItineraryModeSelected;
   final Function onClose;
   final Map<String, dynamic> routes; // Stocke tous les itinéraires
+  final Map<String, dynamic> routesInstructions;
+  final Map<String, Tuple2<double, double>> elevationData;
   final double initialDistance;
   final double initialDuration;
   final String initialMode; // Ajout du mode initial (ex. "car")
@@ -21,6 +24,8 @@ class ItinerarySheet extends StatefulWidget {
     required this.onItineraryModeSelected,
     required this.onClose,
     required this.routes, // Routes pour tous les modes
+    required this.routesInstructions,
+    required this.elevationData,
     required this.initialDistance,
     required this.initialDuration,
     required this.initialMode, // Nouveau paramètre pour le mode initial
@@ -36,6 +41,8 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
   late double _duration;
   late Map<String, dynamic> _routes;
   late String _selectedMode;
+  late Map<String, dynamic> _routesInstructions;
+  late Map<String, Tuple2<double, double>> _elevationData;
 
   @override
   void initState() {
@@ -45,6 +52,10 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
     _duration = widget.initialDuration;
     _routes = widget.routes; // Initialiser les routes pour tous les modes
     _selectedMode = widget.initialMode; // Initialiser le mode sélectionné
+    _routesInstructions =
+        widget.routesInstructions; // Initialisation des instructions
+    _elevationData =
+        widget.elevationData; // Initialisation des données d'élevation
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -118,26 +129,34 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 10.0),
-                          // Affichage de la distance (arrondi)
                           Text(
                             'Distance : ${_distance < 1000 ? '${_distance.ceil()} m' : '${(_distance / 1000).ceil()} km'}',
                           ),
-                          // Affichage de la durée (arrondi)
                           Text(
-                            'Durée : ${(_duration / 60).ceil()} minutes',
+                            'Durée : ${_duration >= 3600 ? (_duration ~/ 3600).toString() + ' h ' : ''}${(_duration % 3600) ~/ 60} minutes',
                           ),
+                          if (_selectedMode == 'foot' ||
+                              _selectedMode == 'bike')
+                            Text(
+                              '${_getDifficultyLevel(_elevationData[_selectedMode]?.item1 ?? 0, _elevationData[_selectedMode]?.item2 ?? 0)} ${_elevationData[_selectedMode]?.item1.ceil() ?? 0} m ascendant / ${_elevationData[_selectedMode]?.item2.ceil() ?? 0} m descendant',
+                            ),
                           const SizedBox(height: 20.0),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment
-                                .spaceEvenly, // Espacement des icônes
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               _buildModeIcon('car', Icons.directions_car),
                               _buildModeIcon('foot', Icons.directions_walk),
                               _buildModeIcon('bike', Icons.directions_bike),
-                              _buildModeIcon(
-                                  'tram', Icons.train), // Icône du tram
+                              _buildModeIcon('tram', Icons.train),
                             ],
                           ),
+                          const SizedBox(height: 20.0),
+                          Text(
+                            'Instructions :',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10.0),
+                          _buildInstructionsList(),
                         ],
                       ),
                     ),
@@ -159,7 +178,6 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
     );
   }
 
-// Construction d'un bouton pour chaque mode avec un contour bleu pour le mode sélectionné
   Widget _buildModeIcon(String mode, IconData icon) {
     return GestureDetector(
       onTap: () {
@@ -169,36 +187,70 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
         });
         widget.onItineraryModeSelected(mode);
       },
-      child: Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-          decoration: BoxDecoration(
-            color: _selectedMode == mode
-                ? Colors.blue
-                : Colors
-                    .grey[300], // Remplissage gris clair pour non sélectionné
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Icon(
-            icon,
-            color: _selectedMode == mode
-                ? Colors.white
-                : Colors.grey[700], // Icône en gris foncé pour non sélectionné
-          ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        decoration: BoxDecoration(
+          color: _selectedMode == mode ? Colors.blue : Colors.grey[300],
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Icon(
+          icon,
+          color: _selectedMode == mode ? Colors.white : Colors.grey[700],
         ),
       ),
     );
   }
 
-// Mise à jour des informations d'itinéraire pour un mode donné
+  String _getDifficultyLevel(double ascend, double descend) {
+    double totalElevation = ascend + descend;
+
+    if (totalElevation < 100) {
+      return 'Généralement plat';
+    } else if (totalElevation < 500) {
+      return 'Dénivelé modéré';
+    } else {
+      return 'Grand dénivelé';
+    }
+  }
+
   void _updateItinerary(String mode) {
-    final route =
-        _routes[mode]; // Récupère les itinéraires pour le mode sélectionné
+    final route = _routes[mode];
     if (route != null) {
       setState(() {
         _distance = route['distance'];
         _duration = route['duration'];
       });
     }
+  }
+
+  Widget _buildInstructionsList() {
+    List instructions = _routesInstructions[_selectedMode] ?? [];
+
+    return Expanded(
+      child: ListView.builder(
+        itemCount: instructions.length,
+        itemBuilder: (context, index) {
+          var instruction = instructions[index];
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 5.0),
+            elevation: 2.0,
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (instruction['distance'] != null)
+                    Text('Sur ${instruction['distance'].ceil()} mètres, '),
+                  if (instruction['text'] != null)
+                    Text('${instruction['text']}'),
+                  if (instruction['time'] != null)
+                    Text('Pendant ${(instruction['time']).ceil()} minutes'),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

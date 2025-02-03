@@ -1,8 +1,9 @@
 const axios = require('axios');
 
 exports.getLocationId = async (placeName, lat, lon) => {
+    console.log("paramètres reçus : ", placeName, lat, lon);
     try {
-        const url = `https://api.tam.cityway.fr/address?Key=TAM&Keywords=${encodeURIComponent(placeName)}&MaxItems=5`;
+        const url = `https://api.tam.cityway.fr/address?Key=TAM&Keywords=${encodeURIComponent(placeName)}`;
         const response = await axios.get(url);
         
         if (response.data.StatusCode !== 200 || !response.data.Data || response.data.Data.length === 0) {

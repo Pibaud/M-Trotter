@@ -3,6 +3,7 @@ const placesRoutes = require('./routes/placesRoutes');
 const routeRoutes = require('./routes/routeRoutes');
 const inscritpions = require('./routes/inscriptions');
 const connexions = require('./routes/connexions');
+const departtrajet = require ('./routes/depart')
 require('dotenv').config();
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(express.json());
 // Middleware pour les routes
 app.use('/api', routeRoutes); // itinéraires
 app.use('/api', placesRoutes); //données
+app.use('/api', departtrajet);
 app.use('/comptes', inscritpions); //inscription
 app.use('/comptes', connexions); //connexion
 

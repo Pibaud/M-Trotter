@@ -8,8 +8,8 @@ exports.ListePlaces = async (search) => {
         const pointsQuery = `
             SELECT name, 
                 amenity, 
-                ST_X(ST_Centroid(ST_Collect(way))) AS longitude, 
-                ST_Y(ST_Centroid(ST_Collect(way))) AS latitude, 
+                ST_X(ST_Centroid(ST_Collect(ST_Transform(way,4326)))) AS longitude, 
+                ST_Y(ST_Centroid(ST_Collect(ST_Transform(way,4326)))) AS latitude, 
                 STRING_AGG(tags::TEXT, '; ') AS tags, 
                 MAX(similarity(name, $1)) AS sim, 
                 'point' AS type
@@ -27,7 +27,7 @@ exports.ListePlaces = async (search) => {
 
         const roadsQuery = `
             SELECT name, amenity, 
-                ST_AsGeoJSON(ST_Union(way)) AS geojson, 
+                ST_AsGeoJSON(ST_Union(ST_Transform(way,4326))) AS geojson, 
                 'road' AS type
             FROM planet_osm_line
             WHERE name IS NOT NULL 

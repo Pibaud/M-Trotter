@@ -56,11 +56,19 @@ class MyAppWrapper extends StatelessWidget {
           final isLoggedIn = appState['isLoggedIn'] as bool;
 
           if (isFirstLaunch) {
-            return MaterialApp(home: IntroSlides());
+            return MaterialApp(
+              theme: ThemeData(
+                fontFamily: 'Poppins', // Appliquer la police par défaut
+              ),
+              home: IntroSlides(),
+            );
           }
-          return isLoggedIn
-              ? MyApp(key: myAppKey) // Assigner la clé ici
-              : MaterialApp(home: AuthPage());
+          return MaterialApp(
+            theme: ThemeData(
+              fontFamily: 'Poppins', // Appliquer la police par défaut
+            ),
+            home: isLoggedIn ? MyApp(key: myAppKey) : AuthPage(),
+          );
         }
 
         return const MaterialApp(
