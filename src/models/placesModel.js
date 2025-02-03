@@ -6,30 +6,48 @@ exports.ListePlaces = async (search) => {
 
         // Définition des requêtes
         const pointsQuery = `
-            SELECT name, amenity, ST_X(ST_Transform(way, 4326)) AS longitude, 
-                   ST_Y(ST_Transform(way, 4326)) AS latitude, tags, 
-                   similarity(name, $1) AS sim, 'point' AS type
+            SELECT name, 
+                amenity, 
+                ST_X(ST_Centroid(ST_Collect(way))) AS longitude, 
+                ST_Y(ST_Centroid(ST_Collect(way))) AS latitude, 
+                STRING_AGG(tags::TEXT, '; ') AS tags, 
+                MAX(similarity(name, $1)) AS sim, 
+                'point' AS type
             FROM planet_osm_point
             WHERE name IS NOT NULL 
-              AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            GROUP BY name, amenity
+            ORDER BY CASE 
+                WHEN name ILIKE $2 THEN 2
+                ELSE MAX(similarity(name, $1))
+            END DESC
+            LIMIT 10;
+
+        `;
+
+        const roadsQuery = `
+            SELECT name, amenity, 
+                ST_AsGeoJSON(ST_Union(way)) AS geojson, 
+                'road' AS type
+            FROM planet_osm_line
+            WHERE name IS NOT NULL 
+            AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            GROUP BY name, amenity
             ORDER BY CASE 
                 WHEN name ILIKE $2 THEN 2
                 ELSE similarity(name, $1)
             END DESC
             LIMIT 10;
-        `;
 
-        const roadsQuery = `
-            SELECT name, highway AS amenity, ST_AsGeoJSON(ST_Transform(way, 4326)) AS geojson, 'road' AS type
-            FROM planet_osm_line
-            WHERE highway IS NOT NULL AND name IS NOT NULL AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
-            LIMIT 5;
         `;
 
         const roadsQuery2 = `
-            SELECT name, highway AS amenity, ST_AsGeoJSON(ST_Transform(way, 4326)) AS geojson, 'road' AS type
+            SELECT name, highway AS amenity, ST_AsGeoJSON(ST_Transform(ST_Collect(way), 4326)) AS geojson, 'road' AS type
             FROM planet_osm_roads
-            WHERE highway IS NOT NULL AND name IS NOT NULL AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            WHERE highway IS NOT NULL 
+            AND name IS NOT NULL 
+            AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            GROUP BY name, highway
             LIMIT 5;
         `;
 

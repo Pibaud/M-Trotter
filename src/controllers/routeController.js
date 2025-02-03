@@ -19,7 +19,7 @@ exports.calculateRoute = async (req, res, next) => {
 
         if (mode === 'transit') {
             // Vérification spécifique pour les paramètres nécessaires au mode transit
-            if (!startName || !endName || !date || !time) {
+            if (!startName || !endName) {
                 return res.status(400).json({ error: 'Missing parameters for transit mode' });
             }
 
@@ -32,7 +32,7 @@ exports.calculateRoute = async (req, res, next) => {
             }
 
             // Appel du service de transport en commun avec les ID trouvés
-            const transit = await getTransit(startLocation.id, endLocation.id, date, time);
+            const transit = await getTransit(startLocation.id, endLocation.id, date, time, startLocation.pointType, endLocation.pointType);
             return res.status(200).json(transit);
         } else {
             // Calcul d'itinéraire pour les autres modes (ex: marche, vélo, voiture)

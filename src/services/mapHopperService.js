@@ -26,15 +26,18 @@ const getRoute = async (start, end, mode) => {
     }
 };
 
-const getTransit = async (startId, endId, date, time) => {
+const getTransit = async (startId, endId, date, time, DepTypeNum, ArrTypeNum) => {
     const url = "https://www.tam-voyages.com/WebServices/TransinfoService/api/TSI/v1/PlanTrip/json";
+
+    const DepType = DepTypeNum === 4 ? "STOP_PLACE" : "POI";
+    const ArrType = ArrTypeNum === 4 ? "STOP_PLACE" : "POI";
 
     const params = {
         key: "TAM",
         DepId: startId,  // Identifiant de départ
-        DepType: "STOP_PLACE", // Vérifie si c'est bien STOP_PLACE
+        DepType: DepType, // Vérifie si c'est bien STOP_PLACE
         ArrId: endId,  // Identifiant d'arrivée
-        ArrType: "POI", // Vérifie si c'est bien POI
+        ArrType: ArrType, // Vérifie si c'est bien POI
         date: date,
         DepartureTime: time, // Format HH-mm
         Algorithm: "FASTEST",
@@ -57,7 +60,8 @@ const getTransit = async (startId, endId, date, time) => {
 };
 
 // 🔹 Test avec les valeurs qui fonctionnent sur le site
-getTransit("5572$0", "3000822$0", "2025-01-30", "18-00").then(console.log);
+getTransit("5572$0", "3000822$0", "2025-01-30", "18-00", 4, 1).then(console.log);
+
 
 module.exports = {
     getRoute,

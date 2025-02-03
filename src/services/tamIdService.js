@@ -29,11 +29,14 @@ exports.getLocationId = async (placeName, lat, lon) => {
             throw new Error('Aucune correspondance de coordonnées trouvée');
         }
 
+        console.log('Meilleur match:', bestMatch);
+
         return {
             id: bestMatch.Id,
             name: bestMatch.Name,
             latitude: bestMatch.Latitude,
-            longitude: bestMatch.Longitude
+            longitude: bestMatch.Longitude,
+            pointType: bestMatch.PointType
         };
 
     } catch (error) {
@@ -41,6 +44,8 @@ exports.getLocationId = async (placeName, lat, lon) => {
         return null;
     }
 };
+
+
 if (require.main === module) {
     console.log("Testing TAM ID service...");
     getLocationId("Saint-Éloi", 43.624305, 3.861029)
