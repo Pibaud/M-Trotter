@@ -53,12 +53,10 @@ function rangeJson(json) {
     trips = json["trips"]["Trip"];
     for (let i =0; i<trips.length; i++) {
         elem = trips[i];
-        console.log("pour le ",i,"eme trajet : ",elem["sections"]["Section"]);
         partis = [];
         for (let j = 0; j<elem["sections"]["Section"].length; j++) {
             let sexion  = elem["sections"]["Section"][j];
             if (sexion["Leg"]["TransportMode"] == 'WALK'){
-                console.log("cette partie est à pied : ", sexion["Leg"])
                 chemins = [];
                 for (let k = 0; k<sexion["Leg"]["pathLinks"]["PathLink"].length; k++) {
                     chemins.push(sexion["Leg"]["pathLinks"]["PathLink"][k]["Departure"]["Site"]["Position"]);
@@ -69,7 +67,6 @@ function rangeJson(json) {
                     temps : sexion["Leg"]["Duration"]
                 };
             } else {
-                console.log("cette partie est en transit : ", sexion["PTRide"]["steps"]["Step"][0]["Arrival"]["StopPlace"])
                 arrets = []
                 for (let k = 0; k<sexion["PTRide"]["steps"]["Step"].length; k++){
                     arrets.push([sexion["PTRide"]["steps"]["Step"][k]["Arrival"]["StopPlace"]["Name"], sexion["PTRide"]["steps"]["Step"][k]["Arrival"]["StopPlace"]["Position"]])
@@ -93,6 +90,5 @@ function rangeJson(json) {
         };
         res.push(trip);
     }
-    console.log("res : ", res);
     return res;
 };
