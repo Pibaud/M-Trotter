@@ -75,7 +75,7 @@ function rangeJson(json) {
                     ligne : sexion["PTRide"]["Line"]["Name"],
                     Sens : sexion["PTRide"]["Destination"],
                     étape : arrets,
-                    arrivée : sexion["PTRide"]["Arrival"],
+                    arrivée :  {nom : sexion["PTRide"]["Arrival"]["StopPlace"]["Name"], position : sexion["PTRide"]["Arrival"]["StopPlace"]["Position"]},
                     temps : sexion["PTRide"]["Duration"]
                 }
             }
