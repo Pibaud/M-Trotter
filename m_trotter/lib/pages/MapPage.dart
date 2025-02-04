@@ -18,6 +18,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:tuple/tuple.dart';
 import 'dart:ui';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
@@ -29,13 +30,13 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  final logger = Logger();
   final GlobalKey<CustomSearchBarState> _searchBarKey = GlobalKey();
   final FocusNode _focusNode = FocusNode(); // FocusNode pour le TextField
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
   Timer? _debounce;
   TextEditingController _controller = TextEditingController();
-  List<String> _suggestions = [];
   List<Place> suggestedPlaces = [];
   bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
   Place? _selectedPlace;
@@ -45,6 +46,7 @@ class _MapPageState extends State<MapPage> {
   late ApiService _apiService;
   StreamSubscription<Position>? _positionSubscription;
   late Map<String, Map<String, dynamic>> _routes;
+  late List<dynamic> _transitWays;
   List<LatLng> _routePoints = [];
   Map<String, dynamic> _routesInstructions = {};
   Map<String, Tuple2<double, double>> _elevationData = {};
@@ -138,21 +140,13 @@ class _MapPageState extends State<MapPage> {
     _controller.text =
         place.name; // Mise à jour du champ texte avec le nom du lieu
     _focusNode.unfocus();
-
-    // Vérification des coordonnées disponibles dans l'objet Place
     LatLng? destination;
     destination = LatLng(place.latitude, place.longitude);
-
-    // Accéder au zoom actuel via mapController.camera.zoom
     double zoom = _mapController.camera.zoom;
-
-    // Calculer le décalage en latitude basé sur le zoom
     final double mapHeightInDegrees =
         360 / (2 << (zoom.toInt() - 1)); // Conversion zoom -> degrés
     final double offsetInDegrees = mapHeightInDegrees *
         (_bottomSheetHeight / MediaQuery.of(context).size.height);
-
-    // Ajuster la latitude du lieu sélectionné
     LatLng adjustedDestination =
         LatLng(destination.latitude - offsetInDegrees, destination.longitude);
 
@@ -165,19 +159,16 @@ class _MapPageState extends State<MapPage> {
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
         .hideBottomNav();
 
-    // Déplacer la carte vers la destination ajustée
     _mapController.move(adjustedDestination, zoom);
   }
 
   Future<void> _fetchRoutesForAllModes(Place place) async {
-    if (_currentLocation == null)
-      return; // S'assurer que la position est disponible
+    if (_currentLocation == null) return;
 
     LatLng depart = _currentLocation!;
     LatLng destination = LatLng(place.latitude, place.longitude);
     final modes = ['car', 'foot', 'bike']; // Ajouter transit
 
-    // Définir des variables pour le mode transit (si nécessaire)
     String? startName = _currentLocationName;
     String? endName = _selectedPlace!.name;
     String? date = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -192,11 +183,6 @@ class _MapPageState extends State<MapPage> {
           endLat: destination.latitude,
           endLon: destination.longitude,
           mode: mode,
-          // Paramètres spécifiques au mode transit
-          startName: mode == 'transit' ? startName : null,
-          endName: mode == 'transit' ? endName : null,
-          date: mode == 'transit' ? date : null,
-          time: mode == 'transit' ? time : null,
         );
 
         setState(() {
@@ -207,33 +193,73 @@ class _MapPageState extends State<MapPage> {
         });
       } catch (e) {
         print(
-            'Erreur lors de la récupération des itinéraires pour tous les modes : $e');
+            'Erreur lors de la récupération des itinéraires pour le mode $mode : $e');
       }
     }
+
     print(
         "date : $date, time : $time, startName : $startName, endName : $endName");
     try {
-      final routeData = await _apiService.fetchRoute(
+      final transitRoutesData = await _apiService.fetchTransitRoute(
         startLat: depart.latitude,
         startLon: depart.longitude,
         endLat: destination.latitude,
         endLon: destination.longitude,
-        mode: 'transit',
         startName: startName,
         endName: endName,
         date: date,
         time: time,
       );
 
-      debugPrint(jsonEncode(routeData['responseData']['trips']['Trip'][0]), wrapWidth: 1024);
+      List<dynamic> transitWays = [];
+
+      for (var way in transitRoutesData) {
+        Map<String, dynamic> wayInfos = {};
+        DateTime dateDepartureTime =
+            DateFormat("dd/MM/yyyy HH:mm:ss").parse(way["heure_de_départ"]);
+        DateTime dateArrivalTime =
+            DateFormat("dd/MM/yyyy HH:mm:ss").parse(way["heure_d_arrivée"]);
+        List<dynamic> cheminMarche = way["itinéraire"][0]["chemin_marche"];
+        List<LatLng> wayPoints = cheminMarche.map((point) {
+          return LatLng(point["Lat"], point["Long"]);
+        }).toList();
+        Map<String, dynamic> arrivee = way["itinéraire"][0]["arrivée"];
+        LatLng arrivalPoint =
+            LatLng(arrivee["position"]["Lat"], arrivee["position"]["Long"]);
+        wayPoints.add(arrivalPoint);
+        String stationName = arrivee["nom"];
+        // Transformation de la durée "PT8M42S" en "8 minutes"
+        String durationRaw = way["itinéraire"][0]["durée"];
+        RegExp regex = RegExp(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?');
+        Match? match = regex.firstMatch(durationRaw);
+
+        int minutes = int.parse(match?.group(2) ?? '0');
+        String durationFormatted = '$minutes minutes';
+
+        wayInfos['heureDepart'] = DateFormat("HH:mm").format(dateDepartureTime);
+        wayInfos['heureArrivee'] = DateFormat("HH:mm").format(dateArrivalTime);
+        wayInfos['distance'] = way["distance"];
+        wayInfos['co2Economise'] = way["co2_économisé"];
+        wayInfos['walkToTram'] = {
+          'wayPoints': wayPoints,
+          'to': stationName,
+          'duration': durationFormatted
+        };
+        //itinéraire[1] : chemin en tram
+        //itinéraire[2] : chemin tramToWalk
+      }
+
+      print("affichage du résultat de TRANSIT :");
+      logger.i(transitRoutesData);
 
       setState(() {
-        _routes['transit'] = routeData;
+        _transitWays = transitWays;
       });
     } catch (e) {
       print(
-          'Erreur lors de la récupération des itinéraires pour tous les modes : $e');
+          'Erreur lors de la récupération des itinéraires pour le mode transit : $e');
     }
+
     setState(() {
       // initialisation du mode
       _routePoints = (_routes['car']!['path'] as List)
@@ -463,7 +489,7 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-            if (_selectedPlace != null && _routePoints.isEmpty)
+          if (_selectedPlace != null && _routePoints.isEmpty)
             PlaceInfoSheet(
               height: _bottomSheetHeight,
               onDragUpdate: (dy) {

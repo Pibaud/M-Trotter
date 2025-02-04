@@ -2,9 +2,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:logger/logger.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+// Instancier FlutterSecureStorage
+final FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
 class ApiService {
   final String baseUrl;
+  final logger = Logger();
 
   ApiService({String? baseUrl}) : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
@@ -51,75 +57,64 @@ class ApiService {
     }
   }
 
+  Future<List<dynamic>> fetchTransitRoute({
+    required double startLat,
+    required double startLon,
+    required double endLat,
+    required double endLon,
+    required String startName,
+    required String endName,
+    required String date,
+    required String time,
+  }) async {
+    final String url = '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
+        '&endLat=$endLat&endLon=$endLon&mode=transit'
+        '&startName=$startName&endName=$endName&date=$date&time=$time';
+
+    try {
+      final response = await http.post(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
   Future<Map<String, dynamic>> fetchRoute({
     required double startLat,
     required double startLon,
     required double endLat,
     required double endLon,
     String mode = 'car',
-    String? startName,
-    String? endName,
-    String? date,
-    String? time,
   }) async {
-    // URL de base
-    String url =
-        '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon&endLat=$endLat&endLon=$endLon&mode=$mode';
+    final String url = '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
+        '&endLat=$endLat&endLon=$endLon&mode=$mode';
 
-    // Si le mode est transit, on ajoute les paramètres supplémentaires
-    if (mode == 'transit') {
-      if (startName == null ||
-          endName == null ||
-          date == null ||
-          time == null) {
-        throw Exception('Missing parameters for transit mode');
-      }
-      url =
-          '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon&endLat=$endLat&endLon=$endLon'
-          '&mode=$mode&startName=$startName&endName=$endName&date=$date&time=$time';
-
-      try {
-        final response = await http.post(Uri.parse(url));
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> responseData = json.decode(response.body);
-          if (responseData['Status']['Code'] == 'OK') {
-            return {
-              'responseData': responseData
-            };
-          } else {
-            throw Exception(
-                'Erreur dans la réponse : ${responseData['Status']}');
-          }
+    try {
+      final response = await http.post(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          return {
+            'path': responseData['path'],
+            'distance': responseData['distance'],
+            'duration': responseData['duration'],
+            'instructions': responseData['instructions'],
+            'ascend': responseData['ascend'],
+            'descend': responseData['descend'],
+          };
         } else {
-          throw Exception('Erreur serveur : ${response.statusCode}');
+          throw Exception('Erreur dans la réponse : ${responseData['status']}');
         }
-      } catch (e) {
-        throw Exception('Erreur lors de la requête : $e');
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
       }
-    } else {
-      try {
-        final response = await http.post(Uri.parse(url));
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> responseData = json.decode(response.body);
-          if (responseData['status'] == 'success') {
-            return {
-              'path': responseData['path'],
-              'distance': responseData['distance'],
-              'duration': responseData['duration'],
-              'instructions': responseData['instructions'],
-              'ascend': responseData['ascend'],
-              'descend': responseData['descend']
-            };
-          } else {
-            throw Exception(
-                'Erreur dans la réponse : ${responseData['status']}');
-          }
-        } else {
-          throw Exception('Erreur serveur : ${response.statusCode}');
-        }
-      } catch (e) {
-        throw Exception('Erreur lors de la requête : $e');
-      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
     }
   }
 
@@ -188,4 +183,5 @@ class ApiService {
       throw Exception('Erreur lors de la requête : $e');
     }
   }
+  
 }
