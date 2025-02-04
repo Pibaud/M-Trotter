@@ -51,7 +51,7 @@ function rangeJson(json) {
     }
     res = [];
     trips = json["trips"]["Trip"];
-    for (let i =0; i<1; i++) {
+    for (let i =0; i<trips.length; i++) {
         elem = trips[i];
         console.log("pour le ",i,"eme trajet : ",elem["sections"]["Section"]);
         partis = [];
