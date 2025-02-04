@@ -46,49 +46,64 @@ exports.calculateRoute = async (req, res, next) => {
 };
 
 function rangeJson(json) {
-    if (json["Status"]["Code"] != "OK") {
-        return "Problème pour touver un itinéraire";
+    if (json["Status"]["Code"] !== "OK") {
+        return "Problème pour trouver un itinéraire";
     }
-    res = [];
-    trips = json["trips"]["Trip"];
-    for (let i =0; i<trips.length; i++) {
-        elem = trips[i];
-        partis = [];
-        for (let j = 0; j<elem["sections"]["Section"].length; j++) {
-            let sexion  = elem["sections"]["Section"][j];
-            if (sexion["Leg"]["TransportMode"] == 'WALK'){
-                chemins = [];
-                for (let k = 0; k<sexion["Leg"]["pathLinks"]["PathLink"].length; k++) {
-                    chemins.push(sexion["Leg"]["pathLinks"]["PathLink"][k]["Departure"]["Site"]["Position"]);
+
+    let res = [];
+    const trips = json["trips"]["Trip"];
+
+    for (let i = 0; i < trips.length; i++) {
+        const elem = trips[i];
+        let partis = [];
+
+        for (let j = 0; j < elem["sections"]["Section"].length; j++) {
+            const section = elem["sections"]["Section"][j];
+            let sectionTrajet;
+
+            if (section["Leg"]["TransportMode"] === 'WALK') {
+                let cheminMarche = [];
+                for (let k = 0; k < section["Leg"]["pathLinks"]["PathLink"].length; k++) {
+                    cheminMarche.push(section["Leg"]["pathLinks"]["PathLink"][k]["Departure"]["Site"]["Position"]);
                 }
-                sexionparti = {
-                    chemin : chemins,
-                    arrivée : {nom : sexion["Leg"]["Arrival"]["Site"]["Name"], position : sexion["Leg"]["Arrival"]["Site"]["Position"]},
-                    temps : sexion["Leg"]["Duration"]
+                sectionTrajet = {
+                    chemin_marche: cheminMarche,
+                    arrivée: {
+                        nom: section["Leg"]["Arrival"]["Site"]["Name"],
+                        position: section["Leg"]["Arrival"]["Site"]["Position"]
+                    },
+                    durée: section["Leg"]["Duration"]
                 };
             } else {
-                arrets = []
-                for (let k = 0; k<sexion["PTRide"]["steps"]["Step"].length; k++){
-                    arrets.push([sexion["PTRide"]["steps"]["Step"][k]["Arrival"]["StopPlace"]["Name"], sexion["PTRide"]["steps"]["Step"][k]["Arrival"]["StopPlace"]["Position"]])
+                let arretsTransports = [];
+                for (let k = 0; k < section["PTRide"]["steps"]["Step"].length; k++) {
+                    arretsTransports.push({
+                        nom: section["PTRide"]["steps"]["Step"][k]["Arrival"]["StopPlace"]["Name"],
+                        position: section["PTRide"]["steps"]["Step"][k]["Arrival"]["StopPlace"]["Position"]
+                    });
                 }
-                sexionparti = {
-                    ligne : sexion["PTRide"]["Line"]["Name"],
-                    Sens : sexion["PTRide"]["Destination"],
-                    étape : arrets,
-                    arrivée :  {nom : sexion["PTRide"]["Arrival"]["StopPlace"]["Name"], position : sexion["PTRide"]["Arrival"]["StopPlace"]["Position"]},
-                    temps : sexion["PTRide"]["Duration"]
-                }
+                sectionTrajet = {
+                    ligne: section["PTRide"]["Line"]["Name"],
+                    direction: section["PTRide"]["Destination"],
+                    étapes_tram: arretsTransports,
+                    arrivée: {
+                        nom: section["PTRide"]["Arrival"]["StopPlace"]["Name"],
+                        position: section["PTRide"]["Arrival"]["StopPlace"]["Position"]
+                    },
+                    durée: section["PTRide"]["Duration"]
+                };
             }
-            partis.push(sexionparti);
+            partis.push(sectionTrajet);
         }
-        trip = {
-        "heure de départ : " :  elem["DepartureTime"],
-        "heure d'arrivée : " : elem["ArrivalTime"],
-        "distance : " : elem["Distance"],
-        "co2 economisé : " : elem["CarbonFootprint"]["CarCO2"] - elem["CarbonFootprint"]["TripCO2"],
-        "trajet : " : partis
+
+        const trajet = {
+            heure_de_départ: elem["DepartureTime"],
+            heure_d_arrivée: elem["ArrivalTime"],
+            distance: elem["Distance"],
+            co2_économisé: elem["CarbonFootprint"]["CarCO2"] - elem["CarbonFootprint"]["TripCO2"],
+            itinéraire: partis
         };
-        res.push(trip);
+        res.push(trajet);
     }
     return res;
 };
