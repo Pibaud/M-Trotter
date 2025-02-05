@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import '../services/LocationService.dart';
 import '../services/MapInteractions.dart';
@@ -13,6 +14,8 @@ import '../widgets/ItinerarySheet.dart';
 import '../widgets/CustomSearchBar.dart';
 import '../providers/BottomNavBarVisibilityProvider.dart';
 import '../models/Place.dart';
+import '../models/TramLine.dart';
+import '../models/TramStop.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:tuple/tuple.dart';
@@ -51,12 +54,15 @@ class _MapPageState extends State<MapPage> {
   Map<String, dynamic> _routesInstructions = {};
   Map<String, Tuple2<double, double>> _elevationData = {};
   late String _currentLocationName;
+  late List<TramStop> tramStops = [];
+  late List<TramLine> tramLines = [];
 
   @override
   void initState() {
     super.initState();
     _locationService = LocationService(); // service de localisation
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
+    loadTramData();
     _apiService = ApiService(); // requêtes
     _routes = {};
     if (widget.focusOnSearch) {
@@ -80,6 +86,29 @@ class _MapPageState extends State<MapPage> {
         debugPrint('Erreur de localisation : $error');
       },
     );
+  }
+
+  Future<void> loadTramData() async {
+    String stopsData = await rootBundle.loadString('assets/tramStops.json');
+    String linesData = await rootBundle.loadString('assets/tramLines.json');
+
+    Map<String, dynamic> stopsJson = jsonDecode(stopsData);
+    Map<String, dynamic> linesJson = jsonDecode(linesData);
+
+    List<TramStop> loadedStops = stopsJson['features']
+        .map<TramStop>((json) => TramStop.fromJson(json))
+        .toList();
+    List<TramLine> loadedLines = linesJson['features']
+        .map<TramLine>((json) => TramLine.fromJson(json, loadedStops))
+        .toList();
+
+    print("Loaded tram stops: ${stopsJson['features'].length}");
+    print("Loaded tram lines: ${linesJson['features'].length}");
+
+    setState(() {
+      tramStops = loadedStops;
+      tramLines = loadedLines;
+    });
   }
 
   Future<void> getUserLocation() async {
@@ -245,6 +274,10 @@ class _MapPageState extends State<MapPage> {
           'to': stationName,
           'duration': durationFormatted
         };
+        /*wayInfos['tram'] = {'ligne': way["itinéraire"][1]["ligne"],
+        'direction': way["itinéraire"][1]["direction"],
+        'steps'};*/
+
         //itinéraire[1] : chemin en tram
         //itinéraire[2] : chemin tramToWalk
       }
@@ -330,6 +363,32 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ],
                 ),
+              PolylineLayer(
+                polylines: tramLines.map((line) {
+                  return Polyline(
+                    points: line.stops.map((stop) => stop.position).toList(),
+                    strokeWidth: 5.0,
+                    color: Color(
+                        int.parse('0xff${line.color.replaceFirst('#', '')}')),
+                  );
+                }).toList(),
+              ),
+
+              // Marqueurs pour les arrêts de tramway
+              MarkerLayer(
+                markers: tramStops.map((stop) {
+                  return Marker(
+                    width: 30.0,
+                    height: 30.0,
+                    point: stop.position,
+                    child: Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 30.0,
+                    ),
+                  );
+                }).toList(),
+              )
             ],
           ),
           if (_isLayerVisible)

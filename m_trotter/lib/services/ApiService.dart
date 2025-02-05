@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'AuthService.dart';
 
 // Instancier FlutterSecureStorage
 final FlutterSecureStorage secureStorage = FlutterSecureStorage();
@@ -122,7 +123,7 @@ class ApiService {
 
   //Inscription
   Future<Map<String, dynamic>> signUp(
-      String email, String username, String password) async {
+    String email, String username, String password) async {
     print("demande d'inscription du service à $baseUrl");
     try {
       final url = Uri.parse('$baseUrl/comptes/inscription');
@@ -141,18 +142,29 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': jsonDecode(response.body)};
-      } else {
-        final error = jsonDecode(response.body);
-        return {
-          'success': false,
-          'error': error['message'] ?? 'Erreur inconnue'
-        };
-      }
-    } catch (e) {
-      throw Exception('Erreur lors de la requête : $e');
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final String? accessToken = responseData['accessToken']; 
+        final String? refreshToken = responseData['refreshToken'];
+
+        if (accessToken != null) {
+          await AuthService.saveToken(accessToken);
+        }
+        if (refreshToken != null) {
+          await AuthService.saveRefreshToken(refreshToken);
+        }
+
+      return {'success': true, 'data': responseData};
+    } else {
+      final error = jsonDecode(response.body);
+      return {
+        'success': false,
+        'error': error['message'] ?? 'Erreur inconnue'
+      };
     }
+  } catch (e) {
+    throw Exception('Erreur lors de la requête : $e');
   }
+}
 
   // Connexion
   Future<Map<String, dynamic>> logIn(String email, String password) async {

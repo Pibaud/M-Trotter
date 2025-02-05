@@ -47,8 +47,8 @@ class LocationService {
     print("Permission acceptée");
     // Configure les paramètres de localisation
     LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.medium, // Précision élevée
-      distanceFilter: 10, // Mise à jour après un déplacement de 10 mètres
+      accuracy: LocationAccuracy.medium,
+      distanceFilter: 0,
     );
 
     // Récupère la position actuelle
