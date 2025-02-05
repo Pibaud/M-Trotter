@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:latlong2/latlong.dart';
@@ -181,6 +183,67 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
+  //recuperer profil
+  Future<Map<String, dynamic>> getProfile() async {
+    var url = Uri.parse('$baseUrl/comptes/getProfil');
+    try {
+      var response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        var jsonResponse = json.decode(response.body);
+
+        // Vérifier si l'image est renvoyée en Base64
+        String? base64Image = jsonResponse['profile_image'];
+
+        // Convertir l'image Base64 en Uint8List pour pouvoir l'afficher
+        Uint8List? imageBytes = base64Image != null ? base64Decode(base64Image) : null;
+
+        // Retourner le profil avec l'image en binaire
+        return {
+          'success': true,
+          'pseudo': jsonResponse['pseudo'],
+          'age': jsonResponse['age'],
+          'profile_image': imageBytes, // L'image en Uint8List
+        };
+      } else {
+        return { "error": "Erreur de récupération des données du profil." };
+      }
+    } catch (e) {
+      return { "error": "Erreur de connexion" };
+    }
+  }
+
+
+  // Mise à jour du profil
+  Future<Map<String, dynamic>> updateProfile({
+    required String pseudo,
+    String? age,
+    File? profileImage,
+  }) async {
+    var url = Uri.parse('$baseUrl/comptes/updateProfil');
+    var request = http.MultipartRequest('POST', url)
+      ..fields['pseudo'] = pseudo;
+
+    if (age != null && age.isNotEmpty) {
+      request.fields['age'] = age;
+    }
+
+    if (profileImage != null) {
+      List<int> imageBytes = await profileImage.readAsBytes();
+      String base64Image = base64Encode(imageBytes); // Conversion en Base64
+      request.fields['profile_image'] = base64Image;
+    }
+
+    try {
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+      var jsonResponse = json.decode(responseData);
+      return jsonResponse;
+    } catch (e) {
+      return { "error": "Erreur de connexion" };
     }
   }
   
