@@ -1,29 +1,21 @@
 const jwt = require('jsonwebtoken');
-const { inscription, connexion, getProfil, updateProfil, updateRefreshToken, getUserByRefreshToken, clearRefreshToken } = require('../models/comptesModel');
-require('dotenv').config();
+const bcrypt = require('bcrypt');
+const { inscriptionUtilisateur, getUtilisateur } = require('../models/comptesModel');
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
-
-const generateAccessToken = (user) => {
-    return jwt.sign({ id: user.id, email: user.email }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-};
-
-const generateRefreshToken = (user) => {
-    return jwt.sign({ id: user.id, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
-};
+const ACCESS_TOKEN_SECRET = 'votre_secret_access';
+const REFRESH_TOKEN_SECRET = 'votre_secret_refresh';
 
 exports.inscription = async (req, res) => {
-    const { email, username, password } = req.body.email ? req.body : req.query;
+    const { email, username, password } = req.body;
     if (!email || !username || !password) {
-        return res.status(400).json({ message: "Tous les champs (email, username, password) sont obligatoires." });
+        return res.status(400).json({ message: "Tous les champs sont obligatoires." });
     }
-    
+
     try {
-        const reussite = await inscription({ email, username, password });
-        res.json({ status: "Inscription bien reçue", success: true });
+        const utilisateur = await inscriptionUtilisateur(email, username, password);
+        res.json({ success: true, utilisateur });
     } catch (error) {
-        res.status(500).json({ message: "Erreur interne du serveur.", error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -32,65 +24,56 @@ exports.connexions = async (req, res) => {
     if (!EorU || !password) {
         return res.status(400).json({ message: "Email/Username et mot de passe sont requis." });
     }
-    
+
     try {
-        const result = await connexion(EorU, password);
-        if (!result) {
-            return res.status(401).json({ success: false, message: "Identifiants incorrects." });
+        const utilisateur = await getUtilisateur(EorU);
+        if (!utilisateur) {
+            return res.status(401).json({ message: "Utilisateur non trouvé." });
         }
-        
-        const accessToken = generateAccessToken(result);
-        const refreshToken = generateRefreshToken(result);
-        
-        await updateRefreshToken(result.id, refreshToken);
-        
-        res.json({ success: true, message: "Connexion réussie.", accessToken, refreshToken });
+
+        const valide = await bcrypt.compare(password, utilisateur.password_hash);
+        if (!valide) {
+            return res.status(401).json({ message: "Mot de passe incorrect." });
+        }
+
+        const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        const refreshToken = jwt.sign({ id: utilisateur.id }, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
+
+        res.json({ accessToken, refreshToken });
     } catch (error) {
-        res.status(401).json({ success: false, message: error.message });
+        res.status(500).json({ message: error.message });
     }
+};
+
+exports.refreshToken = (req, res) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+        return res.status(401).json({ message: "Token manquant." });
+    }
+
+    jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ message: "Token invalide." });
+        
+        const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        res.json({ accessToken: newAccessToken });
+    });
+};
+
+exports.logout = (req, res) => {
+    res.json({ message: "Déconnexion réussie." });
 };
 
 exports.getProfil = async (req, res) => {
     const { pseudo } = req.body;
-    
     try {
-        const result = await getProfil(pseudo);
-        res.json(result);
+        const utilisateur = await getUtilisateur(pseudo);
+        if (!utilisateur) return res.status(404).json({ message: "Utilisateur non trouvé." });
+        res.json(utilisateur);
     } catch (error) {
-        res.status(401).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
-exports.updateProfil = async (req, res) => {
-    res.json({ result: "un jour insh' allah" });
-};
-
-exports.refreshToken = async (req, res) => {
-    const { refreshToken } = req.body;
-    if (!refreshToken) return res.sendStatus(401);
-    
-    try {
-        const user = await getUserByRefreshToken(refreshToken);
-        if (!user) return res.sendStatus(403);
-        
-        jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, decodedUser) => {
-            if (err) return res.sendStatus(403);
-            const newAccessToken = generateAccessToken(decodedUser);
-            res.json({ accessToken: newAccessToken });
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error });
-    }
-};
-
-exports.logout = async (req, res) => {
-    const { refreshToken } = req.body;
-    if (!refreshToken) return res.sendStatus(401);
-    
-    try {
-        await clearRefreshToken(refreshToken);
-        res.sendStatus(204);
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error });
-    }
+exports.updateProfil = (req, res) => {
+    res.json({ message: "Profil mis à jour." });
 };
