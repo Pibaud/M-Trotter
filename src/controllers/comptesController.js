@@ -13,7 +13,9 @@ exports.inscription = async (req, res) => {
 
     try {
         const utilisateur = await inscriptionUtilisateur(email, username, password);
-        res.json({ success: true, utilisateur });
+        const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        const refreshToken = jwt.sign({ id: utilisateur.id }, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
+        res.json({ success: true, utilisateur ,accessToken, refreshToken});
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -143,8 +143,11 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        final String? accessToken = responseData['accessToken']; 
+        print("je recois ca de inscription ${response.body}");
+        final String? accessToken = responseData['accessToken'];
         final String? refreshToken = responseData['refreshToken'];
+        print("accessToken : $accessToken");
+        print("refreshToken : $refreshToken");
 
         if (accessToken != null) {
           await AuthService.saveToken(accessToken);

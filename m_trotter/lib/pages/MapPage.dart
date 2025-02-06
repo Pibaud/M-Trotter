@@ -49,8 +49,13 @@ class _MapPageState extends State<MapPage> {
   late ApiService _apiService;
   StreamSubscription<Position>? _positionSubscription;
   late Map<String, Map<String, dynamic>> _routes;
-  late List<dynamic> _transitWays;
+  late List<dynamic> _transitWays =
+      []; //liste de List<dynamic> avec les wayinfos de chaque trajet
   List<LatLng> _routePoints = [];
+  List<Tuple2<String, List<LatLng>>> _tramPolyLinesPoints =
+      []; //la ou les lignes de tram de format _tramPolyLinesPoints[0] = (codeHexa, [LatLng])
+  List<LatLng> _walkTramPoints =
+      []; // chemin à faire à pied pour arriver au tram / en sortant du tram jusqu'à la destination
   Map<String, dynamic> _routesInstructions = {};
   Map<String, Tuple2<double, double>> _elevationData = {};
   late String _currentLocationName;
@@ -102,8 +107,15 @@ class _MapPageState extends State<MapPage> {
         .map<TramLine>((json) => TramLine.fromJson(json, loadedStops))
         .toList();
 
-    print("Loaded tram stops: ${stopsJson['features'].length}");
     print("Loaded tram lines: ${linesJson['features'].length}");
+
+    for (var line in loadedLines) {
+      print("ligne ${line.number} direction ${line.direction}");
+    }
+    for (var stop in loadedStops) {
+      print("stop direction : ${stop.direction} lines : ${stop.lines} name : ${stop.name}");
+
+    }
 
     setState(() {
       tramStops = loadedStops;
@@ -226,8 +238,6 @@ class _MapPageState extends State<MapPage> {
       }
     }
 
-    print(
-        "date : $date, time : $time, startName : $startName, endName : $endName");
     try {
       final transitRoutesData = await _apiService.fetchTransitRoute(
         startLat: depart.latitude,
@@ -248,42 +258,72 @@ class _MapPageState extends State<MapPage> {
             DateFormat("dd/MM/yyyy HH:mm:ss").parse(way["heure_de_départ"]);
         DateTime dateArrivalTime =
             DateFormat("dd/MM/yyyy HH:mm:ss").parse(way["heure_d_arrivée"]);
-        List<dynamic> cheminMarche = way["itinéraire"][0]["chemin_marche"];
-        List<LatLng> wayPoints = cheminMarche.map((point) {
+
+        List<dynamic> cheminMarcheToTram =
+            way["itinéraire"][0]["chemin_marche"];
+        List<dynamic> cheminMarcheToEnd = way["itinéraire"][2]["chemin_marche"];
+
+        List<LatLng> walkToTramWayPoints = cheminMarcheToTram.map((point) {
           return LatLng(point["Lat"], point["Long"]);
         }).toList();
-        Map<String, dynamic> arrivee = way["itinéraire"][0]["arrivée"];
-        LatLng arrivalPoint =
-            LatLng(arrivee["position"]["Lat"], arrivee["position"]["Long"]);
-        wayPoints.add(arrivalPoint);
-        String stationName = arrivee["nom"];
-        // Transformation de la durée "PT8M42S" en "8 minutes"
-        String durationRaw = way["itinéraire"][0]["durée"];
-        RegExp regex = RegExp(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?');
-        Match? match = regex.firstMatch(durationRaw);
+        List<LatLng> tramToWalkWayPoints = cheminMarcheToEnd.map((point) {
+          return LatLng(point["Lat"], point["Long"]);
+        }).toList();
 
-        int minutes = int.parse(match?.group(2) ?? '0');
-        String durationFormatted = '$minutes minutes';
+        Map<String, dynamic> arriveeToTram = way["itinéraire"][0]["arrivée"];
+        Map<String, dynamic> arriveeToEnd = way["itinéraire"][0]["arrivée"];
+
+        LatLng arrivalTramPoint = LatLng(arriveeToTram["position"]["Lat"],
+            arriveeToTram["position"]["Long"]);
+        walkToTramWayPoints.add(arrivalTramPoint);
+        LatLng arrivalEndPoint = LatLng(
+            arriveeToEnd["position"]["Lat"], arriveeToEnd["position"]["Long"]);
+        tramToWalkWayPoints.add(arrivalEndPoint);
+
+        String startStationName = arriveeToTram["nom"];
+
+        // Transformation de la durée "PT8M42S" en "8 minutes"
+        String walkToTramDurationRaw = way["itinéraire"][0]["durée"];
+        String tramDurationRaw = way["itinéraire"][1]["durée"];
+        String tramToWalkDurationRaw = way["itinéraire"][2]["durée"];
+        RegExp regex = RegExp(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?');
+        Match? walkToTramMatch = regex.firstMatch(walkToTramDurationRaw);
+        Match? tramMatch = regex.firstMatch(tramDurationRaw);
+        Match? tramToWalkMatch = regex.firstMatch(tramToWalkDurationRaw);
+
+        String walkToTramDurationFormatted =
+            '${int.parse(walkToTramMatch?.group(2) ?? '0')} minutes';
+        String tramDurationFormatted =
+            '${int.parse(tramMatch?.group(2) ?? '0')} minutes';
+        String tramToWalkDurationFormatted =
+            '${int.parse(tramToWalkMatch?.group(2) ?? '0')} minutes';
 
         wayInfos['heureDepart'] = DateFormat("HH:mm").format(dateDepartureTime);
         wayInfos['heureArrivee'] = DateFormat("HH:mm").format(dateArrivalTime);
         wayInfos['distance'] = way["distance"];
         wayInfos['co2Economise'] = way["co2_économisé"];
         wayInfos['walkToTram'] = {
-          'wayPoints': wayPoints,
-          'to': stationName,
-          'duration': durationFormatted
+          'wayPoints': walkToTramWayPoints,
+          'to': startStationName,
+          'duration': walkToTramDurationFormatted
         };
-        /*wayInfos['tram'] = {'ligne': way["itinéraire"][1]["ligne"],
-        'direction': way["itinéraire"][1]["direction"],
-        'steps'};*/
+        wayInfos['tram'] = {
+          'start': startStationName,
+          'end': way["itinéraire"][1]["arrivée"]["nom"],
+          'duration': tramDurationFormatted
+        };
 
-        //itinéraire[1] : chemin en tram
-        //itinéraire[2] : chemin tramToWalk
+        wayInfos['tramToWalk'] = {
+          'wayPoints': tramToWalkWayPoints,
+          'to': arrivalEndPoint,
+          'duration': tramToWalkDurationFormatted
+        };
+
+        transitWays.add(wayInfos);
       }
 
-      print("affichage du résultat de TRANSIT :");
-      logger.i(transitRoutesData);
+      print(
+          "longueur des transitWays dans fetchrouteforallmodes : ${transitWays.length}");
 
       setState(() {
         _transitWays = transitWays;
@@ -363,16 +403,17 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ],
                 ),
-              PolylineLayer(
-                polylines: tramLines.map((line) {
-                  return Polyline(
-                    points: line.stops.map((stop) => stop.position).toList(),
-                    strokeWidth: 5.0,
-                    color: Color(
-                        int.parse('0xff${line.color.replaceFirst('#', '')}')),
-                  );
-                }).toList(),
-              ),
+              if (_tramPolyLinesPoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: _tramPolyLinesPoints.map((tuple) {
+                    return Polyline(
+                      points: tuple.item2, // Liste de LatLng
+                      strokeWidth: 5.0,
+                      color: Color(int.parse(
+                          '0xff${tuple.item1.replaceFirst('#', '')}')), // Couleur hexadécimale
+                    );
+                  }).toList(),
+                ),
 
               // Marqueurs pour les arrêts de tramway
               MarkerLayer(
@@ -383,7 +424,7 @@ class _MapPageState extends State<MapPage> {
                     point: stop.position,
                     child: Icon(
                       Icons.location_on,
-                      color: Colors.red,
+                      color: Colors.grey,
                       size: 30.0,
                     ),
                   );
@@ -603,22 +644,40 @@ class _MapPageState extends State<MapPage> {
               routes: _routes, // Routes pour tous les modes
               routesInstructions: _routesInstructions,
               elevationData: _elevationData,
+              transitWays: _transitWays,
+              indexInTransitWays: -1, //par défaut
               initialDistance: _routes['car']!['distance'],
               initialDuration: _routes['car']!['duration'],
               initialMode: 'car',
               onItineraryModeSelected: (String mode) {
-                setState(() {
-                  _routePoints = (_routes[mode]!['path'] as List)
-                      .map((coord) =>
-                          LatLng(coord[1].toDouble(), coord[0].toDouble()))
-                      .toList();
-                });
+                // rajouter un paramètre int qui stocke l'index dans la liste des transitWays (-1 si mode != 'transit')
+                if (mode != 'tram') {
+                  setState(() {
+                    _transitWays = [];
+                    _routePoints = (_routes[mode]!['path'] as List)
+                        .map((coord) =>
+                            LatLng(coord[1].toDouble(), coord[0].toDouble()))
+                        .toList();
+                  });
+                } else {
+                  print(
+                      "_transitWays['tram']['start'] : ${_transitWays[0]['tram']['start']}");
+                  print(
+                      "_transitWays['tram']['end'] : ${_transitWays[0]['tram']['end']}");
+                  //appeler une fonction qui avec deux arrêts de tram et un numéro de ligne donne la liste des LatLng
+                  setState(() {
+                    _routePoints = [];
+                    //_tramPolyLinesPoints = ;//résultat de la fonction
+                  });
+                  //setstate _tramPolyLinesPoints et _walkTramPoints avec grâce à leur indice dans _transitWays
+                }
               },
               onClose: () {
                 setState(() {
                   _routePoints = [];
                   _routes = {};
                   _routesInstructions = {};
+                  _transitWays = [];
                 });
               },
             ),

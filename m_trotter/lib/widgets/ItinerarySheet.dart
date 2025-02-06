@@ -11,6 +11,8 @@ class ItinerarySheet extends StatefulWidget {
   final Map<String, dynamic> routes; // Stocke tous les itinéraires
   final Map<String, dynamic> routesInstructions;
   final Map<String, Tuple2<double, double>> elevationData;
+  final List<dynamic> transitWays;
+  final int indexInTransitWays;
   final double initialDistance;
   final double initialDuration;
   final String initialMode; // Ajout du mode initial (ex. "car")
@@ -26,6 +28,8 @@ class ItinerarySheet extends StatefulWidget {
     required this.routes, // Routes pour tous les modes
     required this.routesInstructions,
     required this.elevationData,
+    required this.transitWays,
+    required this.indexInTransitWays,
     required this.initialDistance,
     required this.initialDuration,
     required this.initialMode, // Nouveau paramètre pour le mode initial
@@ -43,6 +47,8 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
   late String _selectedMode;
   late Map<String, dynamic> _routesInstructions;
   late Map<String, Tuple2<double, double>> _elevationData;
+  late List<dynamic> _transitWays;
+  late int _indexInTransitWays;
 
   @override
   void initState() {
@@ -56,6 +62,8 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
         widget.routesInstructions; // Initialisation des instructions
     _elevationData =
         widget.elevationData; // Initialisation des données d'élevation
+    _transitWays = widget.transitWays;
+    _indexInTransitWays = widget.indexInTransitWays;
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
