@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import '../models/TramStop.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -86,10 +88,6 @@ class TramLine {
     List<dynamic> orderL1Mosson =
         orderL1Odysseum.reversed.toList(); //reverse orderL1Odysseum
 
-    orderL1Odysseum.insert(0, 1);
-
-    orderL1Mosson.insert(0, 1);
-
     List<dynamic> orderL2Jacou = [
       "Saint-Jean de Védas Centre",
       "Saint-Jean le Sec",
@@ -124,10 +122,6 @@ class TramLine {
     List<dynamic> orderL2SaintJeanDeVedasCentre =
         orderL2Jacou.reversed.toList();
 
-    orderL2Jacou.insert(0, 2);
-
-    orderL2SaintJeanDeVedasCentre.insert(0, 2);
-
     List<dynamic> orderL3LattesCentre = [
       "Juvignac",
       "Mosson",
@@ -156,10 +150,6 @@ class TramLine {
 
     List<dynamic> orderL3JuvignacFromLattesCentre =
         orderL3LattesCentre.reversed.toList();
-
-    orderL3LattesCentre.insert(0, 3);
-
-    orderL3JuvignacFromLattesCentre.insert(0, 3);
 
     List<dynamic> orderL3PerolsEtangDeLOr = [
       "Juvignac",
@@ -192,10 +182,6 @@ class TramLine {
     List<dynamic> orderL3JuvignacFromPerolsEtangDeLOr =
         orderL3PerolsEtangDeLOr.reversed.toList();
 
-    orderL3PerolsEtangDeLOr.insert(0, 3);
-
-    orderL3JuvignacFromPerolsEtangDeLOr.insert(0, 3);
-
     List<dynamic> orderl4A = [
       "Garcia Lorca",
       "Restanque",
@@ -220,9 +206,40 @@ class TramLine {
 
     List<dynamic> orderl4B = orderl4A.reversed.toList();
 
-    orderl4A.insert(0, 4);
+    orderl4A.insert(0, "Sens A");
 
-    orderl4B.insert(0, 4);
+    orderl4B.insert(0, "Sens B");
+
+    List<List<dynamic>> orderedLists = [
+      orderL1Odysseum,
+      orderL1Mosson,
+      orderL2SaintJeanDeVedasCentre,
+      orderL2Jacou,
+      orderL3LattesCentre,
+      orderL3JuvignacFromLattesCentre,
+      orderL3PerolsEtangDeLOr,
+      orderL3JuvignacFromPerolsEtangDeLOr,
+      orderl4A,
+      orderl4B
+    ];
+/*
+    for (var line in orderedLists) { // pour chaque line
+      bool bij = true;
+      for (var stop in stops) { // pour chaque stop
+        if (stop.direction == line[0]) { // s'ils ont la même direction
+          if (!bij) { // on vérifie si on n'a pas déjà vu que le point n'est pas dans la liste
+            break;
+          } else {
+            if (!(line.contains(stop.name))) {
+              bij = false;
+            }
+          }
+        }
+      }
+      if (bij) {
+        //réordonner this.points selon l'ordre de la line
+      }
+    }*/
 
     return TramLine(
       number: lineId,
