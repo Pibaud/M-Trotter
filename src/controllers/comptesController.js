@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { inscriptionUtilisateur, getUtilisateur } = require('../models/comptesModel');
+const { inscriptionUtilisateur, getUtilisateur, updateUtilisateur } = require('../models/comptesModel');
 
 const ACCESS_TOKEN_SECRET = 'votre_secret_access';
 const REFRESH_TOKEN_SECRET = 'votre_secret_refresh';
@@ -15,7 +15,7 @@ exports.inscription = async (req, res) => {
         const utilisateur = await inscriptionUtilisateur(email, username, password);
         const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
         const refreshToken = jwt.sign({ id: utilisateur.id }, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
-        res.json({ success: true, utilisateur ,accessToken, refreshToken});
+        res.json({ success: true, utilisateur, accessToken, refreshToken });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -55,7 +55,7 @@ exports.refreshToken = (req, res) => {
 
     jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) return res.status(403).json({ message: "Token invalide." });
-        
+
         const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
         res.json({ accessToken: newAccessToken });
     });
@@ -76,6 +76,33 @@ exports.getProfil = async (req, res) => {
     }
 };
 
-exports.updateProfil = (req, res) => {
-    res.json({ message: "Profil mis à jour." });
+exports.updateProfil = async (req, res) => {
+    try {
+        const { id, email, username, password, profile_picture, dark_mode, language } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: "ID utilisateur manquant." });
+        }
+
+        // Création de l'objet des nouvelles valeurs à modifier
+        const updatedFields = {};
+        if (email) updatedFields.email = email;
+        if (username) updatedFields.username = username;
+        if (profile_picture) updatedFields.profile_picture = profile_picture;
+        if (dark_mode !== undefined) updatedFields.dark_mode = dark_mode;
+        if (language) updatedFields.language = language;
+
+        // Si le mot de passe est fourni, on le hash avant de l'enregistrer
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            updatedFields.password_hash = await bcrypt.hash(password, salt);
+        }
+
+        // Mise à jour dans la base de données
+        const resol = await updateUtilisateur(id, updatedFields);
+
+        res.json({ message: "Profil mis à jour avec succès.", updatedFields });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
