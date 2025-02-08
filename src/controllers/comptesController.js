@@ -77,31 +77,16 @@ exports.getProfil = async (req, res) => {
 };
 
 exports.updateProfil = async (req, res) => {
+    const userId = req.user.id; // Récupération de l'ID depuis le middleware
+    const updatedFields = req.body;
+
+    if (!updatedFields || Object.keys(updatedFields).length === 0) {
+        return res.status(400).json({ message: "Aucune donnée à mettre à jour." });
+    }
+
     try {
-        const { id, email, username, password, profile_picture, dark_mode, language } = req.body;
-
-        if (!id) {
-            return res.status(400).json({ message: "ID utilisateur manquant." });
-        }
-
-        // Création de l'objet des nouvelles valeurs à modifier
-        const updatedFields = {};
-        if (email) updatedFields.email = email;
-        if (username) updatedFields.username = username;
-        if (profile_picture) updatedFields.profile_picture = profile_picture;
-        if (dark_mode !== undefined) updatedFields.dark_mode = dark_mode;
-        if (language) updatedFields.language = language;
-
-        // Si le mot de passe est fourni, on le hash avant de l'enregistrer
-        if (password) {
-            const salt = await bcrypt.genSalt(10);
-            updatedFields.password_hash = await bcrypt.hash(password, salt);
-        }
-
-        // Mise à jour dans la base de données
-        const resol = await updateUtilisateur(id, updatedFields);
-
-        res.json({ message: "Profil mis à jour avec succès.", updatedFields });
+        const utilisateurMisAJour = await updateUtilisateur(userId, updatedFields);
+        res.json({ message: "Profil mis à jour.", utilisateur: utilisateurMisAJour });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
