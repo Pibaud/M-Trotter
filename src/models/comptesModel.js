@@ -32,7 +32,7 @@ async function getUtilisateur(emailOrUsername) {
 }
 
 // Fonction pour mettre à jour un utilisateur
-exports.updateUtilisateur = async (id, updatedFields) => {
+async function updateUtilisateur(id, updatedFields){
     if (!id || Object.keys(updatedFields).length === 0) {
         throw new Error("ID utilisateur ou données de mise à jour manquants.");
     }
@@ -47,6 +47,9 @@ exports.updateUtilisateur = async (id, updatedFields) => {
         values.push(value);
         index++;
     }
+
+    // Ajout du champ updated_at avec la date et heure actuelle
+    fields.push(`updated_at = NOW()`);
 
     // Ajout de l'ID à la liste des valeurs pour la condition WHERE
     values.push(id);
@@ -63,7 +66,9 @@ exports.updateUtilisateur = async (id, updatedFields) => {
 };
 
 
+
 module.exports = {
     inscriptionUtilisateur,
-    getUtilisateur
+    getUtilisateur,
+    updateUtilisateur
 };

@@ -14,7 +14,7 @@ router.post('/refresh', refreshToken);
 // Déconnexion
 router.post('/logout', logout);
 
-// Obtenir le profil utilisateur
+// Obtenir le profil utilisateur    
 router.post('/getProfil', getProfil);
 
 // Mettre à jour le profil utilisateur
