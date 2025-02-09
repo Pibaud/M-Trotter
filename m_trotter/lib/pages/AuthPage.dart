@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/AuthNotifier.dart';
-import '../myapp.dart'; // Import de MyApp
+import '../myapp.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthPage extends StatefulWidget {
@@ -25,13 +25,18 @@ class _AuthPageState extends State<AuthPage> {
     return emailRegex.hasMatch(email);
   }
 
+  Future<void> setPreferencesToTrue() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setBool('isFirstLaunch', true);
+    print("'isLoggedIn' et 'isFirstLaunch' ont été définis à true.");
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = Provider.of<AuthState>(context);
 
-    // Listener pour détecter le changement d'état de la connexion
     if (authState.isLoggedIn) {
-      // Si l'utilisateur est connecté, rediriger vers MyApp
       Future.delayed(Duration.zero, () {
         Navigator.pushReplacement(
           context,
@@ -144,6 +149,11 @@ class _AuthPageState extends State<AuthPage> {
                       ? "Pas encore de compte ? Inscrivez-vous"
                       : "Déjà inscrit ? Connectez-vous",
                 ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: setPreferencesToTrue,
+                child: Text("Définir 'isLoggedIn' et 'isFirstLaunch' à true"),
               ),
             ],
           ),
