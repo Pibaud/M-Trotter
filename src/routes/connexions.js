@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { inscription, connexions, getProfil, updateProfil, refreshToken, logout } = require('../controllers/comptesController');
-const authenticateUser = require('../middlewares/authMiddleware');
+const authenticateUser = require('../middleware/authMiddleware');
 
 // Route d'inscription
 router.post('/inscription', inscription);
