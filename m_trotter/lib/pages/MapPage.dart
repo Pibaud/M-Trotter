@@ -109,7 +109,7 @@ class _MapPageState extends State<MapPage> {
         .toList();
 
     loadedLines.forEach((line) {
-      print(line.name);
+      print("pour la ligne ${line.name} :");
       line.stops.forEach((stop) {
         print(
             "stop name : '${stop.name}', stop direction : '${stop.directions}', stop lines : '${stop.lines}'");
