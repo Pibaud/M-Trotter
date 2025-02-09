@@ -103,19 +103,18 @@ class _MapPageState extends State<MapPage> {
     List<TramStop> loadedStops = stopsJson['features']
         .map<TramStop>((json) => TramStop.fromJson(json))
         .toList();
+
     List<TramLine> loadedLines = linesJson['features']
         .map<TramLine>((json) => TramLine.fromJson(json, loadedStops))
         .toList();
 
-    print("Loaded tram lines: ${linesJson['features'].length}");
-
-    for (var line in loadedLines) {
-      print("ligne ${line.number} direction ${line.direction}");
-    }
-    for (var stop in loadedStops) {
-      print("stop direction : ${stop.direction} lines : ${stop.lines} name : ${stop.name}");
-
-    }
+    loadedLines.forEach((line) {
+      print(line.name);
+      line.stops.forEach((stop) {
+        print(
+            "stop name : '${stop.name}', stop direction : '${stop.directions}', stop lines : '${stop.lines}'");
+      });
+    });
 
     setState(() {
       tramStops = loadedStops;

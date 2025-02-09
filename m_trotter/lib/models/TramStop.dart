@@ -4,13 +4,13 @@ class TramStop {
   final String name;
   final LatLng position;
   final List<String> lines; // String pas objet TramLine !!!
-  final String direction;
+  final List<String> directions;
 
   TramStop({
     required this.name,
     required this.position,
     required this.lines,
-    required this.direction,
+    required this.directions,
   });
 
   factory TramStop.fromJson(Map<String, dynamic> json) {
@@ -25,8 +25,11 @@ class TramStop {
           .where((line) => line.trim().isNotEmpty)
           .map((line) => line.trim())
           .toList(),
-      direction:
-          json['properties']['lignes_et_directions'].split(';').last.trim(),
+      directions: ((json['properties']['lignes_et_directions'] ?? '') as String)
+          .split(';')
+          .where((direction) => direction.trim().isNotEmpty)
+          .map((direction) => direction.trim())
+          .toList(),
     );
   }
 }

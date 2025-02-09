@@ -29,13 +29,9 @@ class TramLine {
       String lineDirection =
           json['properties']['nom_ligne'].split(' > ').last.trim();
 
-      List<String> stopDirections = stop.direction
-          .split(';')
-          .map((e) => e.split(' ').last.trim())
-          .toList();
-
       return stop.lines.contains(lineId) &&
-          stopDirections.contains(lineDirection);
+       stop.directions.any((direction) => direction.contains(lineDirection));
+
     }).toList();
 
     // Extraction des points à partir des coordonnées de GeoJSON
