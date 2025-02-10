@@ -3,7 +3,7 @@ import 'package:latlong2/latlong.dart';
 class TramStop {
   final String name;
   final LatLng position;
-  final List<String> lines; // String pas objet TramLine !!!
+  final List<String> lines;
   final List<String> directions;
 
   TramStop({

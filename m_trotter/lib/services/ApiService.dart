@@ -70,7 +70,8 @@ class ApiService {
     required String date,
     required String time,
   }) async {
-    final String url = '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
+    final String url =
+        '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
         '&endLat=$endLat&endLon=$endLon&mode=transit'
         '&startName=$startName&endName=$endName&date=$date&time=$time';
 
@@ -94,7 +95,8 @@ class ApiService {
     required double endLon,
     String mode = 'car',
   }) async {
-    final String url = '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
+    final String url =
+        '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
         '&endLat=$endLat&endLon=$endLon&mode=$mode';
 
     try {
@@ -123,7 +125,7 @@ class ApiService {
 
   //Inscription
   Future<Map<String, dynamic>> signUp(
-    String email, String username, String password) async {
+      String email, String username, String password) async {
     print("demande d'inscription du service à $baseUrl");
     try {
       final url = Uri.parse('$baseUrl/comptes/inscription');
@@ -156,18 +158,18 @@ class ApiService {
           await AuthService.saveRefreshToken(refreshToken);
         }
 
-      return {'success': true, 'data': responseData};
-    } else {
-      final error = jsonDecode(response.body);
-      return {
-        'success': false,
-        'error': error['message'] ?? 'Erreur inconnue'
-      };
+        return {'success': true, 'data': responseData};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
     }
-  } catch (e) {
-    throw Exception('Erreur lors de la requête : $e');
   }
-}
 
   // Connexion
   Future<Map<String, dynamic>> logIn(String email, String password) async {
@@ -214,7 +216,8 @@ class ApiService {
         String? base64Image = jsonResponse['profile_image'];
 
         // Convertir l'image Base64 en Uint8List pour pouvoir l'afficher
-        Uint8List? imageBytes = base64Image != null ? base64Decode(base64Image) : null;
+        Uint8List? imageBytes =
+            base64Image != null ? base64Decode(base64Image) : null;
 
         // Retourner le profil avec l'image en binaire
         return {
@@ -224,13 +227,12 @@ class ApiService {
           'profile_image': imageBytes, // L'image en Uint8List
         };
       } else {
-        return { "error": "Erreur de récupération des données du profil." };
+        return {"error": "Erreur de récupération des données du profil."};
       }
     } catch (e) {
-      return { "error": "Erreur de connexion" };
+      return {"error": "Erreur de connexion"};
     }
   }
-
 
   // Mise à jour du profil
   Future<Map<String, dynamic>> updateProfile({
@@ -239,8 +241,7 @@ class ApiService {
     File? profileImage,
   }) async {
     var url = Uri.parse('$baseUrl/comptes/updateProfil');
-    var request = http.MultipartRequest('POST', url)
-      ..fields['pseudo'] = pseudo;
+    var request = http.MultipartRequest('POST', url)..fields['pseudo'] = pseudo;
 
     if (age != null && age.isNotEmpty) {
       request.fields['age'] = age;
@@ -258,8 +259,7 @@ class ApiService {
       var jsonResponse = json.decode(responseData);
       return jsonResponse;
     } catch (e) {
-      return { "error": "Erreur de connexion" };
+      return {"error": "Erreur de connexion"};
     }
   }
-  
 }
