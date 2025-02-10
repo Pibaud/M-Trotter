@@ -8,7 +8,6 @@ import 'package:permission_handler/permission_handler.dart';
 import '../providers/AuthNotifier.dart';
 import '../services/ApiService.dart';
 import 'SettingsPage.dart';
-import 'package:flutter/painting.dart';
 
 
 class ProfilePage extends StatefulWidget {
