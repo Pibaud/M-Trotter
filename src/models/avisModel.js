@@ -1,0 +1,33 @@
+const pool = require('../config/db');
+
+exports.newavis =  async ({ user_id, place_id, place_table, lavis, photo_urls, avis_parent, nb_etoile }) => {
+    const result = await pool.query(
+        `INSERT INTO avis (user_id, place_id, place_table, lavis, photo_urls, avis_parent, nb_etoile, created_at) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING *`,
+        [user_id, place_id, place_table, lavis, photo_urls, avis_parent, nb_etoile]
+    );
+    return result.rows[0];
+};
+
+exports.fetchAvisById = async (place_id) => {
+    const result = await pool.query(
+        `SELECT * FROM avis 
+         WHERE place_id = $1
+         ORDER BY avis_parent NULLS FIRST, created_at DESC`,
+        [place_id]
+    );
+
+    return result.rows.length > 0 ? result.rows : null;
+};
+
+exports.deleteAvisById = async (avis_id) => {
+    const result = await pool.query(
+        `DELETE FROM avis
+         WHERE avis_id = $1
+         RETURNING *`,
+        [avis_id]
+    );
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+};
+

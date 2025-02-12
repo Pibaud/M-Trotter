@@ -27,9 +27,24 @@ class _AuthPageState extends State<AuthPage> {
 
   Future<void> setPreferencesToTrue() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-    await prefs.setBool('isFirstLaunch', true);
-    print("'isLoggedIn' et 'isFirstLaunch' ont été définis à true.");
+
+    if (prefs.containsKey('isLoggedIn')) {
+      bool? isLoggedIn = prefs.getBool('isLoggedIn');
+      print("Valeur existante de 'isLoggedIn': $isLoggedIn");
+      await prefs.setBool('isLoggedIn', true);
+    } else {
+      await prefs.setBool('isLoggedIn', true);
+      print("Clé 'isLoggedIn' créée et définie sur true");
+    }
+
+    if (prefs.containsKey('isFirstLaunch')) {
+      bool? isFirstLaunch = prefs.getBool('isFirstLaunch');
+      print("Valeur existante de 'isFirstLaunch': $isFirstLaunch");
+      await prefs.setBool('isFirstLaunch', false);
+    } else {
+      await prefs.setBool('isFirstLaunch', false);
+      print("Clé 'isFirstLaunch' créée et définie sur true");
+    }
   }
 
   @override
@@ -127,7 +142,8 @@ class _AuthPageState extends State<AuthPage> {
                       password: password,
                     );
                   } else {
-                    print("Données envoyées au backend : $email, $username, $password");
+                    print(
+                        "Données envoyées au backend : $email, $username, $password");
                     authState.signUp(
                       email: email,
                       username: username,

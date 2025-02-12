@@ -7877,7 +7877,7 @@
 				"id_lignes_sens" : "IDLTRAM07",
 				"reseau" : "Urbain",
 				"mode" : "Tramway",
-				"nom_ligne" : "L3 Juvignac - Pérols Étang de l'Or",
+				"nom_ligne" : "L3 Juvignac > Pérols Étang de l'Or",
 				"num_exploitation" : 3,
 				"sens" : "Retour - V1",
 				"fonctionnement" : "Ligne Régulière",

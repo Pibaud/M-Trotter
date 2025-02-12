@@ -252,7 +252,7 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
                   if (instruction['text'] != null)
                     Text('${instruction['text']}'),
                   if (instruction['time'] != null)
-                    Text('Pendant ${(instruction['time']).ceil()} minutes'),
+                    Text('Pendant ${((instruction['time'])/1000).ceil()} minutes'),
                 ],
               ),
             ),

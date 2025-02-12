@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { getLocationId } = require('../services/tamIdService');
 
 async function pointdepart(latitude, longitude) {
+    console.log("dans departModel.js : latitude : ",latitude, " longitude : ",longitude);
     const query = `
     SELECT location_name FROM (
         -- Requête sur planet_osm_point
