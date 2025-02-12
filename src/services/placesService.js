@@ -12,9 +12,9 @@ exports.LPlaces = async (req, res) => {
     }
 };
 
-exports.bboxPlaces = async (req, res) => {
+exports.bboxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     try {
-        const lieux = await BoxPlaces(req, res);
+        const lieux = await BoxPlaces(minlat, minlon, maxlat, maxlon);
         return lieux;
     } catch (error) {
         console.error(error);

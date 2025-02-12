@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/HomePage.dart';
 import 'pages/MapPage.dart';
+import 'pages/AuthPage.dart';
 import 'pages/ProfilePage.dart';
 import 'providers/ThemeNotifier.dart';
 import 'providers/LanguageNotifier.dart';
 import 'providers/BottomNavBarVisibilityProvider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '../services/ApiService.dart';
 
 final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
 
@@ -21,6 +23,7 @@ class MyAppState extends State<MyApp> {
   int _selectedIndex = 0;
   bool _focusOnSearch = false;
   late final List<Widget> _pages;
+  late ApiService _apiService;
 
   void navigateToMapWithFocus() {
     print("Navigating to MapPage...");
@@ -35,10 +38,23 @@ class MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _pages = [
-      HomePage(onTabChange: _onItemTapped),
-      MapPage(focusOnSearch: _focusOnSearch),
-      const ProfilePage(),
-    ];
+          HomePage(onTabChange: _onItemTapped),
+          MapPage(focusOnSearch: _focusOnSearch),
+          const ProfilePage(),
+        ];
+    _apiService = ApiService();
+    _apiService.recupAccessToken().then((result) {
+      if (result['success'] == false &&
+          result['error'] ==
+              'Refresh token invalide, veuillez vous reconnecter') {
+        print(
+            "Le refresh token est invalide, redirection vers la connexion...");
+        AuthPage();
+      } else {
+        print("Token rafraîchi avec succès !");
+      }
+    });
+    //refresh token avec apiservice.redfresh
   }
 
   void _onItemTapped(int index) {
@@ -60,13 +76,13 @@ class MyAppState extends State<MyApp> {
       themeMode: themeNotifier.themeMode,
       theme: ThemeData.light().copyWith(
         textTheme: ThemeData.light().textTheme.apply(
-          fontFamily: 'Poppins', // Appliquer la police dans le textTheme
-        ),
+              fontFamily: 'Poppins', // Appliquer la police dans le textTheme
+            ),
       ),
       darkTheme: ThemeData.dark().copyWith(
         textTheme: ThemeData.dark().textTheme.apply(
-          fontFamily: 'Poppins', // Appliquer la police en mode sombre aussi
-        ),
+              fontFamily: 'Poppins', // Appliquer la police en mode sombre aussi
+            ),
       ),
       locale: languageNotifier.currentLocale,
       supportedLocales: const [
