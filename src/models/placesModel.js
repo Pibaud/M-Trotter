@@ -76,15 +76,22 @@ exports.ListePlaces = async (search) => {
 
 exports.BoxPlaces = async (req, res) => {
     try {
-        const { minlat, minlon, maxlat, maxlon } = req.body;
+        const { minlat, minlon, maxlat, maxlon } = req.query;
+
+        // Vérification des paramètres
+        if (!minlat || !minlon || !maxlat || !maxlon) {
+            return res.status(400).json({ error: "Tous les paramètres bbox sont requis." });
+        }
+
         const result = await pool.query(
-            `SELECT name FROM planet_osm_point WHERE ST_Contains(ST_MakeEnvelope($1, $2, $3, $4, 4326), way);`,
+            `SELECT name FROM planet_osm_point 
+             WHERE ST_Intersects(way, ST_MakeEnvelope($1, $2, $3, $4, 4326));`,
             [minlon, minlat, maxlon, maxlat]
         );
-        console.log(result.rows);
-        return result.rows;
+
+        return res.json(result.rows);
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);
-        throw error;
+        return res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
