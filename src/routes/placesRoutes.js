@@ -5,6 +5,6 @@ const { getPlaces, postPlaces, bboxPlaces } = require('../controllers/placesCont
 // POST pour envoyer des données
 router.post('/places/', postPlaces);
 
-router.get('/placesbbox', bboxPlaces);
+router.post('/placesbbox', bboxPlaces);
 
 module.exports = router;

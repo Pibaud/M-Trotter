@@ -74,17 +74,27 @@ exports.ListePlaces = async (search) => {
     }
 };
 
-exports.BoxPlaces = async (req, res) => {
+exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     try {
-        const { minlat, minlon, maxlat, maxlon } = req.body;
         const result = await pool.query(
-            `SELECT name FROM planet_osm_point WHERE ST_Contains(ST_MakeEnvelope($1, $2, $3, $4, 4326), way);`,
-            [minlon, minlat, maxlon, maxlat]
-        );
-        console.log(result.rows);
+            `SELECT DISTINCT name, amenity,
+                ST_X(ST_Transform(way, 4326)) AS lon, 
+                ST_Y(ST_Transform(way, 4326)) AS lat,
+                STRING_AGG(tags::TEXT, '; ') AS tags
+            FROM planet_osm_point 
+            WHERE name IS NOT NULL AND amenity IS NOT NULL
+            AND ST_Intersects(
+                ST_Transform(way, 4326), 
+                ST_MakeEnvelope($1, $2, $3, $4, 4326)
+                )
+            GROUP BY name, amenity, way
+            LIMIT 50`,
+                [minlon, minlat, maxlon, maxlat]
+            );
         return result.rows;
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);
-        throw error;
+        throw { error: "Erreur interne du serveur." };
     }
 };
+

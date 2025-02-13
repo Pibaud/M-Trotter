@@ -38,6 +38,27 @@ class ApiService {
     }
   }
 
+  Future<List<dynamic>> fetchPlacesBbox(LatLng min, LatLng max) async {
+    final String url = '$baseUrl/api/placesbbox';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'minlat': min.latitude,'minlon': min.longitude, 'maxlat': max.latitude, 'maxlon': max.longitude}),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
   Future<String> getNameFromLatLng(LatLng coord) async {
     print("appel à getNeamFromLatLong avec $coord");
     final String url = '$baseUrl/api/depart';
@@ -157,6 +178,14 @@ class ApiService {
         if (refreshToken != null) {
           await AuthService.saveRefreshToken(refreshToken);
         }
+        print("j'essaye de recuperer access token et refresh token ");
+        AuthService.getToken().then((token) {
+          print("Access Token: $token");
+        });
+
+        AuthService.getRefreshToken().then((refreshToken) {
+          print("Refresh Token: $refreshToken");
+        });
 
         return {'success': true, 'data': responseData};
       } else {
@@ -190,7 +219,18 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': jsonDecode(response.body)};
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print("je recois ca de connexion ${response.body}");
+        final String? accessToken = responseData['accessToken'];
+        final String? refreshToken = responseData['refreshToken'];
+        if (accessToken != null) {
+          await AuthService.saveToken(accessToken);
+        }
+        if (refreshToken != null) {
+          await AuthService.saveRefreshToken(refreshToken);
+        }
+        return {'success': true, 'data': responseData};
+
       } else {
         final error = jsonDecode(response.body);
         return {
@@ -262,4 +302,51 @@ class ApiService {
       return {"error": "Erreur de connexion"};
     }
   }
+  //recuperer l'access token
+  Future<Map<String, dynamic>> recupAccessToken() async {
+    String? refreshToken = await AuthService.getRefreshToken();
+  
+    if (refreshToken == null) {
+      return {'success': false, 'error': 'Aucun refresh token trouvé'};
+    }
+
+    print("Mon Refresh Token: $refreshToken");
+    print("demande du token à $baseUrl");
+
+    try {
+      final url = Uri.parse('$baseUrl/comptes/recupAccessToken');
+      final body = jsonEncode({'refreshToken': refreshToken});
+    
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print("je recois ça de recupAccessToken ${response.body}");
+
+        final String? accessToken = responseData['accessToken'];
+        if (accessToken != null) {
+          await AuthService.saveToken(accessToken);
+        }
+        else{
+          await AuthService.logout();
+          return {'success': false, 'error': 'Refresh token invalide, veuillez vous reconnecter'};
+        }
+
+        return {'success': true, 'data': responseData};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
 }
