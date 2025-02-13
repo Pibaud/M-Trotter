@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:math' show sqrt, pow;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import '../services/LocationService.dart';
@@ -22,6 +21,7 @@ import 'package:tuple/tuple.dart';
 import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+import '../utils/AmenityIcons.dart';
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
@@ -37,36 +37,42 @@ class _MapPageState extends State<MapPage> {
   final GlobalKey<CustomSearchBarState> _searchBarKey = GlobalKey();
   final FocusNode _focusNode = FocusNode(); // FocusNode pour le TextField
   final MapController _mapController = MapController();
+  StreamSubscription<MapEvent>? _mapEventSubscription;
+  LatLngBounds?
+      _lastBounds; // Stocke la dernière zone chargée pour pas trop de requêtes
+  double _lastZoom = 0; // Stocke le dernier niveau de zoom
+  final double zoomThreshold = 0.3; // Seuil de zoom pour éviter trop d'appels
   LatLng? _currentLocation;
   Timer? _debounce;
   TextEditingController _controller = TextEditingController();
   List<Place> suggestedPlaces = [];
-  bool _isLayerVisible = false; // pour contrôler l'affichage du layer blanc
+  bool _isLayerVisible = false;
   Place? _selectedPlace;
-  double _bottomSheetHeight = 100.0; // Hauteur initiale de la "modal"
+  double _bottomSheetHeight = 100.0;
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
   StreamSubscription<Position>? _positionSubscription;
   late Map<String, Map<String, dynamic>> _routes;
-  late List<dynamic> _transitWays =
-      []; //liste de List<dynamic> avec les wayinfos de chaque trajet
+  late List<dynamic> _transitWays = [];
   List<LatLng> _routePoints = [];
   List<Tuple2<String, List<LatLng>>> _tramPolyLinesPoints =
       []; //la ou les lignes de tram de format _tramPolyLinesPoints[0] = (codeHexa, [LatLng])
-  List<LatLng> _walkTramPoints =
-      []; // chemin à faire à pied pour arriver au tram / en sortant du tram jusqu'à la destination
+  List<List<LatLng>> _walkTramPoints =
+      []; // chemins à faire à pied pour arriver au tram / en sortant du tram jusqu'à la destination
   Map<String, dynamic> _routesInstructions = {};
   Map<String, Tuple2<double, double>> _elevationData = {};
   late String _currentLocationName;
   late List<TramStop> tramStops = [];
   late List<TramLine> tramLines = [];
+  late List<Place> _loadedPlaces = [];
 
   @override
   void initState() {
     super.initState();
     _locationService = LocationService(); // service de localisation
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
+    _mapEventSubscription = _mapController.mapEventStream.listen(_onMapEvent);
     loadTramData();
     _apiService = ApiService(); // requêtes
     _routes = {};
@@ -107,14 +113,6 @@ class _MapPageState extends State<MapPage> {
     List<TramLine> loadedLines = linesJson['features']
         .map<TramLine>((json) => TramLine.fromJson(json, loadedStops))
         .toList();
-
-    loadedLines.forEach((line) {
-      print("pour la ligne ${line.name} :");
-      line.stops.forEach((stop) {
-        print(
-            "stop name : '${stop.name}', stop direction : '${stop.directions}', stop lines : '${stop.lines}'");
-      });
-    });
 
     setState(() {
       tramStops = loadedStops;
@@ -202,6 +200,15 @@ class _MapPageState extends State<MapPage> {
     _mapController.move(adjustedDestination, zoom);
   }
 
+  void _onMarkerTap(Place place) {
+    setState(() {
+      _selectedPlace = place;
+    });
+
+    Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
+        .hideBottomNav();
+  }
+
   Future<void> _fetchRoutesForAllModes(Place place) async {
     if (_currentLocation == null) return;
 
@@ -275,6 +282,7 @@ class _MapPageState extends State<MapPage> {
         LatLng arrivalTramPoint = LatLng(arriveeToTram["position"]["Lat"],
             arriveeToTram["position"]["Long"]);
         walkToTramWayPoints.add(arrivalTramPoint);
+
         LatLng arrivalEndPoint = LatLng(
             arriveeToEnd["position"]["Lat"], arriveeToEnd["position"]["Long"]);
         tramToWalkWayPoints.add(arrivalEndPoint);
@@ -306,11 +314,22 @@ class _MapPageState extends State<MapPage> {
           'to': startStationName,
           'duration': walkToTramDurationFormatted
         };
+
+        List<Map<String, dynamic>> tramSteps = [
+          way["itinéraire"][0]["arrivée"],
+          ...way["itinéraire"][1]["étapes_tram"]
+        ];
+
         wayInfos['tram'] = {
-          'start': startStationName,
-          'end': way["itinéraire"][1]["arrivée"]["nom"],
+          'line':
+              'L${way["itinéraire"][1]["ligne"].replaceAll(RegExp(r'\s*-\s*'), ' > ')}',
+          'steps': tramSteps,
           'duration': tramDurationFormatted
         };
+
+        if (tramToWalkWayPoints.isNotEmpty) {
+          tramToWalkWayPoints.removeLast();
+        }
 
         wayInfos['tramToWalk'] = {
           'wayPoints': tramToWalkWayPoints,
@@ -321,8 +340,7 @@ class _MapPageState extends State<MapPage> {
         transitWays.add(wayInfos);
       }
 
-      print(
-          "longueur des transitWays dans fetchrouteforallmodes : ${transitWays.length}");
+      logger.i(transitWays[0]);
 
       setState(() {
         _transitWays = transitWays;
@@ -338,6 +356,55 @@ class _MapPageState extends State<MapPage> {
           .map((coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()))
           .toList();
     });
+  }
+
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    return sqrt(pow(point1.latitude - point2.latitude, 2) +
+        pow(point1.longitude - point2.longitude, 2));
+  }
+
+  void _onMapEvent(MapEvent event) {
+    if (event is MapEventMoveEnd) {
+      final bounds = _mapController.camera.visibleBounds;
+
+      if (_lastBounds == null || _hasSignificantChange(bounds, _lastBounds!)) {
+        _lastBounds = bounds;
+        _fetchPlacesBbox(bounds);
+      }
+    }
+  }
+
+  bool _hasSignificantChange(LatLngBounds newBounds, LatLngBounds oldBounds) {
+    const double movementThreshold =
+        0.002; // Ajuste ce seuil pour éviter trop d'appels
+    return (newBounds.northEast.latitude - oldBounds.northEast.latitude).abs() >
+            movementThreshold ||
+        (newBounds.northEast.longitude - oldBounds.northEast.longitude).abs() >
+            movementThreshold ||
+        (newBounds.southWest.latitude - oldBounds.southWest.latitude).abs() >
+            movementThreshold ||
+        (newBounds.southWest.longitude - oldBounds.southWest.longitude).abs() >
+            movementThreshold;
+  }
+
+  void _fetchPlacesBbox(LatLngBounds bounds) async {
+    try {
+      List<dynamic> res = await ApiService().fetchPlacesBbox(
+        bounds.southWest, // min (lat, lon)
+        bounds.northEast, // max (lat, lon)
+      );
+
+      print('Nombre de places récupérées: ${res.length}');
+
+      List<Place> places =
+          res.map<Place>((data) => Place.fromJson(data)).toList();
+
+      setState(() {
+        _loadedPlaces = places;
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération des lieux: $e');
+    }
   }
 
   @override
@@ -359,6 +426,9 @@ class _MapPageState extends State<MapPage> {
                   LatLng(43.76439, 4.05769), // Saussines (Nord-Est)
                 ),
               ),
+              onMapReady: () {
+                _fetchPlacesBbox(_mapController.camera.visibleBounds);
+              },
             ),
             children: [
               TileLayer(
@@ -395,12 +465,32 @@ class _MapPageState extends State<MapPage> {
                       point: LatLng(
                           _selectedPlace!.latitude, _selectedPlace!.longitude),
                       child: const Icon(
-                        Icons.location_on,
+                        Icons.location_on_rounded,
                         color: Colors.red,
                         size: 30.0,
                       ),
                     ),
                   ],
+                ),
+              if (_loadedPlaces.isNotEmpty)
+                MarkerLayer(
+                  markers: _loadedPlaces.map((place) {
+                    return Marker(
+                      point: LatLng(place.latitude, place.longitude),
+                      width: 20.0,
+                      height: 20.0,
+                      child: GestureDetector(
+                        onTap: () => _onMarkerTap(place),
+                        child: _selectedPlace == place
+                            ? const SizedBox.shrink()
+                            : Icon(
+                                getAmenityIcon(place.amenity),
+                                color: getAmenityColor(place.amenity),
+                                size: 20.0,
+                              ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               if (_tramPolyLinesPoints.isNotEmpty)
                 PolylineLayer(
@@ -413,22 +503,16 @@ class _MapPageState extends State<MapPage> {
                     );
                   }).toList(),
                 ),
-
-              // Marqueurs pour les arrêts de tramway
-              MarkerLayer(
-                markers: tramStops.map((stop) {
-                  return Marker(
-                    width: 30.0,
-                    height: 30.0,
-                    point: stop.position,
-                    child: Icon(
-                      Icons.location_on,
-                      color: Colors.grey,
-                      size: 30.0,
-                    ),
-                  );
-                }).toList(),
-              )
+              if (_walkTramPoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: _walkTramPoints.map((walkPath) {
+                    return Polyline(
+                      points: walkPath,
+                      strokeWidth: 3.0,
+                      color: Color.fromARGB(255, 87, 168, 235), // Bleu
+                    );
+                  }).toList(),
+                ),
             ],
           ),
           if (_isLayerVisible)
@@ -588,7 +672,9 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          if (_selectedPlace != null && _routePoints.isEmpty)
+          if (_selectedPlace != null &&
+              _routePoints.isEmpty &&
+              _tramPolyLinesPoints.isEmpty)
             PlaceInfoSheet(
               height: _bottomSheetHeight,
               onDragUpdate: (dy) {
@@ -616,6 +702,9 @@ class _MapPageState extends State<MapPage> {
               placeType: _selectedPlace!.amenity,
               onItineraryTap: () {
                 _fetchRoutesForAllModes(_selectedPlace!);
+                setState(() {
+                  _loadedPlaces = [];
+                });
               },
               onCallTap: () {
                 print("Appeler le lieu sélectionné");
@@ -652,23 +741,88 @@ class _MapPageState extends State<MapPage> {
                 // rajouter un paramètre int qui stocke l'index dans la liste des transitWays (-1 si mode != 'transit')
                 if (mode != 'tram') {
                   setState(() {
-                    _transitWays = [];
+                    _tramPolyLinesPoints = [];
+                    _walkTramPoints = [];
                     _routePoints = (_routes[mode]!['path'] as List)
                         .map((coord) =>
                             LatLng(coord[1].toDouble(), coord[0].toDouble()))
                         .toList();
                   });
                 } else {
-                  print(
-                      "_transitWays['tram']['start'] : ${_transitWays[0]['tram']['start']}");
-                  print(
-                      "_transitWays['tram']['end'] : ${_transitWays[0]['tram']['end']}");
-                  //appeler une fonction qui avec deux arrêts de tram et un numéro de ligne donne la liste des LatLng
+                  // Nous devons trouver la ligne de tram et extraire les points entre le départ et l'arrivée
                   setState(() {
                     _routePoints = [];
-                    //_tramPolyLinesPoints = ;//résultat de la fonction
+
+                    // Récupérons d'abord la ligne de tram concernée
+                    String tramLineName = _transitWays[0]["tram"]["line"];
+                    TramLine? targetLine = tramLines
+                        .firstWhere((line) => line.name == tramLineName);
+
+                    // Position de départ et d'arrivée
+                    LatLng startPos = LatLng(
+                        _transitWays[0]["tram"]["steps"][0]["position"]["Lat"],
+                        _transitWays[0]["tram"]["steps"][0]["position"]
+                            ["Long"]);
+
+                    // Récupérer le dernier élément de la liste des étapes
+                    var lastIndex = _transitWays[0]["tram"]["steps"].length - 1;
+                    LatLng endPos = LatLng(
+                        _transitWays[0]["tram"]["steps"][lastIndex]["position"]
+                            ["Lat"],
+                        _transitWays[0]["tram"]["steps"][lastIndex]["position"]
+                            ["Long"]);
+
+                    // Trouvons les indices des points les plus proches dans la ligne de tram
+                    int startIndex = 0;
+                    int endIndex = 0;
+                    double minStartDist = double.infinity;
+                    double minEndDist = double.infinity;
+
+                    // Parcourons tous les points de la ligne pour trouver les plus proches
+                    for (int i = 0; i < targetLine.points.length; i++) {
+                      var point = targetLine.points[i];
+
+                      // Calculons les distances avec le point de départ
+                      double startDist = _calculateDistance(point, startPos);
+                      if (startDist < minStartDist) {
+                        minStartDist = startDist;
+                        startIndex = i;
+                      }
+
+                      // Et avec le point d'arrivée
+                      double endDist = _calculateDistance(point, endPos);
+                      if (endDist < minEndDist) {
+                        minEndDist = endDist;
+                        endIndex = i;
+                      }
+                    }
+
+                    // Assurons-nous que startIndex est bien avant endIndex
+                    if (startIndex > endIndex) {
+                      var temp = startIndex;
+                      startIndex = endIndex;
+                      endIndex = temp;
+                    }
+
+                    // Extrayons la sous-liste des points entre départ et arrivée
+                    var extractedPoints =
+                        targetLine.points.sublist(startIndex, endIndex + 1);
+
+                    // Mettons à jour _tramPolyLinesPoints avec la nouvelle ligne
+                    _tramPolyLinesPoints = [
+                      Tuple2(targetLine.color, extractedPoints)
+                    ];
+                    // Extraction des chemins à pied
+                    List<List<LatLng>> walkingPaths = [];
+
+                    walkingPaths
+                        .add(_transitWays[0]["walkToTram"]["wayPoints"]);
+                    walkingPaths
+                        .add(_transitWays[0]["tramToWalk"]["wayPoints"]);
+
+                    _walkTramPoints = walkingPaths;
+                    _routePoints = [];
                   });
-                  //setstate _tramPolyLinesPoints et _walkTramPoints avec grâce à leur indice dans _transitWays
                 }
               },
               onClose: () {
@@ -677,6 +831,8 @@ class _MapPageState extends State<MapPage> {
                   _routes = {};
                   _routesInstructions = {};
                   _transitWays = [];
+                  _tramPolyLinesPoints = [];
+                  _walkTramPoints = [];
                 });
               },
             ),
@@ -689,6 +845,7 @@ class _MapPageState extends State<MapPage> {
   void dispose() {
     _focusNode.dispose(); // Libère le FocusNode
     _positionSubscription?.cancel();
+    _mapEventSubscription?.cancel();
     super.dispose();
   }
 }

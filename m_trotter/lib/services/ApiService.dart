@@ -38,6 +38,27 @@ class ApiService {
     }
   }
 
+  Future<List<dynamic>> fetchPlacesBbox(LatLng min, LatLng max) async {
+    final String url = '$baseUrl/api/placesbbox';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'minlat': min.latitude,'minlon': min.longitude, 'maxlat': max.latitude, 'maxlon': max.longitude}),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
   Future<String> getNameFromLatLng(LatLng coord) async {
     print("appel à getNeamFromLatLong avec $coord");
     final String url = '$baseUrl/api/depart';
@@ -70,7 +91,8 @@ class ApiService {
     required String date,
     required String time,
   }) async {
-    final String url = '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
+    final String url =
+        '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
         '&endLat=$endLat&endLon=$endLon&mode=transit'
         '&startName=$startName&endName=$endName&date=$date&time=$time';
 
@@ -94,7 +116,8 @@ class ApiService {
     required double endLon,
     String mode = 'car',
   }) async {
-    final String url = '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
+    final String url =
+        '$baseUrl/api/routes?startLat=$startLat&startLon=$startLon'
         '&endLat=$endLat&endLon=$endLon&mode=$mode';
 
     try {
@@ -123,7 +146,7 @@ class ApiService {
 
   //Inscription
   Future<Map<String, dynamic>> signUp(
-    String email, String username, String password) async {
+      String email, String username, String password) async {
     print("demande d'inscription du service à $baseUrl");
     try {
       final url = Uri.parse('$baseUrl/comptes/inscription');
@@ -155,19 +178,27 @@ class ApiService {
         if (refreshToken != null) {
           await AuthService.saveRefreshToken(refreshToken);
         }
+        print("j'essaye de recuperer access token et refresh token ");
+        AuthService.getToken().then((token) {
+          print("Access Token: $token");
+        });
 
-      return {'success': true, 'data': responseData};
-    } else {
-      final error = jsonDecode(response.body);
-      return {
-        'success': false,
-        'error': error['message'] ?? 'Erreur inconnue'
-      };
+        AuthService.getRefreshToken().then((refreshToken) {
+          print("Refresh Token: $refreshToken");
+        });
+
+        return {'success': true, 'data': responseData};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
     }
-  } catch (e) {
-    throw Exception('Erreur lors de la requête : $e');
   }
-}
 
   // Connexion
   Future<Map<String, dynamic>> logIn(String email, String password) async {
@@ -188,7 +219,18 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': jsonDecode(response.body)};
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print("je recois ca de connexion ${response.body}");
+        final String? accessToken = responseData['accessToken'];
+        final String? refreshToken = responseData['refreshToken'];
+        if (accessToken != null) {
+          await AuthService.saveToken(accessToken);
+        }
+        if (refreshToken != null) {
+          await AuthService.saveRefreshToken(refreshToken);
+        }
+        return {'success': true, 'data': responseData};
+
       } else {
         final error = jsonDecode(response.body);
         return {
@@ -214,7 +256,8 @@ class ApiService {
         String? base64Image = jsonResponse['profile_image'];
 
         // Convertir l'image Base64 en Uint8List pour pouvoir l'afficher
-        Uint8List? imageBytes = base64Image != null ? base64Decode(base64Image) : null;
+        Uint8List? imageBytes =
+            base64Image != null ? base64Decode(base64Image) : null;
 
         // Retourner le profil avec l'image en binaire
         return {
@@ -224,13 +267,12 @@ class ApiService {
           'profile_image': imageBytes, // L'image en Uint8List
         };
       } else {
-        return { "error": "Erreur de récupération des données du profil." };
+        return {"error": "Erreur de récupération des données du profil."};
       }
     } catch (e) {
-      return { "error": "Erreur de connexion" };
+      return {"error": "Erreur de connexion"};
     }
   }
-
 
   // Mise à jour du profil
   Future<Map<String, dynamic>> updateProfile({
@@ -239,8 +281,7 @@ class ApiService {
     File? profileImage,
   }) async {
     var url = Uri.parse('$baseUrl/comptes/updateProfil');
-    var request = http.MultipartRequest('POST', url)
-      ..fields['pseudo'] = pseudo;
+    var request = http.MultipartRequest('POST', url)..fields['pseudo'] = pseudo;
 
     if (age != null && age.isNotEmpty) {
       request.fields['age'] = age;
@@ -258,8 +299,54 @@ class ApiService {
       var jsonResponse = json.decode(responseData);
       return jsonResponse;
     } catch (e) {
-      return { "error": "Erreur de connexion" };
+      return {"error": "Erreur de connexion"};
     }
   }
+  //recuperer l'access token
+  Future<Map<String, dynamic>> recupAccessToken() async {
+    String? refreshToken = await AuthService.getRefreshToken();
   
+    if (refreshToken == null) {
+      return {'success': false, 'error': 'Aucun refresh token trouvé'};
+    }
+
+    print("Mon Refresh Token: $refreshToken");
+    print("demande du token à $baseUrl");
+
+    try {
+      final url = Uri.parse('$baseUrl/comptes/recupAccessToken');
+      final body = jsonEncode({'refreshToken': refreshToken});
+    
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print("je recois ça de recupAccessToken ${response.body}");
+
+        final String? accessToken = responseData['accessToken'];
+        if (accessToken != null) {
+          await AuthService.saveToken(accessToken);
+        }
+        else{
+          await AuthService.logout();
+          return {'success': false, 'error': 'Refresh token invalide, veuillez vous reconnecter'};
+        }
+
+        return {'success': true, 'data': responseData};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
 }
