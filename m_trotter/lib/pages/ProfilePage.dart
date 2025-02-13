@@ -66,23 +66,56 @@ class ProfilePageState extends State<ProfilePage> {
 */
   //  Choisir et recadrer une image
   Future<void> _pickImage() async {
+    // Demander les permissions
     await Permission.camera.request();
     await Permission.storage.request();
 
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    // Afficher le dialogue de choix
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Choisir une source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galerie'),
+                onTap: () {
+                  Navigator.pop(context, ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Appareil photo'),
+                onTap: () {
+                  Navigator.pop(context, ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
 
-    if (pickedFile != null) {
-      File? croppedImage = await _cropImage(File(pickedFile.path));
-      if (croppedImage != null) {
-        setState(() {
-          _profileImage = croppedImage;
-        });
+    // Si l'utilisateur a choisi une source
+    if (source != null) {
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(source: source);
+
+      if (pickedFile != null) {
+        File? croppedImage = await _cropImage(File(pickedFile.path));
+        if (croppedImage != null) {
+          setState(() {
+            _profileImage = croppedImage;
+          });
+        }
       }
     }
   }
 
-  //  Recadrer l’image
+// Le reste du code reste inchangé
   Future<File?> _cropImage(File imageFile) async {
     CroppedFile? croppedFile = await ImageCropper().cropImage(
       sourcePath: imageFile.path,
