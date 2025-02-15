@@ -3,19 +3,25 @@ const { LPlaces, bboxPlaces } = require('../services/placesService'); // Assure-
 exports.postPlaces = async (req, res) => {
     try {
         const lieux = await LPlaces(req,res); // Appel au service
-        res.status(200).json(lieux); // Envoi de la réponse au client
+        return res.status(200).json(lieux); // Envoi de la réponse au client
     } catch (error) {
         console.error("Erreur dans postPlaces :", error);
-        res.status(500).json({ message: "Erreur interne du serveur." });
+        return res.status(500).json({ message: "Erreur interne du serveur." });
     }
 };
 
 exports.bboxPlaces = async (req, res) => {
     try {
-        const lieux = await bboxPlaces(req,res); // Appel au service
-        res.status(200).json(lieux); // Envoi de la réponse au client
+        const { minlat, minlon, maxlat, maxlon } = req.body;
+
+        if (!minlat || !minlon || !maxlat || !maxlon) {
+            return res.status(400).json({ error: "Tous les paramètres bbox sont requis." });
+        }
+
+        const lieux = await bboxPlaces(minlat, minlon, maxlat, maxlon); // Appel au service
+        return res.status(200).json(lieux); // Envoi de la réponse au client
     } catch (error) {
         console.error("Erreur dans bboxPlaces :", error);
-        res.status(500).json({ message: "Erreur interne du serveur." });
+        return res.status(500).json({ message: "Erreur interne du serveur." });
     }
 }

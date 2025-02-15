@@ -10,7 +10,7 @@ router.post('/inscription', inscription);
 router.post('/connexion', connexions);
 
 // Rafraîchissement du token
-router.post('/refresh', refreshToken);
+router.post('/recupAccessToken', refreshToken);
 
 // Déconnexion
 router.post('/logout', logout);

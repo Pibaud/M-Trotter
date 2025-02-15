@@ -55,8 +55,8 @@ class Place {
     return Place(
       name: json['name'] ?? 'Unknown',
       amenity: json['amenity'] ?? 'Unknown',
-      latitude: json['latitude'] ?? 0.0,
-      longitude: json['longitude'] ?? 0.0,
+      latitude: json['latitude'] ?? json['lat'] ?? 0.0,
+      longitude: json['longitude'] ?? json['lon'] ?? 0.0,
       phone: tags['phone'],
       cuisine: tags['cuisine'],
       website: tags['website'],
@@ -71,5 +71,41 @@ class Place {
       facebook: tags['contact:facebook'],
       operator: tags['operator:wikipedia'],
     );
+  }
+
+  @override
+  String toString() {
+    List<String> details = [];
+
+    details.add('Name: $name');
+    details.add('Amenity: $amenity');
+    details.add('Latitude: $latitude');
+    details.add('Longitude: $longitude');
+
+    if (phone != null) details.add('Phone: $phone');
+    if (cuisine != null) details.add('Cuisine: $cuisine');
+    if (website != null) details.add('Website: $website');
+    if (email != null) details.add('Email: $email');
+    if (city != null) details.add('City: $city');
+    if (street != null) details.add('Street: $street');
+    if (postcode != null) details.add('Postcode: $postcode');
+    if (openingHours != null) details.add('Opening Hours: $openingHours');
+    if (wheelchairAccessible != null) {
+      details.add(
+          'Wheelchair Accessible: ${wheelchairAccessible! ? "Yes" : "No"}');
+    }
+
+    if (outdoorSeating != null) {
+      details.add('Outdoor Seating: ${outdoorSeating! ? "Yes" : "No"}');
+    }
+
+    if (airConditioning != null) {
+      details.add('Air Conditioning: ${airConditioning! ? "Yes" : "No"}');
+    }
+
+    if (facebook != null) details.add('Facebook: $facebook');
+    if (operator != null) details.add('Operator: $operator');
+
+    return details.join('\n');
   }
 }
