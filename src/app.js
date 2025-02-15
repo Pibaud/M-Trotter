@@ -4,6 +4,7 @@ const routeRoutes = require('./routes/routeRoutes');
 const connexions = require('./routes/connexions');
 const departtrajet = require ('./routes/depart')
 const avis = require('./routes/avis');
+const upload = require('./routes/uploadRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -15,6 +16,7 @@ app.use('/api', routeRoutes); // itinéraires
 app.use('/api', placesRoutes); //données
 app.use('/api', departtrajet); //départ
 app.use('/api', avis); //avis
+app.use('/api', upload); //upload
 app.use('/comptes', connexions); //connexion
 
 // Gestion des erreurs
