@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
-const VPS_UPLOAD_URL = 'http://217.182.79.84:3000/upload'; // URL du serveur VPS
+const VPS_URL = 'http://217.182.79.84:3000'; // URL du serveur VPS
 
 // Vérifier et créer le dossier 'uploads/' s'il n'existe pas
 const uploadDir = path.join(__dirname, '../uploads');
@@ -31,7 +31,7 @@ const uploadToVPS = async (filePath) => {
         const formData = new FormData();
         formData.append('image', fs.createReadStream(filePath));
 
-        const response = await axios.post(VPS_UPLOAD_URL, formData, {
+        const response = await axios.post(VPS_URL+"/upload", formData, {
             headers: {
                 ...formData.getHeaders(),
             },
@@ -44,4 +44,19 @@ const uploadToVPS = async (filePath) => {
     }
 };
 
-module.exports = { uploadToVPS, upload };
+const fetchImageFromVPS = async (filename) => {
+    try {
+        const response = await axios({
+            method: 'get',
+            url: `${VPS_URL+"/image/"}${filename}`,
+            responseType: 'stream' // On récupère l’image en flux (stream)
+        });
+
+        return response;
+    } catch (error) {
+        console.error('Erreur lors de la récupération de l’image du VPS :', error.message);
+        throw new Error('Impossible de récupérer l’image depuis le serveur distant.');
+    }
+};
+
+module.exports = {fetchImageFromVPS, uploadToVPS, upload };
