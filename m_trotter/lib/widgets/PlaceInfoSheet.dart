@@ -42,6 +42,7 @@ class Review {
     );
   }
 }
+
 class Photo {
   final Uint8List imageData;
   final String? tag;
@@ -265,10 +266,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   void addReview(String text, int rating) {
     setState(() {
       reviews.add(Review(
-        id: DateTime
-            .now()
-            .millisecondsSinceEpoch
-            .toString(),
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         parentId: null,
         username: "Moi",
         profilePicBytes: null,
@@ -285,10 +283,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   void addReply(String text, String parentId) {
     setState(() {
       reviews.add(Review(
-        id: DateTime
-            .now()
-            .millisecondsSinceEpoch
-            .toString(),
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         parentId: parentId,
         username: "Moi",
         profilePicBytes: null,
@@ -379,27 +374,23 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     );
   }
 
-
   // Fonction récursive pour afficher les réponses
   Widget _buildReplies(List<Review> replies, bool isLastReply) {
     return Column(
-      children: replies
-          .asMap()
-          .entries
-          .map((entry) {
+      children: replies.asMap().entries.map((entry) {
         int index = entry.key;
         Review reply = entry.value;
 
         // Récupérer les réponses imbriquées (niveaux inférieurs)
-        List<Review> nestedReplies = reviews.where((r) =>
-        r.parentId == reply.id).toList();
+        List<Review> nestedReplies =
+            reviews.where((r) => r.parentId == reply.id).toList();
 
         return Column(
           children: [
             // Afficher la réponse actuelle avec un décalage si elle est imbriquée
             Padding(
-              padding: EdgeInsets.only(
-                  left: reply.parentId != null ? 20.0 : 0.0),
+              padding:
+                  EdgeInsets.only(left: reply.parentId != null ? 20.0 : 0.0),
               // Décalage uniquement pour les réponses imbriquées
               child: _buildReviewItem(reply),
             ),
@@ -413,11 +404,10 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
             // Ajouter le bouton "Répondre" seulement après la dernière réponse d'un avis principal
             if (index == replies.length - 1 && isLastReply)
               TextButton(
-                onPressed: () =>
-                    setState(() {
-                      replyingTo = reply
-                          .id; // On définit quel avis on est en train de répondre
-                    }),
+                onPressed: () => setState(() {
+                  replyingTo = reply
+                      .id; // On définit quel avis on est en train de répondre
+                }),
                 child: const Text("Répondre"),
               ),
 
@@ -431,12 +421,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                     hintText: "Votre réponse...",
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.send),
-                      onPressed: replyText.isEmpty ? null : () {
-                        addReply(replyText, reply.id);
-                        setState(() {
-                          replyText = ''; // Réinitialiser le texte après envoi
-                        });
-                      },
+                      onPressed: replyText.isEmpty
+                          ? null
+                          : () {
+                              addReply(replyText, reply.id);
+                              setState(() {
+                                replyText =
+                                    ''; // Réinitialiser le texte après envoi
+                              });
+                            },
                     ),
                   ),
                 ),
@@ -446,7 +439,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       }).toList(),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -461,10 +453,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           // Ajout du MediaQuery pour gérer le clavier
-          height: widget.height - MediaQuery
-              .of(context)
-              .viewInsets
-              .bottom,
+          height: widget.height - MediaQuery.of(context).viewInsets.bottom,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: const BorderRadius.vertical(
@@ -481,10 +470,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
           // Wrap le Column dans un SingleChildScrollView
           child: SingleChildScrollView(
             child: SizedBox(
-              height: widget.height - MediaQuery
-                  .of(context)
-                  .viewInsets
-                  .bottom,
+              height: widget.height - MediaQuery.of(context).viewInsets.bottom,
               child: Column(
                 children: [
                   // Handle
@@ -506,19 +492,27 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                       children: [
                         Text(
                           widget.placeName,
-                          style: const TextStyle(fontSize: 18,
-                              fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6.0),
                         Text(
                           widget.placeType,
-                          style: TextStyle(fontSize: 14,
-                              color: Colors.grey[600]),
+                          style:
+                              TextStyle(fontSize: 14, color: Colors.grey[600]),
                         ),
                       ],
                     ),
                   ),
 
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: GestureDetector(
+                      onTap: () => widget.onClose!(),
+                      child: const Icon(Icons.close, color: Colors.black),
+                    ),
+                  ),
 
                   // Action buttons
                   Padding(
@@ -556,9 +550,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                           child: OutlinedButton(
                             onPressed: () => setState(() => showReviews = true),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: showReviews
-                                  ? Colors.white
-                                  : Colors.black,
+                              foregroundColor:
+                                  showReviews ? Colors.white : Colors.black,
                               backgroundColor: showReviews
                                   ? Colors.blue
                                   : Colors.transparent,
@@ -576,9 +569,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                             onPressed: () =>
                                 setState(() => showReviews = false),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: showReviews
-                                  ? Colors.black
-                                  : Colors.white,
+                              foregroundColor:
+                                  showReviews ? Colors.black : Colors.white,
                               backgroundColor: showReviews
                                   ? Colors.transparent
                                   : Colors.blue,
@@ -610,8 +602,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   }
 
   Widget buildReviewsSection() {
-    List<Review> mainReviews = reviews.where((r) => r.parentId == null)
-        .toList();
+    List<Review> mainReviews =
+        reviews.where((r) => r.parentId == null).toList();
 
     if (isSortedByDate) {
       mainReviews.sort((a, b) => b.date.compareTo(a.date));
@@ -636,19 +628,18 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                     onPressed: newReviewText.isEmpty
                         ? null
                         : () {
-                      if (newReviewRating == 0) {
-                        setState(() =>
-                        ratingError =
-                        "Veuillez attribuer au moins une étoile.");
-                      } else {
-                        addReview(newReviewText, newReviewRating);
-                        setState(() {
-                          newReviewText = "";
-                          newReviewRating = 0;
-                          ratingError = "";
-                        });
-                      }
-                    },
+                            if (newReviewRating == 0) {
+                              setState(() => ratingError =
+                                  "Veuillez attribuer au moins une étoile.");
+                            } else {
+                              addReview(newReviewText, newReviewRating);
+                              setState(() {
+                                newReviewText = "";
+                                newReviewRating = 0;
+                                ratingError = "";
+                              });
+                            }
+                          },
                   ),
                 ),
               ),
@@ -658,14 +649,13 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                   return IconButton(
                     icon: Icon(
                       index < newReviewRating ? Icons.star : Icons.star_border,
-                      color: index < newReviewRating ? Colors.amber : Colors
-                          .grey,
+                      color:
+                          index < newReviewRating ? Colors.amber : Colors.grey,
                     ),
-                    onPressed: () =>
-                        setState(() {
-                          newReviewRating = index + 1;
-                          ratingError = "";
-                        }),
+                    onPressed: () => setState(() {
+                      newReviewRating = index + 1;
+                      ratingError = "";
+                    }),
                   );
                 }),
               ),
@@ -689,8 +679,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                   children: [
                     const Text(
                       "Avis",
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     TextButton.icon(
                       onPressed: toggleSortOrder,
@@ -706,49 +696,52 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 child: mainReviews.isEmpty
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
-                  itemCount: mainReviews.length,
-                  itemBuilder: (context, index) {
-                    Review review = mainReviews[index];
-                    List<Review> replies = reviews.where((r) =>
-                    r.parentId == review.id).toList();
+                        itemCount: mainReviews.length,
+                        itemBuilder: (context, index) {
+                          Review review = mainReviews[index];
+                          List<Review> replies = reviews
+                              .where((r) => r.parentId == review.id)
+                              .toList();
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildReviewItem(review),
-                          if (replies.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 20),
-                              child: _buildReplies(replies, true),
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildReviewItem(review),
+                                if (replies.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 20),
+                                    child: _buildReplies(replies, true),
+                                  ),
+                                if (replies.isEmpty)
+                                  TextButton(
+                                    onPressed: () =>
+                                        setState(() => replyingTo = review.id),
+                                    child: const Text("Répondre"),
+                                  ),
+                                if (replyingTo == review.id)
+                                  TextField(
+                                    onChanged: (value) =>
+                                        setState(() => replyText = value),
+                                    decoration: InputDecoration(
+                                      hintText: "Votre réponse...",
+                                      suffixIcon: IconButton(
+                                        icon: const Icon(Icons.send),
+                                        onPressed: replyText.isEmpty
+                                            ? null
+                                            : () =>
+                                                addReply(replyText, review.id),
+                                      ),
+                                    ),
+                                  ),
+                                const Divider(),
+                              ],
                             ),
-                          if (replies.isEmpty)
-                            TextButton(
-                              onPressed: () =>
-                                  setState(() => replyingTo = review.id),
-                              child: const Text("Répondre"),
-                            ),
-                          if (replyingTo == review.id)
-                            TextField(
-                              onChanged: (value) =>
-                                  setState(() => replyText = value),
-                              decoration: InputDecoration(
-                                hintText: "Votre réponse...",
-                                suffixIcon: IconButton(
-                                  icon: const Icon(Icons.send),
-                                  onPressed: replyText.isEmpty
-                                      ? null
-                                      : () => addReply(replyText, review.id),
-                                ),
-                              ),
-                            ),
-                          const Divider(),
-                        ],
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),
@@ -756,7 +749,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       ],
     );
   }
-
 
   Widget _buildReviewItem(Review review) {
     return ListTile(
@@ -806,7 +798,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     );
   }
 
-
   Widget buildPhotosSection() {
     List<Photo> filteredPhotos = selectedTag == null
         ? photos
@@ -826,30 +817,30 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
-                      backgroundColor: selectedTag == null
-                          ? Colors.blue
-                          : Colors.white,
+                      backgroundColor:
+                          selectedTag == null ? Colors.blue : Colors.white,
                       label: Text(
                         'Tous',
                         style: TextStyle(
-                            color: selectedTag == null ? Colors.white : Colors
-                                .black),
+                            color: selectedTag == null
+                                ? Colors.white
+                                : Colors.black),
                       ),
                       onSelected: (_) => setState(() => selectedTag = null),
                       selected: selectedTag == null,
                     ),
                   ),
-                  ...allTags.map((tag) =>
-                      Padding(
+                  ...allTags.map((tag) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: FilterChip(
-                          backgroundColor: selectedTag == tag
-                              ? Colors.blue
-                              : Colors.white,
+                          backgroundColor:
+                              selectedTag == tag ? Colors.blue : Colors.white,
                           label: Text(
                             tag,
-                            style: TextStyle(color: selectedTag == tag ? Colors
-                                .white : Colors.black),
+                            style: TextStyle(
+                                color: selectedTag == tag
+                                    ? Colors.white
+                                    : Colors.black),
                           ),
                           onSelected: (_) => setState(() => selectedTag = tag),
                           selected: selectedTag == tag,
@@ -863,79 +854,78 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
             Expanded(
               child: filteredPhotos.isEmpty
                   ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.photo_library_outlined, size: 64,
-                        color: Colors.grey[400]),
-                    const SizedBox(height: 12),
-                    Text(
-                      "Aucune photo${selectedTag != null
-                          ? ' avec ce tag'
-                          : ' ajoutée'}",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                    ),
-                  ],
-                ),
-              )
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.photo_library_outlined,
+                              size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Aucune photo${selectedTag != null ? ' avec ce tag' : ' ajoutée'}",
+                            style: TextStyle(
+                                color: Colors.grey[600], fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    )
                   : GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 5,
-                  mainAxisSpacing: 5,
-                ),
-                itemCount: filteredPhotos.length,
-                itemBuilder: (context, index) {
-                  final photo = filteredPhotos[index];
-                  return GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) =>
-                            Dialog(
-                              backgroundColor: Colors.transparent,
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: InteractiveViewer(
-                                  child: Image.memory(
-                                      photo.imageData, fit: BoxFit.contain),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 5,
+                        mainAxisSpacing: 5,
+                      ),
+                      itemCount: filteredPhotos.length,
+                      itemBuilder: (context, index) {
+                        final photo = filteredPhotos[index];
+                        return GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => Dialog(
+                                backgroundColor: Colors.transparent,
+                                child: GestureDetector(
+                                  onTap: () => Navigator.pop(context),
+                                  child: InteractiveViewer(
+                                    child: Image.memory(photo.imageData,
+                                        fit: BoxFit.contain),
+                                  ),
                                 ),
                               ),
-                            ),
-                      );
-                    },
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.memory(
-                            photo.imageData,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        if (photo.tag != null)
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
+                            );
+                          },
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(
+                                  photo.imageData,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                              child: Text(
-                                photo.tag!,
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.black),
-                              ),
-                            ),
+                              if (photo.tag != null)
+                                Positioned(
+                                  bottom: 4,
+                                  right: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      photo.tag!,
+                                      style: const TextStyle(
+                                          fontSize: 12, color: Colors.black),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                      ],
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
@@ -956,7 +946,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 class TagSelectionDialog extends StatefulWidget {
   final Set<String> existingTags;
 
-  const TagSelectionDialog({Key? key, required this.existingTags}) : super(key: key);
+  const TagSelectionDialog({Key? key, required this.existingTags})
+      : super(key: key);
 
   @override
   _TagSelectionDialogState createState() => _TagSelectionDialogState();
@@ -975,9 +966,9 @@ class _TagSelectionDialogState extends State<TagSelectionDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ...widget.existingTags.map((tag) => ListTile(
-              title: Text(tag),
-              onTap: () => Navigator.of(context).pop(tag),
-            )),
+                  title: Text(tag),
+                  onTap: () => Navigator.of(context).pop(tag),
+                )),
             const Divider(),
             TextField(
               controller: _controller,
@@ -993,7 +984,8 @@ class _TagSelectionDialogState extends State<TagSelectionDialog> {
       actions: [
         // Voici le bouton à remplacer
         TextButton(
-          onPressed: () => Navigator.of(context).pop("NO_TAG"),  // Au lieu de null
+          onPressed: () =>
+              Navigator.of(context).pop("NO_TAG"), // Au lieu de null
           child: const Text('Sans tag'),
         ),
         TextButton(
@@ -1016,9 +1008,3 @@ class _TagSelectionDialogState extends State<TagSelectionDialog> {
     super.dispose();
   }
 }
-
-
-
-
-
-

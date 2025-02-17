@@ -6,7 +6,7 @@ exports.ListePlaces = async (search) => {
 
         // Définition des requêtes
         const pointsQuery = `
-            SELECT name, 
+            SELECT osm_id as id, name, 
                 amenity, 
                 ST_X(ST_Centroid(ST_Collect(ST_Transform(way,4326)))) AS longitude, 
                 ST_Y(ST_Centroid(ST_Collect(ST_Transform(way,4326)))) AS latitude, 
@@ -16,7 +16,7 @@ exports.ListePlaces = async (search) => {
             FROM planet_osm_point
             WHERE name IS NOT NULL 
             AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
-            GROUP BY name, amenity
+            GROUP BY id, name, amenity
             ORDER BY CASE 
                 WHEN name ILIKE $2 THEN 2
                 ELSE MAX(similarity(name, $1))
@@ -77,7 +77,7 @@ exports.ListePlaces = async (search) => {
 exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     try {
         const result = await pool.query(
-            `SELECT DISTINCT name, amenity,
+            `SELECT DISTINCT osm_id as id, name, amenity,
                 ST_X(ST_Transform(way, 4326)) AS lon, 
                 ST_Y(ST_Transform(way, 4326)) AS lat,
                 STRING_AGG(tags::TEXT, '; ') AS tags
@@ -87,7 +87,7 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
                 ST_Transform(way, 4326), 
                 ST_MakeEnvelope($1, $2, $3, $4, 4326)
                 )
-            GROUP BY name, amenity, way
+            GROUP BY id, name, amenity, way
             LIMIT 50`,
                 [minlon, minlat, maxlon, maxlat]
             );

@@ -673,7 +673,7 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
           if (_selectedPlace != null &&
-              _routePoints.isEmpty &&
+              _routes.isEmpty &&
               _tramPolyLinesPoints.isEmpty)
             PlaceInfoSheet(
               height: _bottomSheetHeight,

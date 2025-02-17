@@ -42,7 +42,7 @@ const Map<List<String>, IconData> amenityIconMapping = {
   ["post_office", "post_box", "letter_box"]: Icons.local_post_office_rounded,
 
   ["place_of_worship"]: Icons.church_rounded,
-  ["community_centre", "social_centre", "social_club", "childcare", "social_facility"]: Icons.groups_rounded,
+  ["community_centre", "social_centre", "social_club", "childcare", "social_facility", "kindergarten"]: Icons.groups_rounded,
   ["shelter"]: Icons.home,
   ["employment_agency", "job_centre"]: Icons.business_center_rounded,
 
@@ -103,7 +103,7 @@ const Map<List<String>, Color> amenityColorMapping = {
   ["post_office", "post_box", "letter_box"]: Colors.red,
 
   ["place_of_worship"]: Colors.amber,
-  ["community_centre", "social_centre", "social_club"]: Colors.orange,
+  ["community_centre", "social_centre", "social_club", "kindergarten"]: Colors.orange,
   ["shelter"]: Colors.blueGrey,
   ["employment_agency", "job_centre"]: Colors.teal,
 

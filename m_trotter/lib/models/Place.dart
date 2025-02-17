@@ -1,4 +1,5 @@
 class Place {
+  final int id;
   final String name;
   final String amenity;
   final double latitude;
@@ -20,6 +21,7 @@ class Place {
   final String? operator;
 
   Place({
+    required this.id,
     required this.name,
     required this.amenity,
     required this.latitude,
@@ -42,6 +44,7 @@ class Place {
   factory Place.fromJson(Map<String, dynamic> json) {
     // Extraction et nettoyage des tags sous forme de Map
     Map<String, String> tags = {};
+    print("id du lieu : ${json['id']}");
     if (json['tags'] != null && json['tags'] is String) {
       for (String entry in json['tags'].split(", ")) {
         List<String> keyValue = entry.split("=>");
@@ -53,6 +56,7 @@ class Place {
     }
 
     return Place(
+      id: int.parse(json['id']),
       name: json['name'] ?? 'Unknown',
       amenity: json['amenity'] ?? 'Unknown',
       latitude: json['latitude'] ?? json['lat'] ?? 0.0,
