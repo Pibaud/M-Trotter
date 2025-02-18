@@ -28,8 +28,9 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-        return responseData;
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> pointsData = responseData['points'];
+        return pointsData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
       }
@@ -45,7 +46,12 @@ class ApiService {
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'minlat': min.latitude,'minlon': min.longitude, 'maxlat': max.latitude, 'maxlon': max.longitude}),
+        body: json.encode({
+          'minlat': min.latitude,
+          'minlon': min.longitude,
+          'maxlat': max.latitude,
+          'maxlon': max.longitude
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -230,7 +236,6 @@ class ApiService {
           await AuthService.saveRefreshToken(refreshToken);
         }
         return {'success': true, 'data': responseData};
-
       } else {
         final error = jsonDecode(response.body);
         return {
@@ -302,10 +307,11 @@ class ApiService {
       return {"error": "Erreur de connexion"};
     }
   }
+
   //recuperer l'access token
   Future<Map<String, dynamic>> recupAccessToken() async {
     String? refreshToken = await AuthService.getRefreshToken();
-  
+
     if (refreshToken == null) {
       return {'success': false, 'error': 'Aucun refresh token trouvé'};
     }
@@ -316,7 +322,7 @@ class ApiService {
     try {
       final url = Uri.parse('$baseUrl/comptes/recupAccessToken');
       final body = jsonEncode({'refreshToken': refreshToken});
-    
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -330,10 +336,12 @@ class ApiService {
         final String? accessToken = responseData['accessToken'];
         if (accessToken != null) {
           await AuthService.saveToken(accessToken);
-        }
-        else{
+        } else {
           await AuthService.logout();
-          return {'success': false, 'error': 'Refresh token invalide, veuillez vous reconnecter'};
+          return {
+            'success': false,
+            'error': 'Refresh token invalide, veuillez vous reconnecter'
+          };
         }
 
         return {'success': true, 'data': responseData};
@@ -348,5 +356,4 @@ class ApiService {
       throw Exception('Erreur lors de la requête : $e');
     }
   }
-
 }

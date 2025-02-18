@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../services/LocationService.dart';
 import '../services/MapInteractions.dart';
 import '../services/ApiService.dart';
+import '../services/AmenitiesService.dart';
 import 'dart:async';
 import '../widgets/PlaceInfoSheet.dart';
 import '../widgets/ItinerarySheet.dart';
@@ -46,12 +47,14 @@ class _MapPageState extends State<MapPage> {
   Timer? _debounce;
   TextEditingController _controller = TextEditingController();
   List<Place> suggestedPlaces = [];
+  List<String> suggestedAmenities = [];
   bool _isLayerVisible = false;
   Place? _selectedPlace;
   double _bottomSheetHeight = 100.0;
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
+  late AmenitiesService _amenitiesService;
   StreamSubscription<Position>? _positionSubscription;
   late Map<String, Map<String, dynamic>> _routes;
   late List<dynamic> _transitWays = [];
@@ -71,6 +74,8 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     _locationService = LocationService(); // service de localisation
+    _amenitiesService = AmenitiesService();
+    _loadAmenitiesData(); // Nouvelle méthode pour charger les données
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
     _mapEventSubscription = _mapController.mapEventStream.listen(_onMapEvent);
     loadTramData();
@@ -97,6 +102,11 @@ class _MapPageState extends State<MapPage> {
         debugPrint('Erreur de localisation : $error');
       },
     );
+  }
+
+  Future<void> _loadAmenitiesData() async {
+    await _amenitiesService.loadAmenities();
+    // Vous pouvez ajouter d'autres initialisations asynchrones ici si nécessaire
   }
 
   Future<void> loadTramData() async {
@@ -169,6 +179,13 @@ class _MapPageState extends State<MapPage> {
     _debounce = Timer(const Duration(milliseconds: 100), () {
       if (value.trim().isNotEmpty) {
         getPlaces(value.trim());
+        List<String> foundAmenities = _amenitiesService.searchAmenities(value);
+        if (foundAmenities.isNotEmpty) {
+          print("Amenities trouvées : $foundAmenities");
+          setState(() {
+            suggestedAmenities = foundAmenities;
+          });
+        }
       }
     });
   }

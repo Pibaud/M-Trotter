@@ -1,6 +1,7 @@
 {
     "Restaurant": "restaurant",
     "Supermarché": "HUGOmagasin",
+    "Bar": "bar",
     "Station-service": "fuel",
     "Hôtel": "HUGOhotel",
     "Abri": "shelter",
@@ -16,7 +17,6 @@
     "Bain public": "public_bath",
     "Baking oven": "baking_oven",
     "Banque": "bank",
-    "Bar": "bar",
     "Bar à chicha": "hookah_lounge",
     "Bibliothèque": "library",
     "Bibliothèque de jouets": "toy_library",

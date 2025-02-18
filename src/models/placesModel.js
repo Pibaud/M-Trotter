@@ -15,6 +15,7 @@ exports.ListePlaces = async (search) => {
                 'point' AS type
             FROM planet_osm_point
             WHERE name IS NOT NULL 
+            AND amenity IS NOT NULL
             AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
             GROUP BY id, name, amenity
             ORDER BY CASE 
@@ -60,14 +61,27 @@ exports.ListePlaces = async (search) => {
         ]);
 
         // Fusion des résultats
-        const finalResults = [
-            ...pointsResult.rows,
-            ...roadsResult.rows.map(row => ({ ...row, longitude: null, latitude: null, tags: null, sim: null })),
-            ...roadsResult2.rows.map(row => ({ ...row, longitude: null, latitude: null, tags: null, sim: null }))
-        ];
-
-        console.log(finalResults);
-        return finalResults; // Renvoie un tableau avec les résultats fusionnés
+        // Création d'un objet avec 3 propriétés distinctes
+        const finalResults = {
+            points: pointsResult.rows,
+            lines: roadsResult.rows.map(row => ({
+                ...row,
+                longitude: null,
+                latitude: null,
+                tags: null,
+                sim: null
+            })),
+            roads: roadsResult2.rows.map(row => ({
+                ...row,
+                longitude: null,
+                latitude: null,
+                tags: null,
+                sim: null
+            }))
+        };
+        console.log("juste les points :");
+        console.log(finalResults.points); // pour afficher uniquement les points
+        return finalResults; // Renvoie un objet avec les résultats séparés par type
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);
         throw error;
@@ -89,8 +103,8 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
                 )
             GROUP BY id, name, amenity, way
             LIMIT 50`,
-                [minlon, minlat, maxlon, maxlat]
-            );
+            [minlon, minlat, maxlon, maxlat]
+        );
         return result.rows;
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);

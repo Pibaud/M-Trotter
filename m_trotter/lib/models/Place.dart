@@ -44,7 +44,6 @@ class Place {
   factory Place.fromJson(Map<String, dynamic> json) {
     // Extraction et nettoyage des tags sous forme de Map
     Map<String, String> tags = {};
-    print("id du lieu : ${json['id']}");
     if (json['tags'] != null && json['tags'] is String) {
       for (String entry in json['tags'].split(", ")) {
         List<String> keyValue = entry.split("=>");
