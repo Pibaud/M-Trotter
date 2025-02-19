@@ -14,6 +14,12 @@ class AmenitiesService {
   List<String> searchAmenities(String query) {
     if (_amenities.isEmpty || query.isEmpty) return [];
     query = query.toLowerCase();
-    return _amenities.keys.where((key) => key.toLowerCase().startsWith(query)).toList();
+    return _amenities.keys
+        .where((key) => key.toLowerCase().startsWith(query))
+        .toList();
+  }
+
+  String getRealAmenityName(String amenity) {
+    return _amenities[amenity] ?? '';
   }
 }

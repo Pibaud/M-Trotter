@@ -3,6 +3,7 @@ import 'dart:math' show sqrt, pow;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter/services.dart';
+import 'package:m_trotter/widgets/PlaceListSheet.dart';
 import 'dart:convert';
 import '../services/LocationService.dart';
 import '../services/MapInteractions.dart';
@@ -47,9 +48,12 @@ class _MapPageState extends State<MapPage> {
   Timer? _debounce;
   TextEditingController _controller = TextEditingController();
   List<Place> suggestedPlaces = [];
+  List<Place> fittingPlaces =
+      []; // places correspondant à l'amenity (extensible à d'autres filtres ?)
   List<String> suggestedAmenities = [];
   bool _isLayerVisible = false;
   Place? _selectedPlace;
+  String? _selectedAmenity;
   double _bottomSheetHeight = 100.0;
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
@@ -106,7 +110,6 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _loadAmenitiesData() async {
     await _amenitiesService.loadAmenities();
-    // Vous pouvez ajouter d'autres initialisations asynchrones ici si nécessaire
   }
 
   Future<void> loadTramData() async {
@@ -181,9 +184,12 @@ class _MapPageState extends State<MapPage> {
         getPlaces(value.trim());
         List<String> foundAmenities = _amenitiesService.searchAmenities(value);
         if (foundAmenities.isNotEmpty) {
-          print("Amenities trouvées : $foundAmenities");
           setState(() {
             suggestedAmenities = foundAmenities;
+          });
+        } else {
+          setState(() {
+            suggestedAmenities = [];
           });
         }
       }
@@ -424,6 +430,29 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  Future<void> _onAmenityTap(String amenity) async {
+    Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
+        .hideBottomNav();
+    _controller.text = amenity;
+    _focusNode.unfocus();
+
+    setState(() {
+      _selectedAmenity = amenity; // Mettre à jour le lieu sélectionné
+      suggestedPlaces = [];
+      _isLayerVisible = false;
+    });
+
+    try {
+      final res = await _apiService.fetchPlacesFittingAmenity(
+          _amenitiesService.getRealAmenityName(amenity));
+      setState(() {
+        fittingPlaces = res.map<Place>((data) => Place.fromJson(data)).toList();
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération des places : $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     print("Build appelé pour mappage");
@@ -557,11 +586,14 @@ class _MapPageState extends State<MapPage> {
             onTextClear: () {
               setState(() {
                 _controller.clear();
+                suggestedPlaces = [];
+                suggestedAmenities = [];
               });
             },
             onTextChanged: _onTextChanged,
           ),
-          if (suggestedPlaces.isNotEmpty && _isLayerVisible)
+          if ((_isLayerVisible && suggestedPlaces.isNotEmpty) ||
+              _isLayerVisible && suggestedAmenities.isNotEmpty)
             Positioned(
               top: 85.0,
               left: 8.0,
@@ -579,22 +611,61 @@ class _MapPageState extends State<MapPage> {
                     }
                     return false;
                   },
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: suggestedPlaces.length,
-                    itemBuilder: (context, index) {
-                      final place = suggestedPlaces[index];
-                      return ListTile(
-                        title: Text(place
-                            .name), // Utilisation directe de l'attribut name
-                        subtitle: Text(place.amenity ??
-                            ''), // Affiche éventuellement la catégorie
-                        onTap: () {
-                          _onSuggestionTap(
-                              place); // Appelle la fonction avec l'objet Place
-                        },
-                      );
-                    },
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Affichage des amenities
+                        if (suggestedAmenities.isNotEmpty)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 8.0),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: suggestedAmenities.length,
+                              itemBuilder: (context, index) {
+                                final amenity = suggestedAmenities[index];
+                                return ListTile(
+                                  leading: const Icon(Icons.category),
+                                  title: Text(amenity),
+                                  onTap: () {
+                                    _onAmenityTap(amenity);
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+
+                        // Affichage des places
+                        if (suggestedPlaces.isNotEmpty)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: suggestedPlaces.length,
+                              itemBuilder: (context, index) {
+                                final place = suggestedPlaces[index];
+                                return ListTile(
+                                  leading: const Icon(Icons.place),
+                                  title: Text(place.name),
+                                  subtitle: Text(place.amenity),
+                                  onTap: () {
+                                    _onSuggestionTap(place);
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -689,6 +760,23 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
+          if (fittingPlaces.isNotEmpty)
+            PlaceListSheet(
+                initialHeight: MediaQuery.of(context).size.height * 0.45,
+                fullHeight: MediaQuery.of(context).size.height,
+                midHeight: MediaQuery.of(context).size.height * 0.45,
+                collapsedHeight: 100.0,
+                onClose: () {
+                  Provider.of<BottomNavBarVisibilityProvider>(context,
+                          listen: false)
+                      .showBottomNav();
+                  setState(() {
+                    _controller.clear();
+                    fittingPlaces = [];
+                  });
+                },
+                title: _selectedAmenity ?? '',
+                places: fittingPlaces),
           if (_selectedPlace != null &&
               _routes.isEmpty &&
               _tramPolyLinesPoints.isEmpty)

@@ -39,6 +39,28 @@ class ApiService {
     }
   }
 
+  Future<List<dynamic>> fetchPlacesFittingAmenity(String amenity) async {
+    final String url = '$baseUrl/api/amenityList/';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'amenity': amenity}),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        print("je recois les places pour une AMENITY : $responseData");
+        return responseData;
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
   Future<List<dynamic>> fetchPlacesBbox(LatLng min, LatLng max) async {
     final String url = '$baseUrl/api/placesbbox';
 

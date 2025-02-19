@@ -3,6 +3,7 @@ const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const uploadModel = require('../models/uploadModel'); // Import du modèle
 
 const VPS_URL = 'http://217.182.79.84:3000'; // URL du serveur VPS
 
@@ -18,45 +19,54 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        const safeFilename = file.originalname.replace(/\s+/g, '_'); // Remplace les espaces
+        const safeFilename = file.originalname.replace(/\s+/g, '_');
         cb(null, Date.now() + '-' + safeFilename);
     },
 });
 
 const upload = multer({ storage: storage });
 
-// Fonction pour envoyer une image vers le VPS après l'upload local
-const uploadToVPS = async (filePath) => {
+// Fonction pour envoyer une image vers le VPS + l'enregistrer en base
+const uploadToVPS = async (filePath, id_lieu, id_avis) => {
     try {
         const formData = new FormData();
         formData.append('image', fs.createReadStream(filePath));
+        formData.append('id_lieu', id_lieu);
+        formData.append('id_avis', id_avis || null);
 
-        const response = await axios.post(VPS_URL+"/upload", formData, {
-            headers: {
-                ...formData.getHeaders(),
-            },
+        const response = await axios.post(`${VPS_URL}/upload`, formData, {
+            headers: { ...formData.getHeaders() },
         });
 
-        return response.data;
+        // Enregistrer en base de données
+        const { id_photo, created_at } = await uploadModel.addImage(id_lieu, id_avis);
+
+        // Construire l’URL dynamiquement
+        const image_url = `${VPS_URL}/images/${id_photo}.jpg`;
+
+        return { id_photo, image_url, created_at };
     } catch (error) {
         console.error('❌ Erreur lors de l’envoi au VPS :', error.message);
-        throw new Error('Impossible d’envoyer l’image au serveur distant.');
+        throw new Error('Impossible d’enregistrer l’image.');
     }
 };
 
-const fetchImageFromVPS = async (filename) => {
+// Récupérer toutes les images associées à un lieu depuis la BDD
+const fetchImagesByPlaceId = async (placeId) => {
     try {
-        const response = await axios({
-            method: 'get',
-            url: `${VPS_URL+"/image/"}${filename}`,
-            responseType: 'stream' // On récupère l’image en flux (stream)
-        });
+        const images = await uploadModel.getImagesByPlaceId(placeId);
 
-        return response;
+        // Ajouter l’URL basée sur le VPS
+        return images.map(image => ({
+            id_photo: image.id_photo,
+            id_avis: image.id_avis,
+            created_at: image.created_at,
+            image_url: `${VPS_URL}/images/${image.id_photo}.jpg`
+        }));
     } catch (error) {
-        console.error('Erreur lors de la récupération de l’image du VPS :', error.message);
-        throw new Error('Impossible de récupérer l’image depuis le serveur distant.');
+        console.error('Erreur lors de la récupération des images :', error.message);
+        throw new Error('Impossible de récupérer les images.');
     }
 };
 
-module.exports = {fetchImageFromVPS, uploadToVPS, upload };
+module.exports = { uploadToVPS, fetchImagesByPlaceId, upload };

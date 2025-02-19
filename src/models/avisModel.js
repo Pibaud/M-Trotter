@@ -31,3 +31,12 @@ exports.deleteAvisById = async (avis_id) => {
     return result.rows.length > 0 ? result.rows[0] : null;
 };
 
+exports.likeAvisById = async (avis_id, user_id) => { 
+    const result = await pool.query(
+        `INSERT INTO avis_likes 
+        VALUES ($1, $2) RETURNING *`,
+        [avis_id, user_id]
+    );
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+};

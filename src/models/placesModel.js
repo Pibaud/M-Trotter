@@ -79,8 +79,6 @@ exports.ListePlaces = async (search) => {
                 sim: null
             }))
         };
-        console.log("juste les points :");
-        console.log(finalResults.points); // pour afficher uniquement les points
         return finalResults; // Renvoie un objet avec les résultats séparés par type
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);
@@ -112,3 +110,24 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     }
 };
 
+exports.AmenityPlaces = async (amenity) => {
+    try {
+        const result = await pool.query(
+            `SELECT osm_id as id, name, amenity,
+                ST_X(ST_Transform(way, 4326)) AS lon, 
+                ST_Y(ST_Transform(way, 4326)) AS lat,
+                STRING_AGG(tags::TEXT, '; ') AS tags
+            FROM planet_osm_point 
+            WHERE name IS NOT NULL AND amenity = $1
+            GROUP BY id, name, amenity, way
+            LIMIT 10`,
+            [amenity]
+        );
+        console.log("Places pour l'AMENITY ",amenity," :")
+        console.dir(result.rows)
+        return result.rows;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des places :", error);
+        throw { error: "Erreur interne du serveur." };
+    }
+}

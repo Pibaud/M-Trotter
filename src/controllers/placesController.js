@@ -1,4 +1,4 @@
-const { LPlaces, bboxPlaces } = require('../services/placesService'); // Assure-toi que l'importation est correcte
+const { LPlaces, bboxPlaces, amenitylist } = require('../services/placesService'); // Assure-toi que l'importation est correcte
 
 exports.postPlaces = async (req, res) => {
     try {
@@ -22,6 +22,21 @@ exports.bboxPlaces = async (req, res) => {
         return res.status(200).json(lieux); // Envoi de la réponse au client
     } catch (error) {
         console.error("Erreur dans bboxPlaces :", error);
+        return res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}
+
+exports.amenitylist = async(req, res) => {
+    try {
+        const {amenity} = req.body;
+
+        if (!amenity){
+            return res.status(400).json({error : "pas d'amenity "});
+        }
+        const liste = await amenitylist(amenity);
+        return res.status(200).json(liste);
+    } catch (error) {
+        console.error("Erreur dans amenitylist :", error);
         return res.status(500).json({ message: "Erreur interne du serveur." });
     }
 }
