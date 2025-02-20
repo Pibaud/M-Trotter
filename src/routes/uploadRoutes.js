@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const {getImage, uploadImage } = require('../controllers/uploadController');
+const {getImagesByPlaceId, uploadImage } = require('../controllers/uploadController');
 
-//router.post('/upload', uploadImage);
-//router.post('/image', getImage);
-
+router.post('/upload', uploadImage);
+router.post('/image', getImagesByPlaceId);
 
 module.exports = router;
