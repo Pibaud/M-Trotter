@@ -51,7 +51,6 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
-        print("je recois les places pour une AMENITY : $responseData");
         return responseData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');

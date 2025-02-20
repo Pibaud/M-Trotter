@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 // Mapping des icônes par catégorie d'amenities
 const Map<List<String>, IconData> amenityIconMapping = {
+  ["fuel"]: Icons.local_gas_station_rounded,
   ["bicycle_parking", "bicycle_rental", "bicycle_repair_station"]:
       Icons.pedal_bike_rounded,
   ["boat_rental", "boat_sharing", "boat_school"]: Icons.directions_boat_rounded,
@@ -83,7 +84,7 @@ const Map<List<String>, Color> amenityColorMapping = {
   ["atm", "bank", "money_transfer", "bureau_de_change"]: Colors.blueGrey,
 
   ["clinic", "dentist", "doctors", "hospital", "nursing_home", "healthcare"]: Colors.redAccent,
-  ["pharmacy"]: Colors.teal,
+  ["pharmacy"]: Color.fromARGB(255, 0, 163, 0),
   ["audiologist"]: Colors.indigo,
   ["veterinary", "dog_toilet"]: Colors.lightGreen,
   ["pedicurist", "beauty", "personal_service"]: Colors.purple,

@@ -595,6 +595,24 @@ class _MapPageState extends State<MapPage> {
             },
             onTextChanged: _onTextChanged,
           ),
+          Positioned(
+            top: 85.0,
+            left: 0.0,
+            right: 0.0,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildAmenityChip('Supermarché'),
+                  _buildAmenityChip('Restaurant'),
+                  _buildAmenityChip('Bar'),
+                  _buildAmenityChip('Station-service'),
+                  _buildAmenityChip('Hôtel'),
+                  _buildAmenityChip('Plus'),
+                ],
+              ),
+            ),
+          ),
           if ((_isLayerVisible && suggestedPlaces.isNotEmpty) ||
               _isLayerVisible && suggestedAmenities.isNotEmpty)
             Positioned(
@@ -959,5 +977,16 @@ class _MapPageState extends State<MapPage> {
     _positionSubscription?.cancel();
     _mapEventSubscription?.cancel();
     super.dispose();
+  }
+
+  // Add the _buildAmenityChip method
+  Widget _buildAmenityChip(String amenity) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: ActionChip(
+        label: Text(amenity),
+        onPressed: () => _onAmenityTap(amenity),
+      ),
+    );
   }
 }
