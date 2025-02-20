@@ -52,6 +52,7 @@ class _MapPageState extends State<MapPage> {
       []; // places correspondant à l'amenity (extensible à d'autres filtres ?)
   List<String> suggestedAmenities = [];
   bool _isLayerVisible = false;
+  bool _isPlaceInfoSheetVisible = false;
   Place? _selectedPlace;
   String? _selectedAmenity;
   double _bottomSheetHeight = 100.0;
@@ -215,6 +216,7 @@ class _MapPageState extends State<MapPage> {
       _selectedPlace = place; // Mettre à jour le lieu sélectionné
       suggestedPlaces.clear(); // Vide la liste des suggestions
       _isLayerVisible = false;
+      _isPlaceInfoSheetVisible = true;
     });
 
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
@@ -226,6 +228,7 @@ class _MapPageState extends State<MapPage> {
   void _onMarkerTap(Place place) {
     setState(() {
       _selectedPlace = place;
+      _isPlaceInfoSheetVisible = true;
     });
 
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
@@ -760,7 +763,7 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          if (fittingPlaces.isNotEmpty)
+          if (fittingPlaces.isNotEmpty && !_isPlaceInfoSheetVisible)
             PlaceListSheet(
                 initialHeight: MediaQuery.of(context).size.height * 0.45,
                 fullHeight: MediaQuery.of(context).size.height,
@@ -774,6 +777,9 @@ class _MapPageState extends State<MapPage> {
                     _controller.clear();
                     fittingPlaces = [];
                   });
+                },
+                onFittingPlaceTap: (Place selectedPlace) {
+                  _onSuggestionTap(selectedPlace);
                 },
                 title: _selectedAmenity ?? '',
                 places: fittingPlaces),
@@ -820,6 +826,7 @@ class _MapPageState extends State<MapPage> {
               onClose: () {
                 setState(() {
                   _selectedPlace = null;
+                  _isPlaceInfoSheetVisible = false;
                   _controller.text = "";
                 });
 

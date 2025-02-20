@@ -450,152 +450,161 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         onVerticalDragUpdate: (details) =>
             widget.onDragUpdate?.call(details.delta.dy),
         onVerticalDragEnd: (_) => widget.onDragEnd?.call(),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          // Ajout du MediaQuery pour gérer le clavier
-          height: widget.height - MediaQuery.of(context).viewInsets.bottom,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(20.0),
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10.0,
-                spreadRadius: 2.0,
-              ),
-            ],
-          ),
-          // Wrap le Column dans un SingleChildScrollView
-          child: SingleChildScrollView(
-            child: SizedBox(
+        child: Stack(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
               height: widget.height - MediaQuery.of(context).viewInsets.bottom,
-              child: Column(
-                children: [
-                  // Handle
-                  Container(
-                    width: 40.0,
-                    height: 6.0,
-                    margin: const EdgeInsets.symmetric(vertical: 10.0),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(3.0),
-                    ),
-                  ),
-
-                  // Place info
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.placeName,
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 6.0),
-                        Text(
-                          widget.placeType,
-                          style:
-                              TextStyle(fontSize: 14, color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: GestureDetector(
-                      onTap: () => widget.onClose!(),
-                      child: const Icon(Icons.close, color: Colors.black),
-                    ),
-                  ),
-
-                  // Action buttons
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10.0, horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton(
-                          onPressed: widget.onItineraryTap,
-                          child: const Text('Itinéraire'),
-                        ),
-                        TextButton(
-                          onPressed: widget.onCallTap,
-                          child: const Text('Appeler'),
-                        ),
-                        TextButton(
-                          onPressed: widget.onWebsiteTap,
-                          child: const Text('Site Web'),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Divider(thickness: 1, height: 1, color: Colors.grey),
-
-                  // Toggle buttons
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10.0, horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => setState(() => showReviews = true),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor:
-                                  showReviews ? Colors.white : Colors.black,
-                              backgroundColor: showReviews
-                                  ? Colors.blue
-                                  : Colors.transparent,
-                              side: const BorderSide(color: Colors.blue),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            child: const Text("Avis"),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () =>
-                                setState(() => showReviews = false),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor:
-                                  showReviews ? Colors.black : Colors.white,
-                              backgroundColor: showReviews
-                                  ? Colors.transparent
-                                  : Colors.blue,
-                              side: const BorderSide(color: Colors.blue),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            child: const Text("Photos"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Content section
-                  Expanded(
-                    child: showReviews
-                        ? buildReviewsSection()
-                        : buildPhotosSection(),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20.0),
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12, // Updated shadow color
+                    blurRadius: 10.0,
+                    spreadRadius: 2.0,
                   ),
                 ],
               ),
+              // Wrap le Column dans un SingleChildScrollView
+              child: SingleChildScrollView(
+                child: SizedBox(
+                  height:
+                      widget.height - MediaQuery.of(context).viewInsets.bottom,
+                  child: Column(
+                    children: [
+                      // Handle
+                      Container(
+                        width: 40.0,
+                        height: 6.0,
+                        margin: const EdgeInsets.symmetric(vertical: 10.0),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(3.0),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                widget.placeName,
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 6.0),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                widget.placeType,
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey[600]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Action buttons
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10.0, horizontal: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: widget.onItineraryTap,
+                              child: const Text('Itinéraire'),
+                            ),
+                            TextButton(
+                              onPressed: widget.onCallTap,
+                              child: const Text('Appeler'),
+                            ),
+                            TextButton(
+                              onPressed: widget.onWebsiteTap,
+                              child: const Text('Site Web'),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Divider(
+                          thickness: 1, height: 1, color: Colors.grey),
+
+                      // Toggle buttons
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10.0, horizontal: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () =>
+                                    setState(() => showReviews = true),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor:
+                                      showReviews ? Colors.white : Colors.black,
+                                  backgroundColor: showReviews
+                                      ? Colors.blue
+                                      : Colors.transparent,
+                                  side: const BorderSide(color: Colors.blue),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                                child: const Text("Avis"),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () =>
+                                    setState(() => showReviews = false),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor:
+                                      showReviews ? Colors.black : Colors.white,
+                                  backgroundColor: showReviews
+                                      ? Colors.transparent
+                                      : Colors.blue,
+                                  side: const BorderSide(color: Colors.blue),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                                child: const Text("Photos"),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Content section
+                      Expanded(
+                        child: showReviews
+                            ? buildReviewsSection()
+                            : buildPhotosSection(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: () => widget.onClose!(),
+                child: const Icon(Icons.close, color: Colors.black),
+              ),
+            ),
+          ],
         ),
       ),
     );

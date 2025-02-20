@@ -108,7 +108,7 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
                 ),
                 boxShadow: const [
                   BoxShadow(
-                    color: Colors.black,
+                    color: Colors.black12, // Updated shadow color
                     blurRadius: 10.0,
                     spreadRadius: 2.0,
                   ),
@@ -252,7 +252,8 @@ class _ItinerarySheetState extends State<ItinerarySheet> {
                   if (instruction['text'] != null)
                     Text('${instruction['text']}'),
                   if (instruction['time'] != null)
-                    Text('Pendant ${((instruction['time'])/1000).ceil()} minutes'),
+                    Text(
+                        'Pendant ${((instruction['time']) / 1000).ceil()} minutes'),
                 ],
               ),
             ),

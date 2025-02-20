@@ -8,6 +8,7 @@ class PlaceListSheet extends StatefulWidget {
   final double midHeight;
   final double collapsedHeight;
   final Function onClose;
+  final Function(Place) onFittingPlaceTap;
   final String title;
   final List<Place> places;
 
@@ -18,6 +19,7 @@ class PlaceListSheet extends StatefulWidget {
     required this.midHeight,
     required this.collapsedHeight,
     required this.onClose,
+    required this.onFittingPlaceTap,
     required this.title,
     required this.places,
   }) : super(key: key);
@@ -79,7 +81,7 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
             ),
             boxShadow: const [
               BoxShadow(
-                color: Colors.black12,
+                color: Colors.black12, // Updated shadow color
                 blurRadius: 10.0,
                 spreadRadius: 2.0,
               ),
@@ -97,7 +99,7 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // En-tête avec titre et bouton fermer
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -153,7 +155,7 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
-                          
+                          widget.onFittingPlaceTap(place);
                         },
                       ),
                     );
