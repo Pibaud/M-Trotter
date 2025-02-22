@@ -2,13 +2,13 @@ const {newavis, fetchAvisById, deleteAvisById, likeAvisById } = require('../mode
 
 exports.getAvisByPlaceId = async (req, res) => {
     try {
-        const { place_id } = req.body; // On récupère place_id dans le corps de la requête
+        const { place_id, startid } = req.body; // On récupère place_id dans le corps de la requête
 
         if (!place_id) {
             return res.status(400).json({ error: 'place_id est requis.' });
         }
 
-        const avis = await fetchAvisById(place_id);
+        const avis = await fetchAvisById(place_id, startid || 0);
 
         if (!avis || avis.length === 0) {
             return res.status(404).json({ error: 'Aucun avis trouvé pour ce lieu.' });
@@ -24,7 +24,7 @@ exports.getAvisByPlaceId = async (req, res) => {
 
 exports.postAvis = async (req, res) => {
     try {
-        const { user_id, place_id, place_table, lavis, photo_urls, avis_parent, nb_etoile } = req.body;
+        const { user_id, place_id, place_table, lavis, avis_parent, nb_etoile } = req.body;
 
         // Vérification des champs obligatoires
         if (!user_id || !place_id || !place_table || !lavis) {
@@ -32,11 +32,11 @@ exports.postAvis = async (req, res) => {
         }
 
         // Vérification de la valeur de nb_etoile
-        if (avis_parent === null && (nb_etoile === undefined || nb_etoile < 1 || nb_etoile > 5)) {
+        if (avis_parent === undefined && (nb_etoile === undefined || nb_etoile < 1 || nb_etoile > 5)) {
             return res.status(400).json({ error: 'Les avis principaux doivent contenir une note entre 1 et 5 étoiles.' });
         }
 
-        if (avis_parent !== null) {
+        if (avis_parent !== undefined) {
             // Un avis qui est une réponse ne doit pas avoir de note
             if (nb_etoile !== undefined) {
                 return res.status(400).json({ error: 'Les réponses aux avis ne doivent pas contenir de note.' });
@@ -49,9 +49,8 @@ exports.postAvis = async (req, res) => {
             place_id,
             place_table,
             lavis,
-            photo_urls: photo_urls || [],
-            avis_parent,
-            nb_etoile: avis_parent === null ? nb_etoile : null // Force null pour les réponses
+            avis_parent : avis_parent || null,
+            nb_etoile: nb_etoile || null
         });
 
         res.status(201).json({ message: 'Avis ajouté avec succès', avis: nouvelAvis });

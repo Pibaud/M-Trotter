@@ -3,8 +3,8 @@ const { ListePlaces, BoxPlaces, AmenityPlaces } = require('../models/placesModel
 // GET pour récupérer des lieux
 exports.LPlaces = async (req, res) => {
     try {
-        const search = req.body.search;
-        const lieux = await ListePlaces(search);
+        const {search, startid} = req.body;
+        const lieux = await ListePlaces(search, startid || 0);
         return lieux;
     } catch (error) {
         console.error(error);
@@ -22,9 +22,9 @@ exports.bboxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     }
 }
 
-exports.amenitylist = async (amenity) => {
+exports.amenitylist = async (amenity, startid) => {
     try {
-        const lieux = await AmenityPlaces(amenity);
+        const lieux = await AmenityPlaces(amenity, startid);
         return lieux;
     } catch (error) {
         console.error(error);

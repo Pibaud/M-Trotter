@@ -28,12 +28,12 @@ exports.bboxPlaces = async (req, res) => {
 
 exports.amenitylist = async(req, res) => {
     try {
-        const {amenity} = req.body;
+        const {amenity, startid} = req.body;
 
         if (!amenity){
             return res.status(400).json({error : "pas d'amenity "});
         }
-        const liste = await amenitylist(amenity);
+        const liste = await amenitylist(amenity, startid || 0);
         return res.status(200).json(liste);
     } catch (error) {
         console.error("Erreur dans amenitylist :", error);

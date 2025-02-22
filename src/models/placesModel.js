@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-exports.ListePlaces = async (search) => {
+exports.ListePlaces = async (search, startid) => {
     try {
         console.log("Recherche de :", search);
 
@@ -17,6 +17,7 @@ exports.ListePlaces = async (search) => {
             WHERE name IS NOT NULL 
             AND amenity IS NOT NULL
             AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+            AND osm_id > $3
             GROUP BY id, name, amenity
             ORDER BY CASE 
                 WHEN name ILIKE $2 THEN 2
@@ -55,7 +56,7 @@ exports.ListePlaces = async (search) => {
 
         // Exécution des requêtes en parallèle
         const [pointsResult, roadsResult, roadsResult2] = await Promise.all([
-            pool.query(pointsQuery, [search, `%${search}%`]),
+            pool.query(pointsQuery, [search, `%${search}%`, startid]),
             pool.query(roadsQuery, [search, `%${search}%`]),
             pool.query(roadsQuery2, [search, `%${search}%`])
         ]);
@@ -110,7 +111,7 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     }
 };
 
-exports.AmenityPlaces = async (amenity) => {
+exports.AmenityPlaces = async (amenity, startid) => {
     try {
         const result = await pool.query(
             `SELECT osm_id as id, name, amenity,
@@ -119,9 +120,10 @@ exports.AmenityPlaces = async (amenity) => {
                 STRING_AGG(tags::TEXT, '; ') AS tags
             FROM planet_osm_point 
             WHERE name IS NOT NULL AND amenity = $1
+            AND osm_id > $2
             GROUP BY id, name, amenity, way
             LIMIT 10`,
-            [amenity]
+            [amenity, startid]
         );
         console.log("Places pour l'AMENITY ",amenity," :")
         console.dir(result.rows)
