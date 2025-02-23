@@ -1,9 +1,12 @@
+const path = require('path');
 const multer = require('multer');
 
-// Configuration de stockage
+// 📂 Définition du dossier de destination
+const UPLOADS_FOLDER = path.join(__dirname, '..', 'uploads');
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // Dossier où enregistrer les images
+        cb(null, UPLOADS_FOLDER); // 📌 Multer va stocker ici
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -11,7 +14,7 @@ const storage = multer.diskStorage({
     }
 });
 
-// Vérification du format
+// 🔎 Vérification du format (JPG, PNG uniquement)
 const fileFilter = (req, file, cb) => {
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
         cb(null, true);
@@ -20,6 +23,6 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-const upload = multer({ storage: storage, fileFilter: fileFilter });
+const upload = multer({ storage, fileFilter });
 
 module.exports = upload;

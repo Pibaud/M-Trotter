@@ -2,26 +2,28 @@ const uploadService = require('../services/uploadService');
 
 const uploadImage = async (req, res) => {
     try {
-        console.log("Requête reçue :", req.body, req.file); // Debug
+        console.log("Requête reçue :", req.body);  // 🔍 Vérifier ce qui arrive
+        console.log("Fichier reçu :", req.file);  // 📸 Vérifier le fichier
 
-        const { id_lieu, id_avis } = req.body;
-        const file = req.file; // Multer stocke l'image ici
-
-        if (!file || !id_lieu) {
-            console.log("file : ", file, " id_lieu : ", id_lieu);
-            return res.status(400).json({ error: 'Paramètres manquants' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'Aucun fichier reçu' });
         }
 
-        // Chemin absolu du fichier
-        const filePath = file.path;
+        const { id_lieu, id_avis } = req.body;
+        const filePath = req.file.path;
 
-        const result = await uploadService.uploadImageToVPS(filePath, id_lieu, id_avis);
+        if (!id_lieu) {
+            return res.status(400).json({ error: 'id_lieu est obligatoire' });
+        }
+
+        const result = await uploadService.processAndUploadImage(filePath, id_lieu, id_avis);
         res.status(201).json(result);
     } catch (error) {
-        console.error("Erreur d'upload :", error);
-        res.status(500).json({ error: error.message });
+        console.error("Erreur lors de l'upload :", error);
+        res.status(500).json({ error: 'Erreur serveur' });
     }
 };
+
 
 
 // Récupérer les images par id_lieu

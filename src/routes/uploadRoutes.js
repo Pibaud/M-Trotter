@@ -3,8 +3,7 @@ const router = express.Router();
 const {getImagesByPlaceId, uploadImage } = require('../controllers/uploadController');
 const upload = require('../middleware/multerMiddleware'); // Import de Multer
 
-router.post('/upload', upload.single('file'), uploadController.uploadImage);
-router.post('/upload', uploadImage);
+router.post('/upload', upload.single('file'), uploadImage);
 router.post('/image', getImagesByPlaceId);
 
 module.exports = router;
