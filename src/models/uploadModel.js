@@ -20,7 +20,7 @@ const addImage = async (id_lieu, id_avis) => {
 const getImagesByPlaceId = async (id_lieu) => {
     try {
         const result = await db.query(
-            `SELECT id_photo, id_avis, created_at 
+            `SELECT id_photo
              FROM photos 
              WHERE id_lieu = $1`,
             [id_lieu]

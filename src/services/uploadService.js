@@ -58,18 +58,29 @@ const fetchImagesByPlaceId = async (placeId) => {
     try {
         console.log(`📸 Récupération des images pour le lieu ${placeId}...`);
 
-        const images = await uploadModel.getImagesByPlaceId(placeId);
+        let images = await uploadModel.getImagesByPlaceId(placeId);
+        console.log('Images récupérées de la BDD :', images);
 
-        return images.map(image => ({
-            id_photo: image.id_photo,
-            id_avis: image.id_avis,
-            created_at: image.created_at,
-            image_url: `${VPS_URL}/images/${image.id_photo}.jpg`
-        }));
+        if (!images || images.length === 0) {
+            console.error('Aucune image trouvée pour ce lieu.');
+            return []; // Retourner un tableau vide plutôt que de lever une erreur
+        }
+
+        // Transformer le format en tableau d'IDs
+        const imageIds = images.map((image) => image.id_photo);
+        console.log('📤 Demande des images au VPS pour les IDs :', imageIds);
+
+        // Requête POST au VPS avec les IDs des images
+        const response = await axios.post(`${VPS_URL}/images/`, { photo_ids: imageIds });
+
+        console.log('📥 Réponse du VPS :', response.data);
+
+        return response.data; // Retourner les images avec leurs URLs
     } catch (error) {
-        console.error('Erreur lors de la récupération des images :', error.message);
+        console.error('❌ Erreur lors de la récupération des images :', error.message);
         throw new Error('Impossible de récupérer les images.');
     }
 };
+
 
 module.exports = { uploadToVPS, fetchImagesByPlaceId, upload };

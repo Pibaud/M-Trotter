@@ -377,4 +377,27 @@ class ApiService {
       throw Exception('Erreur lors de la requête : $e');
     }
   }
+
+  Future<List<Photo>> fetchImagesByPlaceId(String placeId) async {
+    final String url = 'http://217.182.79.84:3000/images/$placeId';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body)['photos'];
+        return responseData.map((data) {
+          final String imageUrl = 'http://217.182.79.84:3000/uploads/${data['id']}.jpg';
+          return Photo(
+            imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
+            tag: data['tag'],
+          );
+        }).toList();
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+  }
 }

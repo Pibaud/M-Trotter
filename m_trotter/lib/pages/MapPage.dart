@@ -17,6 +17,7 @@ import '../providers/BottomNavBarVisibilityProvider.dart';
 import '../models/Place.dart';
 import '../models/TramLine.dart';
 import '../models/TramStop.dart';
+import '../models/Photo.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:tuple/tuple.dart';
@@ -197,7 +198,8 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  void _onSuggestionTap(Place place) {
+  
+  void _onSuggestionTap(Place place) async {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
     _controller.text =
         place.name; // Mise à jour du champ texte avec le nom du lieu
@@ -223,6 +225,17 @@ class _MapPageState extends State<MapPage> {
         .hideBottomNav();
 
     _mapController.move(adjustedDestination, zoom);
+
+    // Fetch images for the selected place
+    try {
+      List<Photo> fetchedPhotos =
+          await _apiService.fetchImagesByPlaceId(place.id.toString());
+      setState(() {
+        photos = fetchedPhotos;
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération des images : $e');
+    }
   }
 
   void _onMarkerTap(Place place) {
