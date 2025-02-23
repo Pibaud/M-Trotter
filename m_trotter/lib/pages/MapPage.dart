@@ -75,6 +75,7 @@ class _MapPageState extends State<MapPage> {
   late List<TramStop> tramStops = [];
   late List<TramLine> tramLines = [];
   late List<Place> _loadedPlaces = [];
+  late List<Photo> photos = [];
 
   @override
   void initState() {
@@ -198,7 +199,6 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  
   void _onSuggestionTap(Place place) async {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
     _controller.text =
@@ -546,8 +546,8 @@ class _MapPageState extends State<MapPage> {
                         child: _selectedPlace == place
                             ? const SizedBox.shrink()
                             : Icon(
-                                getAmenityIcon(place.amenity),
-                                color: getAmenityColor(place.amenity),
+                                getAmenityIcon(place.amenity ?? ''),
+                                color: getAmenityColor(place.amenity ?? ''),
                                 size: 20.0,
                               ),
                       ),
@@ -690,7 +690,7 @@ class _MapPageState extends State<MapPage> {
                                 return ListTile(
                                   leading: const Icon(Icons.place),
                                   title: Text(place.name),
-                                  subtitle: Text(place.amenity),
+                                  subtitle: Text(place.amenity ?? ''),
                                   onTap: () {
                                     _onSuggestionTap(place);
                                   },
@@ -841,7 +841,7 @@ class _MapPageState extends State<MapPage> {
                 });
               },
               placeName: _selectedPlace!.name,
-              placeType: _selectedPlace!.amenity,
+              placeType: _selectedPlace!.amenity ?? '',
               onItineraryTap: () {
                 _fetchRoutesForAllModes(_selectedPlace!);
                 setState(() {
@@ -865,6 +865,7 @@ class _MapPageState extends State<MapPage> {
                         listen: false)
                     .showBottomNav();
               },
+              photos: photos, // Pass the photos list here
             ),
           if (_routes.isNotEmpty)
             ItinerarySheet(

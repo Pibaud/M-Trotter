@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import '../models/Photo.dart';
 
 class Review {
   final String id;
@@ -43,13 +44,6 @@ class Review {
   }
 }
 
-class Photo {
-  final Uint8List imageData;
-  final String? tag;
-
-  Photo({required this.imageData, this.tag});
-}
-
 class PlaceInfoSheet extends StatefulWidget {
   final double height;
   final Function(double)? onDragUpdate;
@@ -60,6 +54,7 @@ class PlaceInfoSheet extends StatefulWidget {
   final Function()? onCallTap;
   final Function()? onWebsiteTap;
   final Function()? onClose;
+  final List<Photo> photos; // Add this line
 
   const PlaceInfoSheet({
     Key? key,
@@ -72,6 +67,7 @@ class PlaceInfoSheet extends StatefulWidget {
     this.onCallTap,
     this.onWebsiteTap,
     this.onClose,
+    required this.photos, // Add this line
   }) : super(key: key);
 
   @override
@@ -88,7 +84,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   String ratingError = "";
   bool showReviews = true;
   List<Uint8List> images = [];
-  List<Photo> photos = [];
   Set<String> allTags = {};
   String? selectedTag;
 
@@ -328,7 +323,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
         if (tag != null) {
           setState(() {
-            photos.add(Photo(
+            widget.photos.add(Photo(
               imageData: imageBytes,
               tag: tag == "NO_TAG" ? null : tag,
             ));
@@ -809,8 +804,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
   Widget buildPhotosSection() {
     List<Photo> filteredPhotos = selectedTag == null
-        ? photos
-        : photos.where((photo) => photo.tag == selectedTag).toList();
+        ? widget.photos // Use widget.photos instead of photos
+        : widget.photos.where((photo) => photo.tag == selectedTag).toList();
 
     return Stack(
       children: [

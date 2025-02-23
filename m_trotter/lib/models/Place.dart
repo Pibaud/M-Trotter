@@ -1,11 +1,14 @@
+import 'package:logger/logger.dart';
+
 class Place {
+  static final logger = Logger();
   final int id;
   final String name;
-  final String amenity;
   final double latitude;
   final double longitude;
 
   // Attributs facultatifs
+  final String? amenity;
   final String? phone;
   final String? cuisine;
   final String? website;
@@ -42,6 +45,16 @@ class Place {
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
+    logger.i('donnees à traiter: ${json.toString()}');
+
+    // Print statements for debugging
+    print('ID: ${json['id']}');
+    print('Name: ${json['name']}');
+    print('Amenity: ${json['amenity']}');
+    print('Latitude: ${json['latitude']}');
+    print('Longitude: ${json['longitude']}');
+    print('Tags: ${json['tags']}');
+
     // Extraction et nettoyage des tags sous forme de Map
     Map<String, String> tags = {};
     if (json['tags'] != null && json['tags'] is String) {

@@ -6,26 +6,26 @@ exports.ListePlaces = async (search, startid) => {
 
         // Définition des requêtes
         const pointsQuery = `
-            SELECT osm_id as id, name, 
-                amenity, 
-                ST_X(ST_Centroid(ST_Collect(ST_Transform(way,4326)))) AS longitude, 
-                ST_Y(ST_Centroid(ST_Collect(ST_Transform(way,4326)))) AS latitude, 
-                STRING_AGG(tags::TEXT, '; ') AS tags, 
-                MAX(similarity(name, $1)) AS sim, 
-                'point' AS type
-            FROM planet_osm_point
-            WHERE name IS NOT NULL 
-            AND amenity IS NOT NULL
-            AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
-            AND osm_id > $3
-            GROUP BY id, name, amenity
-            ORDER BY CASE 
-                WHEN name ILIKE $2 THEN 2
-                ELSE MAX(similarity(name, $1))
-            END DESC
-            LIMIT 10;
-
-        `;
+                SELECT 
+                    osm_id as id,
+                    name, 
+                    amenity, 
+                    ST_X(ST_Centroid(ST_Collect(ST_Transform(way, 4326)))) AS longitude, 
+                    ST_Y(ST_Centroid(ST_Collect(ST_Transform(way, 4326)))) AS latitude, 
+                    STRING_AGG(tags::TEXT, '; ') AS tags, 
+                    MAX(similarity(name, $1)) AS sim, 
+                    'point' AS type
+                FROM planet_osm_point
+                WHERE name IS NOT NULL 
+                AND (name ILIKE $2 OR similarity(name, $1) > 0.4)
+                AND osm_id > $3
+                GROUP BY id, name, amenity
+                ORDER BY CASE 
+                    WHEN name ILIKE $2 THEN 2
+                    ELSE MAX(similarity(name, $1))
+                END DESC
+                LIMIT 10;
+            `;
 
         const roadsQuery = `
             SELECT name, amenity, 
@@ -80,6 +80,7 @@ exports.ListePlaces = async (search, startid) => {
                 sim: null
             }))
         };
+        console.log("points :", finalResults.points);
         return finalResults; // Renvoie un objet avec les résultats séparés par type
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);
@@ -125,7 +126,7 @@ exports.AmenityPlaces = async (amenity, startid) => {
             LIMIT 10`,
             [amenity, startid]
         );
-        console.log("Places pour l'AMENITY ",amenity," :")
+        console.log("Places pour l'AMENITY ", amenity, " :")
         console.dir(result.rows)
         return result.rows;
     } catch (error) {

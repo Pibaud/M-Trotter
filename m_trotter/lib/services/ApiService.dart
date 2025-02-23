@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'AuthService.dart';
+import '../models/Photo.dart';
 
 // Instancier FlutterSecureStorage
 final FlutterSecureStorage secureStorage = FlutterSecureStorage();
@@ -379,22 +380,30 @@ class ApiService {
   }
 
   Future<List<Photo>> fetchImagesByPlaceId(String placeId) async {
-    final String url = 'http://217.182.79.84:3000/images/$placeId';
+    final String url = '$baseUrl/api/image';
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'place_id': placeId}),
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body)['photos'];
-        return responseData.map((data) {
-          final String imageUrl = 'http://217.182.79.84:3000/uploads/${data['id']}.jpg';
+        print("responseData : $responseData");
+        return Future.wait(responseData.map((data) async {
+          final String imageUrl =
+              'http://217.182.79.84:3000${data['url']}';
           return Photo(
             imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
             tag: data['tag'],
           );
-        }).toList();
+        }).toList());
       } else {
-        throw Exception('Erreur serveur : ${response.statusCode}');
+        final errorResponse = json.decode(response.body);
+        throw Exception(
+            'Erreur serveur : ${response.statusCode} - ${errorResponse['message'] ?? 'Erreur inconnue'}');
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');

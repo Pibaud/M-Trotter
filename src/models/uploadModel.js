@@ -1,21 +1,5 @@
 const db = require('../config/db'); // Connexion à PostgreSQL
 
-// Ajouter une image dans la BDD
-const addImage = async (id_lieu, id_avis) => {
-    try {
-        const result = await db.query(
-            `INSERT INTO photos (id_lieu, id_avis, created_at) 
-             VALUES ($1, $2, NOW()) 
-             RETURNING id_photo, created_at`,
-            [id_lieu, id_avis]
-        );
-        return result.rows[0];
-    } catch (error) {
-        console.error('❌ Erreur lors de l’insertion de l’image dans la BDD :', error);
-        throw new Error('Impossible d’enregistrer l’image dans la base de données.');
-    }
-};
-
 // Récupérer les images d’un lieu
 const getImagesByPlaceId = async (id_lieu) => {
     try {
@@ -32,4 +16,4 @@ const getImagesByPlaceId = async (id_lieu) => {
     }
 };
 
-module.exports = { addImage, getImagesByPlaceId };
+module.exports = {getImagesByPlaceId };
