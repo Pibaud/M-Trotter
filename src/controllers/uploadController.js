@@ -45,7 +45,7 @@ const uploadImage = async (req, res) => {
 // Récupérer les images par id_lieu
 const getImagesByPlaceId = async (req, res) => {
     try {
-        const { place_id } = req.params;
+        const { place_id } = req.body;
         if (!place_id) {
             return res.status(400).json({ error: "L'identifiant du lieu est requis." });
         }
