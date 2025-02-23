@@ -1,38 +1,63 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
-const path = require('path');
-const multer = require('multer');
+const sharp = require('sharp');
 const uploadModel = require('../models/uploadModel'); 
 
 const VPS_URL = 'http://217.182.79.84:3000';
 
-// Fonction pour envoyer une image vers le VPS + l'enregistrer en base
-const uploadImageToVPS = async (filePath, id_lieu, id_avis = null) => {
+const MAX_PIXELS = 2073600; // Limite de 2 073 600 pixels (Full HD)
+
+const processAndUploadImage = async (filePath, id_lieu, id_avis = null) => {
     try {
         if (!filePath.endsWith('.jpg')) {
             throw new Error('Seuls les fichiers .jpg sont autorisés');
         }
 
+        // Lire les métadonnées de l'image
+        const metadata = await sharp(filePath).metadata();
+        let { width, height } = metadata;
+        const totalPixels = width * height;
+
+        // Si l'image dépasse 2 073 600 pixels, on la redimensionne
+        if (totalPixels > MAX_PIXELS) {
+            const scaleFactor = Math.sqrt(MAX_PIXELS / totalPixels);
+            width = Math.round(width * scaleFactor);
+            height = Math.round(height * scaleFactor);
+        }
+
+        // Chemin temporaire pour l'image redimensionnée
+        const tempPath = filePath.replace('.jpg', '_resized.jpg');
+
+        // Redimensionner si nécessaire (conserve le ratio)
+        await sharp(filePath)
+            .resize({ width, height }) // Redimensionner en respectant le ratio
+            .toFormat('jpeg')
+            .toFile(tempPath);
+
+        // Préparer l’envoi
         const formData = new FormData();
-        formData.append('image', fs.createReadStream(filePath));
+        formData.append('image', fs.createReadStream(tempPath));
         formData.append('id_lieu', id_lieu);
         if (id_avis) {
             formData.append('id_avis', id_avis);
         }
 
+        // Envoyer l’image redimensionnée au VPS
         const response = await axios.post(VPS_URL, formData, {
-            headers: {
-                ...formData.getHeaders(),
-            },
+            headers: { ...formData.getHeaders() },
         });
+
+        // Supprimer le fichier temporaire après l’envoi
+        fs.unlinkSync(tempPath);
 
         return response.data;
     } catch (error) {
-        console.error('Erreur lors de l’envoi de l’image au VPS :', error.message);
+        console.error('Erreur lors du traitement/envoi de l’image :', error.message);
         throw new Error('Impossible d’envoyer l’image.');
     }
 };
+
 
 // Récupérer toutes les images associées à un lieu depuis la BDD
 const fetchImagesByPlaceId = async (placeId) => {
@@ -64,4 +89,4 @@ const fetchImagesByPlaceId = async (placeId) => {
 };
 
 
-module.exports = { uploadImageToVPS, fetchImagesByPlaceId};
+module.exports = {  processAndUploadImage , fetchImagesByPlaceId};

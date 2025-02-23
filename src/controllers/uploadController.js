@@ -2,15 +2,23 @@ const uploadService = require('../services/uploadService');
 
 const uploadImage = async (req, res) => {
     try {
-        const { filePath, id_lieu, id_avis } = req.body;
+        console.log("Requête reçue :", req.body, req.file); // Debug
 
-        if (!filePath || !id_lieu) {
+        const { id_lieu, id_avis } = req.body;
+        const file = req.file; // Multer stocke l'image ici
+
+        if (!file || !id_lieu) {
+            console.log("file : ", file, " id_lieu : ", id_lieu);
             return res.status(400).json({ error: 'Paramètres manquants' });
         }
+
+        // Chemin absolu du fichier
+        const filePath = file.path;
 
         const result = await uploadService.uploadImageToVPS(filePath, id_lieu, id_avis);
         res.status(201).json(result);
     } catch (error) {
+        console.error("Erreur d'upload :", error);
         res.status(500).json({ error: error.message });
     }
 };
