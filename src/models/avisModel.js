@@ -11,16 +11,23 @@ exports.newavis =  async ({ user_id, place_id, place_table, lavis, avis_parent, 
 
 exports.fetchAvisById = async (place_id, startid) => {
     const result = await pool.query(
-        `SELECT * FROM avis 
-         WHERE place_id = $1
-         AND avis_id > $2
-         ORDER BY avis_parent NULLS FIRST, created_at DESC
+        `SELECT a.*, 
+                COALESCE(l.like_count, 0) AS like_count
+         FROM avis a
+         LEFT JOIN (
+             SELECT avis_id, COUNT(*) AS like_count
+             FROM avis_likes
+             GROUP BY avis_id
+         ) l ON a.avis_id = l.avis_id
+         WHERE a.place_id = $1
+         AND a.avis_id > $2
+         ORDER BY a.avis_parent NULLS FIRST, a.created_at DESC
          LIMIT 10`,
         [place_id, startid]
     );
-
     return result.rows.length > 0 ? result.rows : null;
 };
+
 
 exports.deleteAvisById = async (avis_id) => {
     const result = await pool.query(

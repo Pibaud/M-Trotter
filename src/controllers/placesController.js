@@ -3,6 +3,7 @@ const { LPlaces, bboxPlaces, amenitylist } = require('../services/placesService'
 exports.postPlaces = async (req, res) => {
     try {
         const lieux = await LPlaces(req,res); // Appel au service
+
         return res.status(200).json(lieux); // Envoi de la réponse au client
     } catch (error) {
         console.error("Erreur dans postPlaces :", error);
