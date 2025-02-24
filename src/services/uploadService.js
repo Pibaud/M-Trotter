@@ -44,7 +44,7 @@ const processAndUploadImage = async (filePath, id_lieu, id_avis = null) => {
         }
 
         // Envoyer l’image redimensionnée au VPS
-        const response = await axios.post(VPS_URL, formData, {
+        const response = await axios.post(VPS_URL+'/upload', formData, {
             headers: { ...formData.getHeaders() },
         });
 

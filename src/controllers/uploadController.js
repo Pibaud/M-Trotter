@@ -16,7 +16,9 @@ const uploadImage = async (req, res) => {
             return res.status(400).json({ error: 'id_lieu est obligatoire' });
         }
 
-        const result = await uploadService.processAndUploadImage(filePath, id_lieu, id_avis);
+        const id_avi = id_avis==="null" ?  null : id_avis;
+
+        const result = await uploadService.processAndUploadImage(filePath, id_lieu, id_avi);
         res.status(201).json(result);
     } catch (error) {
         console.error("Erreur lors de l'upload :", error);
