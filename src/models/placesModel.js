@@ -115,17 +115,21 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
 exports.AmenityPlaces = async (amenity, startid) => {
     try {
         const result = await pool.query(
-            `SELECT osm_id as id, name, amenity,
-                ST_X(ST_Transform(way, 4326)) AS lon, 
-                ST_Y(ST_Transform(way, 4326)) AS lat,
-                STRING_AGG(tags::TEXT, '; ') AS tags
-            FROM planet_osm_point 
-            WHERE name IS NOT NULL AND amenity = $1
-            AND osm_id > $2
-            GROUP BY id, name, amenity, way
+            `SELECT p.osm_id as id, p.name, p.amenity,
+                    ST_X(ST_Transform(p.way, 4326)) AS lon, 
+                    ST_Y(ST_Transform(p.way, 4326)) AS lat,
+                    STRING_AGG(p.tags::TEXT, '; ') AS tags,
+                    AVG(a.nb_etoiles) AS avg_stars
+            FROM planet_osm_point p
+            LEFT JOIN avis a ON p.osm_id = a.place_id
+            WHERE p.name IS NOT NULL 
+              AND p.amenity = $1
+              AND p.osm_id > $2
+            GROUP BY p.osm_id, p.name, p.amenity, p.way
             LIMIT 10`,
             [amenity, startid]
         );
+
         console.log("Places pour l'AMENITY ", amenity, " :")
         console.dir(result.rows)
         return result.rows;

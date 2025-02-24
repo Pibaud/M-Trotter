@@ -34,6 +34,11 @@ exports.amenitylist = async(req, res) => {
             return res.status(400).json({error : "pas d'amenity "});
         }
         const liste = await amenitylist(amenity, startid || 0);
+        //on fait passer avgstars de string à float
+        liste.forEach((element) => {
+            element.avg_stars = parseFloat(element.avg_stars);
+        });
+        
         return res.status(200).json(liste);
     } catch (error) {
         console.error("Erreur dans amenitylist :", error);
