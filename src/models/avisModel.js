@@ -40,6 +40,18 @@ exports.deleteAvisById = async (avis_id) => {
     return result.rows.length > 0 ? result.rows[0] : null;
 };
 
+exports.deletelike = async (avis_id, user_id) => {
+    const result = await pool.query(
+        `DELETE FROM avis_likes
+         WHERE avis_id = $1
+         AND user_id = $2
+         RETURNING *`,
+        [avis_id, user_id]
+    );
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+}
+
 exports.likeAvisById = async (avis_id, user_id) => { 
     const result = await pool.query(
         `INSERT INTO avis_likes 

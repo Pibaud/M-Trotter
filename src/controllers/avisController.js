@@ -1,4 +1,4 @@
-const {newavis, fetchAvisById, deleteAvisById, likeAvisById } = require('../models/avisModel');
+const {newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike} = require('../models/avisModel');
 
 exports.getAvisByPlaceId = async (req, res) => {
     try {
@@ -103,3 +103,25 @@ exports.likeAvis = async (req, res) => {
         res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 };
+
+exports.unlikeAvis = async (req, res) => {
+    try{ 
+        const { avis_id, user_id } = req.body; // Récupère l'ID de l'avis et l'ID de l'utilisateur dans le corps de la requête
+
+        if (!avis_id || !user_id) {
+            return res.status(400).json({ error: 'avis_id et user_id sont requis.' });
+        }
+
+        // Appel du modèle pour supprimer le like
+        const unlikedAvis = await deletelike(avis_id, user_id);
+
+        if (!unlikedAvis) {
+            return res.status(404).json({ error: 'Avis non trouvé.' });
+        }
+
+        res.status(200).json({ message: 'Like supprimé avec succès.' });
+    } catch (error) {
+        console.error('Erreur lors de la suppression d\'un like:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+}
