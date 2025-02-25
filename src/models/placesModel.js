@@ -191,8 +191,11 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
             `SELECT DISTINCT osm_id as id, name, amenity,
                 ST_X(ST_Transform(way, 4326)) AS lon, 
                 ST_Y(ST_Transform(way, 4326)) AS lat,
-                STRING_AGG(tags::TEXT, '; ') AS tags
+                STRING_AGG(tags::TEXT, '; ') AS tags,
+                AVG(a.nb_etoiles) AS avg_stars,
+                count(a.nb_etoiles) AS nb_avis_stars
             FROM planet_osm_point 
+            LEFT JOIN avis a ON osm_id = a.place_id
             WHERE name IS NOT NULL AND amenity IS NOT NULL
             AND ST_Intersects(
                 ST_Transform(way, 4326), 
