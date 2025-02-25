@@ -111,7 +111,8 @@ exports.ListePlaces = async (search, startid) => {
                 STRING_AGG(p.tags::TEXT, '; ') AS tags, 
                 similarity(p.name, $1) AS sim, 
                 'point' AS type,
-                COALESCE(AVG(a.nb_etoiles), 0) AS avg_stars
+                AVG(a.nb_etoiles) AS avg_stars,
+                Count(a.nb_etoiles) AS nb_avis_stars
             FROM planet_osm_point p
             LEFT JOIN avis a ON p.osm_id = a.place_id
             WHERE p.name IS NOT NULL 
@@ -215,7 +216,8 @@ exports.AmenityPlaces = async (amenity, startid) => {
                     ST_X(ST_Transform(p.way, 4326)) AS lon, 
                     ST_Y(ST_Transform(p.way, 4326)) AS lat,
                     STRING_AGG(p.tags::TEXT, '; ') AS tags,
-                    AVG(a.nb_etoiles) AS avg_stars
+                    AVG(a.nb_etoiles) AS avg_stars,
+                    count(a.nb_etoiles) AS nb_avis_stars
             FROM planet_osm_point p
             LEFT JOIN avis a ON p.osm_id = a.place_id
             WHERE p.name IS NOT NULL 
