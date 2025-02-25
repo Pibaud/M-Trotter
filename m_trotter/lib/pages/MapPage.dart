@@ -840,8 +840,7 @@ class _MapPageState extends State<MapPage> {
                   _bottomSheetHeight = closestPosition;
                 });
               },
-              placeName: _selectedPlace!.name,
-              placeType: _selectedPlace!.amenity ?? '',
+              place : _selectedPlace!,
               onItineraryTap: () {
                 _fetchRoutesForAllModes(_selectedPlace!);
                 setState(() {

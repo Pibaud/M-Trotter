@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/Photo.dart';
+import '../services/ApiService.dart'; // Importer ApiService
+import 'dart:io'; // Importer dart:io pour utiliser File
+import '../models/Place.dart'; // Importer Place
 
 class Review {
   final String id;
@@ -48,8 +51,7 @@ class PlaceInfoSheet extends StatefulWidget {
   final double height;
   final Function(double)? onDragUpdate;
   final Function()? onDragEnd;
-  final String placeName;
-  final String placeType;
+  final Place place;
   final Function()? onItineraryTap;
   final Function()? onCallTap;
   final Function()? onWebsiteTap;
@@ -61,8 +63,7 @@ class PlaceInfoSheet extends StatefulWidget {
     this.height = 400,
     this.onDragUpdate,
     this.onDragEnd,
-    required this.placeName,
-    required this.placeType,
+    required this.place,
     this.onItineraryTap,
     this.onCallTap,
     this.onWebsiteTap,
@@ -322,13 +323,31 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         if (!mounted) return;
 
         if (tag != null) {
-          setState(() {
-            widget.photos.add(Photo(
-              imageData: imageBytes,
-              tag: tag == "NO_TAG" ? null : tag,
-            ));
-            if (tag != "NO_TAG") allTags.add(tag);
-          });
+          // Appeler la fonction uploadImage après avoir sélectionné le tag
+          try {
+            ApiService apiService = ApiService();
+            File imageFile = File(image.path); // Convertir XFile en File
+            String placeId =
+                widget.place.id.toString(); // Convert int to String
+
+            Map<String, dynamic> response = await apiService.uploadImage(
+              imageFile,
+              placeId
+            );
+
+            print('Image upload response: $response');
+
+            // Ajouter la photo à la liste après l'upload réussi
+            setState(() {
+              widget.photos.add(Photo(
+                imageData: imageBytes,
+                tag: tag == "NO_TAG" ? null : tag,
+              ));
+              if (tag != "NO_TAG") allTags.add(tag);
+            });
+          } catch (e) {
+            print('Erreur lors de l\'upload de l\'image : $e');
+          }
         }
       }
     } catch (e) {
@@ -489,7 +508,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                widget.placeName,
+                                widget.place.name,
                                 style: const TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.bold),
                               ),
@@ -498,7 +517,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                widget.placeType,
+                                widget.place.amenity ?? '',
                                 style: TextStyle(
                                     fontSize: 14, color: Colors.grey[600]),
                               ),

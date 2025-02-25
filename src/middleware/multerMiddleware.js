@@ -16,9 +16,12 @@ const storage = multer.diskStorage({
 
 // 🔎 Vérification du format (JPG, PNG uniquement)
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    const extname = path.extname(file.originalname);
+    if (extname === '.jpg' || extname === '.png') {
+        console.log('Extension du fichier:', extname);
         cb(null, true);
     } else {
+        console.log('Extension du fichier:', path.extname(file.originalname));
         cb(new Error('Seuls les fichiers .jpg et .png sont autorisés'), false);
     }
 };

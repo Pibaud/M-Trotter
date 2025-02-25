@@ -1,10 +1,9 @@
 const uploadService = require('../services/uploadService');
 
 const uploadImage = async (req, res) => {
+    console.log("Requête reçue :", req.body);  // 🔍 Vérifier ce qui arrive
+    console.log("Fichier reçu :", req.file);  // 📸 Vérifier le fichier
     try {
-        console.log("Requête reçue :", req.body);  // 🔍 Vérifier ce qui arrive
-        console.log("Fichier reçu :", req.file);  // 📸 Vérifier le fichier
-
         if (!req.file) {
             return res.status(400).json({ error: 'Aucun fichier reçu' });
         }
@@ -22,7 +21,7 @@ const uploadImage = async (req, res) => {
         res.status(201).json(result);
     } catch (error) {
         console.error("Erreur lors de l'upload :", error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        res.status(500).json({ error: 'Erreur serveur dans uploadController' });
     }
 };
 

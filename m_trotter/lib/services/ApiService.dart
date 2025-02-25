@@ -393,8 +393,7 @@ class ApiService {
         final List<dynamic> responseData = json.decode(response.body)['photos'];
         print("responseData : $responseData");
         return Future.wait(responseData.map((data) async {
-          final String imageUrl =
-              'http://217.182.79.84:3000${data['url']}';
+          final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
           return Photo(
             imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
             tag: data['tag'],
@@ -407,6 +406,33 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> uploadImage(File imageFile, String placeId,
+      {String? reviewId}) async {
+    final String url = '$baseUrl/api/upload';
+    print("requete à $url");
+
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(url))
+        ..fields['id_lieu'] = placeId
+        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      if (reviewId != null) {
+        request.fields['id_avis'] = reviewId;
+      }
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+
+      if (response.statusCode == 201) {
+        return json.decode(responseData);
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de l\'upload de l\'image dans ApiService : $e');
     }
   }
 }
