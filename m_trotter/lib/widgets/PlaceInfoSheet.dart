@@ -6,6 +6,9 @@ import '../models/Photo.dart';
 import '../services/ApiService.dart'; // Importer ApiService
 import 'dart:io'; // Importer dart:io pour utiliser File
 import '../models/Place.dart'; // Importer Place
+import 'package:logger/logger.dart'; // Importer le package logger
+
+Logger logger = Logger();
 
 class Review {
   final String id;
@@ -17,33 +20,34 @@ class Review {
   bool isLiked;
   final DateTime date;
   int rating;
+  final String placeTable;
 
-  Review({
-    required this.id,
-    this.parentId,
-    required this.username,
-    required this.profilePicBytes,
-    required this.comment,
-    required this.likes,
-    this.isLiked = false,
-    required this.date,
-    this.rating = 0,
-  });
+  Review(
+      {required this.id,
+      this.parentId,
+      required this.username,
+      required this.profilePicBytes,
+      required this.comment,
+      required this.likes,
+      this.isLiked = false,
+      required this.date,
+      this.rating = 0,
+      required this.placeTable});
 
-  // Factory pour créer un Review depuis un JSON
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
-      id: json['id'],
-      parentId: json['parentId'],
-      username: json['username'],
-      profilePicBytes: json['profilePicBytes'] != null
-          ? Uint8List.fromList(List<int>.from(json['profilePicBytes']))
-          : null, // Convertir en Uint8List si non null
-      comment: json['comment'],
-      likes: json['likes'] ?? 0,
-      date: DateTime.parse(json['date']),
-      rating: json['rating'] ?? 0,
-    );
+        id: json['avis_id'].toString(),
+        parentId: json['avis_parent'].toString(),
+        username:
+            'toto', // Remplacer par le nom de l'utilisateur quand on fera avec les tokens
+        profilePicBytes: json['profilePicBytes'] != null
+            ? Uint8List.fromList(List<int>.from(json['profilePicBytes']))
+            : null, // Convertir en Uint8List si non null
+        comment: json['lavis'],
+        likes: int.tryParse(json['like_count'].toString()) ?? 0,
+        date: DateTime.parse(json['created_at']),
+        rating: json['nb_etoiles'] ?? 0,
+        placeTable: json['place_table']);
   }
 }
 
@@ -94,125 +98,21 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     fetchReviews();
   }
 
-  // Fonction pour récupérer les avis depuis l'API
   void fetchReviews() async {
     try {
-      // Simule un appel API (remplace avec un vrai appel HTTP)
-      await Future.delayed(const Duration(seconds: 2)); // Simule un délai API
-      List<Map<String, dynamic>> response = [
-        {
-          "id": "1",
-          "parentId": null,
-          "username": "Alice",
-          "profilePicBytes": null,
-          "comment": "Super endroit !",
-          "likes": 5,
-          "date": "2025-02-08T12:30:00",
-          "rating": 5
-        },
-        {
-          "id": "2",
-          "parentId": "1",
-          "username": "Bob",
-          "profilePicBytes": null,
-          "comment": "Je suis d’accord !",
-          "likes": 2,
-          "date": "2025-02-09T10:00:00"
-        },
-        {
-          "id": "3",
-          "parentId": null,
-          "username": "Charlie",
-          "profilePicBytes": null,
-          "comment": "Moyen...",
-          "likes": 1,
-          "date": "2025-02-10T09:00:00",
-          "rating": 3
-        },
-        {
-          "id": "4",
-          "parentId": null,
-          "username": "David",
-          "profilePicBytes": null,
-          "comment": "Lieu très propre et agréable.",
-          "likes": 7,
-          "date": "2025-02-07T14:15:00",
-          "rating": 4
-        },
-        {
-          "id": "5",
-          "parentId": "3",
-          "username": "Eve",
-          "profilePicBytes": null,
-          "comment": "J'ai trouvé ça plutôt sympa aussi.",
-          "likes": 3,
-          "date": "2025-02-10T10:20:00"
-        },
-        {
-          "id": "6",
-          "parentId": null,
-          "username": "Frank",
-          "profilePicBytes": null,
-          "comment": "Pas terrible... je ne reviendrai pas.",
-          "likes": 0,
-          "date": "2025-02-06T18:45:00",
-          "rating": 1
-        },
-        {
-          "id": "7",
-          "parentId": null,
-          "username": "Grace",
-          "profilePicBytes": null,
-          "comment": "Endroit génial ! Je recommande.",
-          "likes": 9,
-          "date": "2025-02-05T20:30:00",
-          "rating": 5
-        },
-        {
-          "id": "8",
-          "parentId": "6",
-          "username": "Hugo",
-          "profilePicBytes": null,
-          "comment": "Je suis d'accord, pas ouf...",
-          "likes": 2,
-          "date": "2025-02-06T19:00:00"
-        },
-        {
-          "id": "9",
-          "parentId": null,
-          "username": "Isabelle",
-          "profilePicBytes": null,
-          "comment": "Mauvais rapport qualité-prix.",
-          "likes": 4,
-          "date": "2025-02-04T15:10:00",
-          "rating": 2
-        },
-        {
-          "id": "10",
-          "parentId": null,
-          "username": "Jack",
-          "profilePicBytes": null,
-          "comment": "Très bon accueil, personnel sympa.",
-          "likes": 6,
-          "date": "2025-02-03T17:50:00",
-          "rating": 4
-        },
-        {
-          "id": "11",
-          "parentId": "8",
-          "username": "Vincent",
-          "profilePicBytes": null,
-          "comment": "Pas trop d'accord avec vous",
-          "likes": 2,
-          "date": "2025-02-07T19:00:00"
-        },
-      ];
+      ApiService apiService = ApiService();
+      List<dynamic> response = await apiService.fetchReviewsByPlaceId(
+          widget.place.id.toString(),
+          0); //incrémenter le startid pour obtenir les avis suivants
 
       setState(() {
-        reviews = response.map((json) => Review.fromJson(json)).toList();
+        reviews = // Convertir la liste de Map en liste de Review
+            response.map((e) => Review.fromJson(e)).toList();
       });
+
+      print("avis dans la liste reviews :$reviews");
     } catch (e) {
-      print("Erreur lors de la récupération des avis : $e");
+      print('Erreur lors de la récupération des avis : $e');
     }
   }
 
@@ -260,37 +160,10 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   }
 
   void addReview(String text, int rating) {
-    setState(() {
-      reviews.add(Review(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        parentId: null,
-        username: "Moi",
-        profilePicBytes: null,
-        comment: text,
-        likes: 0,
-        date: DateTime.now(),
-        rating: rating,
-      ));
-      newReviewText = '';
-      newReviewRating = 0;
-    });
+    setState(() {});
   }
 
-  void addReply(String text, String parentId) {
-    setState(() {
-      reviews.add(Review(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        parentId: parentId,
-        username: "Moi",
-        profilePicBytes: null,
-        comment: text,
-        likes: 0,
-        date: DateTime.now(),
-      ));
-      replyingTo = null;
-      replyText = '';
-    });
-  }
+  void addReply(String text, String parentId) {}
 
   void updateLikes(String reviewId) {
     setState(() {
@@ -330,10 +203,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
             String placeId =
                 widget.place.id.toString(); // Convert int to String
 
-            Map<String, dynamic> response = await apiService.uploadImage(
-              imageFile,
-              placeId
-            );
+            Map<String, dynamic> response =
+                await apiService.uploadImage(imageFile, placeId);
 
             print('Image upload response: $response');
 
@@ -627,7 +498,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   Widget buildReviewsSection() {
     List<Review> mainReviews =
         reviews.where((r) => r.parentId == null).toList();
-
+    print("main reviews: $mainReviews");
     if (isSortedByDate) {
       mainReviews.sort((a, b) => b.date.compareTo(a.date));
     } else {

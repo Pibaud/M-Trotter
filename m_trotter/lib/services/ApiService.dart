@@ -405,14 +405,13 @@ class ApiService {
             'Erreur serveur : ${response.statusCode} - ${errorResponse['message'] ?? 'Erreur inconnue'}');
       }
     } catch (e) {
-      throw Exception('Erreur lors de la requête : $e');
+      throw Exception('Erreur lors de la requête de recup des images de apiservice : $e');
     }
   }
 
   Future<Map<String, dynamic>> uploadImage(File imageFile, String placeId,
       {String? reviewId}) async {
     final String url = '$baseUrl/api/upload';
-    print("requete à $url");
 
     try {
       final request = http.MultipartRequest('POST', Uri.parse(url))
@@ -433,6 +432,31 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Erreur lors de l\'upload de l\'image dans ApiService : $e');
+    }
+  }
+
+  Future<List<dynamic>> fetchReviewsByPlaceId(
+      String placeId, int startId) async {
+    final String url = '$baseUrl/api/getavis';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'place_id': placeId,
+          'startid': startId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return responseData['avis'];
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête de ApiService : $e');
     }
   }
 }
