@@ -6,6 +6,8 @@ class Place {
   final String name;
   final double latitude;
   final double longitude;
+  final double avgStars;
+  final int numReviews;
 
   // Attributs facultatifs
   final String? amenity;
@@ -29,6 +31,8 @@ class Place {
     required this.amenity,
     required this.latitude,
     required this.longitude,
+    required this.avgStars,
+    required this.numReviews,
     this.phone,
     this.cuisine,
     this.website,
@@ -47,15 +51,6 @@ class Place {
   factory Place.fromJson(Map<String, dynamic> json) {
     logger.i('donnees à traiter: ${json.toString()}');
 
-    // Print statements for debugging
-    print('ID: ${json['id']}');
-    print('Name: ${json['name']}');
-    print('Amenity: ${json['amenity']}');
-    print('Latitude: ${json['latitude']}');
-    print('Longitude: ${json['longitude']}');
-    print('Tags: ${json['tags']}');
-
-    // Extraction et nettoyage des tags sous forme de Map
     Map<String, String> tags = {};
     if (json['tags'] != null && json['tags'] is String) {
       for (String entry in json['tags'].split(", ")) {
@@ -73,6 +68,8 @@ class Place {
       amenity: json['amenity'] ?? 'Unknown',
       latitude: json['latitude'] ?? json['lat'] ?? 0.0,
       longitude: json['longitude'] ?? json['lon'] ?? 0.0,
+      avgStars: json['avg_stars'] ?? 0.0,
+      numReviews: int.parse(json['nb_avis_stars']),
       phone: tags['phone'],
       cuisine: tags['cuisine'],
       website: tags['website'],

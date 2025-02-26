@@ -115,7 +115,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       setState(() {
         reviews = // Convertir la liste de Map en liste de Review
             response.map((e) => Review.fromJson(e)).toList();
-        print("avis dans la liste reviews :$reviews");
       });
     } catch (e) {
       print('Erreur lors de la récupération des avis : $e');
@@ -384,10 +383,24 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                           children: [
                             Align(
                               alignment: Alignment.centerLeft,
-                              child: Text(
-                                widget.place.name,
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    widget.place.name,
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildStars(widget.place.avgStars
+                                      .toInt()), // Star rating indicator
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '(${widget.place.numReviews})', // Number of reviews
+                                    style: const TextStyle(
+                                        fontSize: 14, color: Colors.grey),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 6.0),
@@ -517,12 +530,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   }
 
   Widget buildReviewsSection() {
-    for (var review in reviews) {
-      print(review.toString());
-    }
     List<Review> mainReviews =
         reviews.where((r) => r.parentId == null).toList();
-    print("main reviews: $mainReviews");
     if (isSortedByDate) {
       mainReviews.sort((a, b) => b.date.compareTo(a.date));
     } else {
