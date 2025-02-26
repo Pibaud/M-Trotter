@@ -139,14 +139,16 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     });
   }
 
-  Widget _buildStars(int rating) {
+  Widget _buildStars(double rating) {
     return Row(
       children: List.generate(5, (index) {
-        return Icon(
-          index < rating ? Icons.star : Icons.star_border,
-          // Étoile pleine ou vide
-          color: index < rating ? Colors.amber : Colors.grey,
-        );
+        if (index < rating.floor()) {
+          return const Icon(Icons.star, color: Colors.amber);
+        } else if (index < rating) {
+          return const Icon(Icons.star_half, color: Colors.amber);
+        } else {
+          return const Icon(Icons.star_border, color: Colors.grey);
+        }
       }),
     );
   }
@@ -392,8 +394,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                         fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 8),
-                                  _buildStars(widget.place.avgStars
-                                      .toInt()), // Star rating indicator
+                                  Text(
+                                    widget.place.avgStars
+                                        .toString(), // Display avgStars
+                                    style: const TextStyle(
+                                        fontSize: 16, color: Colors.black),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildStars(widget
+                                      .place.avgStars), // Star rating indicator
                                   const SizedBox(width: 8),
                                   Text(
                                     '(${widget.place.numReviews})', // Number of reviews
@@ -690,7 +699,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
             review.username,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          if (review.parentId == null) _buildStars(review.rating),
+          if (review.parentId == null) _buildStars(review.rating.toDouble()),
           // Afficher étoiles si avis principal
         ],
       ),
