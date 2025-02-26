@@ -37,7 +37,7 @@ class Review {
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
         id: json['avis_id'].toString(),
-        parentId: json['avis_parent'].toString(),
+        parentId: json['avis_parent']?.toString(),
         username:
             'toto', // Remplacer par le nom de l'utilisateur quand on fera avec les tokens
         profilePicBytes: json['profilePicBytes'] != null
@@ -48,6 +48,11 @@ class Review {
         date: DateTime.parse(json['created_at']),
         rating: json['nb_etoiles'] ?? 0,
         placeTable: json['place_table']);
+  }
+
+  @override
+  String toString() {
+    return 'Review{id: $id, parentId: $parentId, username: $username, profilePicBytes: $profilePicBytes, comment: $comment, likes: $likes, isLiked: $isLiked, date: $date, rating: $rating, placeTable: $placeTable}';
   }
 }
 
@@ -92,13 +97,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   Set<String> allTags = {};
   String? selectedTag;
 
+  late Future<void> _fetchReviewsFuture;
+
   @override
   void initState() {
     super.initState();
-    fetchReviews();
+    _fetchReviewsFuture = fetchReviews();
   }
 
-  void fetchReviews() async {
+  Future<void> fetchReviews() async {
     try {
       ApiService apiService = ApiService();
       List<dynamic> response = await apiService.fetchReviewsByPlaceId(
@@ -108,9 +115,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       setState(() {
         reviews = // Convertir la liste de Map en liste de Review
             response.map((e) => Review.fromJson(e)).toList();
+        print("avis dans la liste reviews :$reviews");
       });
-
-      print("avis dans la liste reviews :$reviews");
     } catch (e) {
       print('Erreur lors de la récupération des avis : $e');
     }
@@ -473,7 +479,22 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                       // Content section
                       Expanded(
                         child: showReviews
-                            ? buildReviewsSection()
+                            ? FutureBuilder<void>(
+                                future: _fetchReviewsFuture,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  } else if (snapshot.hasError) {
+                                    return Center(
+                                        child:
+                                            Text('Erreur: ${snapshot.error}'));
+                                  } else {
+                                    return buildReviewsSection();
+                                  }
+                                },
+                              )
                             : buildPhotosSection(),
                       ),
                     ],
@@ -496,6 +517,9 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   }
 
   Widget buildReviewsSection() {
+    for (var review in reviews) {
+      print(review.toString());
+    }
     List<Review> mainReviews =
         reviews.where((r) => r.parentId == null).toList();
     print("main reviews: $mainReviews");
@@ -587,55 +611,50 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 ),
               ),
               Expanded(
-                child: mainReviews.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        itemCount: mainReviews.length,
-                        itemBuilder: (context, index) {
-                          Review review = mainReviews[index];
-                          List<Review> replies = reviews
-                              .where((r) => r.parentId == review.id)
-                              .toList();
+                child: ListView.builder(
+                  itemCount: mainReviews.length,
+                  itemBuilder: (context, index) {
+                    Review review = mainReviews[index];
+                    List<Review> replies =
+                        reviews.where((r) => r.parentId == review.id).toList();
 
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildReviewItem(review),
-                                if (replies.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 20),
-                                    child: _buildReplies(replies, true),
-                                  ),
-                                if (replies.isEmpty)
-                                  TextButton(
-                                    onPressed: () =>
-                                        setState(() => replyingTo = review.id),
-                                    child: const Text("Répondre"),
-                                  ),
-                                if (replyingTo == review.id)
-                                  TextField(
-                                    onChanged: (value) =>
-                                        setState(() => replyText = value),
-                                    decoration: InputDecoration(
-                                      hintText: "Votre réponse...",
-                                      suffixIcon: IconButton(
-                                        icon: const Icon(Icons.send),
-                                        onPressed: replyText.isEmpty
-                                            ? null
-                                            : () =>
-                                                addReply(replyText, review.id),
-                                      ),
-                                    ),
-                                  ),
-                                const Divider(),
-                              ],
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildReviewItem(review),
+                          if (replies.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 20),
+                              child: _buildReplies(replies, true),
                             ),
-                          );
-                        },
+                          if (replies.isEmpty)
+                            TextButton(
+                              onPressed: () =>
+                                  setState(() => replyingTo = review.id),
+                              child: const Text("Répondre"),
+                            ),
+                          if (replyingTo == review.id)
+                            TextField(
+                              onChanged: (value) =>
+                                  setState(() => replyText = value),
+                              decoration: InputDecoration(
+                                hintText: "Votre réponse...",
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.send),
+                                  onPressed: replyText.isEmpty
+                                      ? null
+                                      : () => addReply(replyText, review.id),
+                                ),
+                              ),
+                            ),
+                          const Divider(),
+                        ],
                       ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
