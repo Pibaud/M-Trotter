@@ -378,49 +378,50 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         ),
                       ),
 
-                      Padding(
+                        Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Row(
-                                children: [
-                                  Text(
-                                    widget.place.name,
-                                    style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    widget.place.avgStars
-                                        .toString(), // Display avgStars
-                                    style: const TextStyle(
-                                        fontSize: 16, color: Colors.black),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _buildStars(widget
-                                      .place.avgStars), // Star rating indicator
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '(${widget.place.numReviews})', // Number of reviews
-                                    style: const TextStyle(
-                                        fontSize: 14, color: Colors.grey),
-                                  ),
-                                ],
-                              ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                            widget.place.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 6.0),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                widget.place.amenity ?? '',
-                                style: TextStyle(
-                                    fontSize: 14, color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 6.0),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                            children: [
+                              Text(
+                              widget.place.avgStars.toString(),
+                              style: const TextStyle(
+                                fontSize: 16, color: Colors.black),
                               ),
+                              const SizedBox(width: 8),
+                              _buildStars(widget.place.avgStars),
+                              const SizedBox(width: 8),
+                              Text(
+                              '(${widget.place.numReviews})',
+                              style: const TextStyle(
+                                fontSize: 14, color: Colors.grey),
+                              ),
+                            ],
                             ),
+                          ),
+                          const SizedBox(height: 6.0),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                            widget.place.amenity ?? '',
+                            style: TextStyle(
+                              fontSize: 14, color: Colors.grey[600]),
+                            ),
+                          ),
                           ],
                         ),
                       ),

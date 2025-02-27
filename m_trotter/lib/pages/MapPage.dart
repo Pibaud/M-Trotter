@@ -43,7 +43,6 @@ class _MapPageState extends State<MapPage> {
   StreamSubscription<MapEvent>? _mapEventSubscription;
   LatLngBounds?
       _lastBounds; // Stocke la dernière zone chargée pour pas trop de requêtes
-  double _lastZoom = 0; // Stocke le dernier niveau de zoom
   final double zoomThreshold = 0.3; // Seuil de zoom pour éviter trop d'appels
   LatLng? _currentLocation;
   Timer? _debounce;
@@ -109,6 +108,10 @@ class _MapPageState extends State<MapPage> {
         debugPrint('Erreur de localisation : $error');
       },
     );
+    // Call _fetchPlacesBbox with the current visible bounds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchPlacesBbox(_mapController.camera.visibleBounds);
+    });
   }
 
   Future<void> _loadAmenitiesData() async {
@@ -160,7 +163,13 @@ class _MapPageState extends State<MapPage> {
         print('erreur de requête : $error');
       }
 
-      _mapController.move(LatLng(position.latitude, position.longitude), 13.0);
+      if (position.latitude >= 43.51483 &&
+          position.latitude <= 43.76439 &&
+          position.longitude >= 3.69367 &&
+          position.longitude <= 4.05769) {
+        _mapController.move(
+            LatLng(position.latitude, position.longitude), 13.0);
+      }
     } else {
       debugPrint('Impossible d\'obtenir la position de l\'utilisateur.');
     }
@@ -520,20 +529,6 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ],
                 ),
-              if (_selectedPlace != null)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: LatLng(
-                          _selectedPlace!.latitude, _selectedPlace!.longitude),
-                      child: const Icon(
-                        Icons.location_on_rounded,
-                        color: Colors.red,
-                        size: 30.0,
-                      ),
-                    ),
-                  ],
-                ),
               if (_loadedPlaces.isNotEmpty)
                 MarkerLayer(
                   markers: _loadedPlaces.map((place) {
@@ -574,6 +569,20 @@ class _MapPageState extends State<MapPage> {
                       color: Color.fromARGB(255, 87, 168, 235), // Bleu
                     );
                   }).toList(),
+                ),
+                if (_selectedPlace != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: LatLng(
+                          _selectedPlace!.latitude, _selectedPlace!.longitude),
+                      child: const Icon(
+                        Icons.location_on_rounded,
+                        color: Colors.red,
+                        size: 30.0,
+                      ),
+                    ),
+                  ],
                 ),
             ],
           ),
@@ -840,7 +849,7 @@ class _MapPageState extends State<MapPage> {
                   _bottomSheetHeight = closestPosition;
                 });
               },
-              place : _selectedPlace!,
+              place: _selectedPlace!,
               onItineraryTap: () {
                 _fetchRoutesForAllModes(_selectedPlace!);
                 setState(() {

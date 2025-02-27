@@ -205,6 +205,12 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
             LIMIT 50`,
             [minlon, minlat, maxlon, maxlat]
         );
+
+        // Arrondir avg_stars au dixième
+        result.rows.forEach((element) => {
+            element.avg_stars = parseFloat(element.avg_stars);
+        });
+
         return result.rows;
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);

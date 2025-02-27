@@ -49,8 +49,6 @@ class Place {
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
-    logger.i('donnees à traiter: ${json.toString()}');
-
     Map<String, String> tags = {};
     if (json['tags'] != null && json['tags'] is String) {
       for (String entry in json['tags'].split(", ")) {
