@@ -21,7 +21,6 @@ exports.fetchAvisById = async (place_id, startid) => {
          ) l ON a.avis_id = l.avis_id
          WHERE a.place_id = $1
          AND a.avis_id > $2
-         ORDER BY a.avis_parent NULLS FIRST, a.created_at DESC
          LIMIT 10`,
         [place_id, startid]
     );
