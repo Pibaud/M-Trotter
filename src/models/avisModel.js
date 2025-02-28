@@ -9,6 +9,14 @@ exports.newavis =  async ({ user_id, place_id, place_table, lavis, avis_parent, 
     return result.rows[0];
 };
 
+exports.fetchAvisbyUser = async (user_id) => {
+    const result = await pool.query(
+        `SELECT * FROM avis WHERE user_id = $1`,
+        [user_id]
+    );
+    return result.rows.length > 0 ? result.rows : null;
+};
+
 exports.fetchAvisById = async (place_id, startid) => {
     const result = await pool.query(
         `SELECT a.*, 

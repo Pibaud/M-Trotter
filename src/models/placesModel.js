@@ -95,7 +95,7 @@ exports.ListePlaces = async (search, startid) => {
     }
 };exports.ListePlaces = async (search, startid) => {
     try {
-        console.log("Recherche de :", search);
+        console.log("Recherche 222222222 de :", search);
 
         // Nettoyage du terme de recherche
         const safeSearch = search.replace(/%/g, '');

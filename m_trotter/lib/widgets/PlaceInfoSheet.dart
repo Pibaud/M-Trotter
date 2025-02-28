@@ -166,8 +166,53 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     });
   }
 
-  void addReview(String text, int rating) {
-    setState(() {});
+  void postReview(String text, {int? rating, int? parentId}) async {
+    if (rating != null) {
+      print("c'est un avis avec note");
+      try {
+        ApiService apiService = ApiService();
+        final response = await apiService.postReview(
+          placeId: widget.place.id,
+          placeTable: widget.place.placeTable,
+          comment: text,
+          parentId: parentId,
+          rating: rating,
+        );
+
+        if (response['success']) {
+          setState(() {
+            reviews.add(Review.fromJson(response['data']));
+          });
+        } else {
+          print(
+              'Erreur lors de la publication de l\'avis : ${response['error']}');
+        }
+      } catch (e) {
+        print('Erreur : $e');
+      }
+    } else {
+      print("c'est un avis sans note");
+      try {
+        ApiService apiService = ApiService();
+        final response = await apiService.postReview(
+          placeId: widget.place.id,
+          placeTable: widget.place.placeTable,
+          comment: text,
+          parentId: parentId,
+        );
+
+        if (response['success']) {
+          setState(() {
+            reviews.add(Review.fromJson(response['data']));
+          });
+        } else {
+          print(
+              'Erreur lors de la publication de l\'avis : ${response['error']}');
+        }
+      } catch (e) {
+        print('Erreur : $e');
+      }
+    }
   }
 
   void addReply(String text, String parentId) {}
@@ -378,50 +423,49 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         ),
                       ),
 
-                        Padding(
+                      Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                            widget.place.name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(height: 6.0),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Row(
-                            children: [
-                              Text(
-                              widget.place.avgStars.toString(),
-                              style: const TextStyle(
-                                fontSize: 16, color: Colors.black),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                widget.place.name,
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
-                              const SizedBox(width: 8),
-                              _buildStars(widget.place.avgStars),
-                              const SizedBox(width: 8),
-                              Text(
-                              '(${widget.place.numReviews})',
-                              style: const TextStyle(
-                                fontSize: 14, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 6.0),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                children: [
+                                  Text(
+                                    widget.place.avgStars.toString(),
+                                    style: const TextStyle(
+                                        fontSize: 16, color: Colors.black),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildStars(widget.place.avgStars),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '(${widget.place.numReviews})',
+                                    style: const TextStyle(
+                                        fontSize: 14, color: Colors.grey),
+                                  ),
+                                ],
                               ),
-                            ],
                             ),
-                          ),
-                          const SizedBox(height: 6.0),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                            widget.place.amenity ?? '',
-                            style: TextStyle(
-                              fontSize: 14, color: Colors.grey[600]),
+                            const SizedBox(height: 6.0),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                widget.place.amenity ?? '',
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey[600]),
+                              ),
                             ),
-                          ),
                           ],
                         ),
                       ),
@@ -569,7 +613,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                               setState(() => ratingError =
                                   "Veuillez attribuer au moins une étoile.");
                             } else {
-                              addReview(newReviewText, newReviewRating);
+                              postReview(newReviewText,
+                                  rating: newReviewRating, parentId: null);
                               setState(() {
                                 newReviewText = "";
                                 newReviewRating = 0;
@@ -650,8 +695,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                             ),
                           if (replies.isEmpty)
                             TextButton(
-                              onPressed: () =>
-                                  setState(() => replyingTo = review.id),
+                              onPressed: () {
+                                postReview(newReviewText,
+                                    rating: null,
+                                    parentId: int.tryParse(review.id));
+                                setState(() {
+                                  newReviewText = "";
+                                  replyingTo = null;
+                                });
+                              },
                               child: const Text("Répondre"),
                             ),
                           if (replyingTo == review.id)

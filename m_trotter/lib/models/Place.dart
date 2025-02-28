@@ -3,6 +3,7 @@ import 'package:logger/logger.dart';
 class Place {
   static final logger = Logger();
   final int id;
+  final String placeTable;
   final String name;
   final double latitude;
   final double longitude;
@@ -27,6 +28,7 @@ class Place {
 
   Place({
     required this.id,
+    required this.placeTable,
     required this.name,
     required this.amenity,
     required this.latitude,
@@ -62,6 +64,7 @@ class Place {
 
     return Place(
       id: int.parse(json['id']),
+      placeTable: json['place_table'],
       name: json['name'] ?? 'Unknown',
       amenity: json['amenity'] ?? 'Unknown',
       latitude: json['latitude'] ?? json['lat'] ?? 0.0,

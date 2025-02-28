@@ -1,4 +1,7 @@
-const {newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike} = require('../models/avisModel');
+const {newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike, fetchAvisbyUser} = require('../models/avisModel');
+const jwt = require('jsonwebtoken');
+
+const ACCESS_TOKEN_SECRET = 'votre_secret_access';
 
 exports.getAvisByPlaceId = async (req, res) => {
     try {
@@ -21,16 +24,41 @@ exports.getAvisByPlaceId = async (req, res) => {
     }
 };
 
+exports.getAvisbyUser = async(req,res) => {
+    try {
+        const { accessToken } = req.body; // On récupère user_id dans le corps de la requête
+
+        if (!accessToken) {
+            return res.status(400).json({ error: "token d'acces est requis." });
+        }
+
+        const user_id = jwt.verify(accessToken, ACCESS_TOKEN_SECRET).id;
+
+        const avis = await fetchAvisbyUser(user_id);
+
+        if (!avis || avis.length === 0) {
+            return res.status(404).json({ error: 'Aucun avis trouvé pour cet utilisateur.' });
+        }
+
+        res.status(200).json({ avis });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des avis:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+};
+
 
 exports.postAvis = async (req, res) => {
     try {
-        const { user_id, place_id, place_table, lavis, avis_parent, nb_etoile } = req.body;
+        const { accesstoken, place_id, place_table, lavis, avis_parent, nb_etoile } = req.body;
+
+        console.log("les données reçues : ", req.body);
 
         // Vérification des champs obligatoires
-        if (!user_id || !place_id || !place_table || !lavis) {
+        if (!accesstoken || !place_id || !place_table || !lavis) {
             return res.status(400).json({ error: 'Champs obligatoires manquants' });
         }
-
+        
         // Vérification de la valeur de nb_etoile
         if (avis_parent === undefined && (nb_etoile === undefined || nb_etoile < 1 || nb_etoile > 5)) {
             return res.status(400).json({ error: 'Les avis principaux doivent contenir une note entre 1 et 5 étoiles.' });
@@ -42,6 +70,12 @@ exports.postAvis = async (req, res) => {
                 return res.status(400).json({ error: 'Les réponses aux avis ne doivent pas contenir de note.' });
             }
         }
+        //on récupère le user_id à partir du token
+        const decodedToken = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET);
+        console.log("le token : ", accesstoken, " le payload décodé : ", decodedToken);
+        const user_id = decodedToken.id;
+        console.log("le user_id : ", user_id);
+    
 
         // Appel du modèle pour ajouter l'avis
         const nouvelAvis = await newavis({
@@ -53,10 +87,10 @@ exports.postAvis = async (req, res) => {
             nb_etoile: nb_etoile || null
         });
 
-        res.status(201).json({ message: 'Avis ajouté avec succès', avis: nouvelAvis });
+        res.status(201).json({ success: true, message: 'Avis ajouté avec succès', avis: nouvelAvis });
     } catch (error) {
         console.error('Erreur lors de l\'ajout d\'un avis:', error);
-        res.status(500).json({ error: 'Erreur interne du serveur' });
+        res.status(500).json({ success: false, error: 'Erreur interne du serveur' });
     }
 };
 

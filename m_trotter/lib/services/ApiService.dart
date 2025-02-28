@@ -31,6 +31,10 @@ class ApiService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> pointsData = responseData['points'];
+        for (var point in pointsData) {
+          point['place_table'] = "planet_osm_point";
+        }
+        logger.i('API FETCH PLACES places: $pointsData');
         return pointsData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
@@ -78,6 +82,10 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
+        for (var point in responseData) {
+          point['place_table'] = "planet_osm_point";
+        }
+        logger.i('API FETCH PLACES places: $responseData');
         return responseData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
@@ -405,7 +413,8 @@ class ApiService {
             'Erreur serveur : ${response.statusCode} - ${errorResponse['message'] ?? 'Erreur inconnue'}');
       }
     } catch (e) {
-      throw Exception('Erreur lors de la requête de recup des images de apiservice : $e');
+      throw Exception(
+          'Erreur lors de la requête de recup des images de apiservice : $e');
     }
   }
 
@@ -431,7 +440,8 @@ class ApiService {
         throw Exception('Erreur serveur : ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Erreur lors de l\'upload de l\'image dans ApiService : $e');
+      throw Exception(
+          'Erreur lors de l\'upload de l\'image dans ApiService : $e');
     }
   }
 
@@ -457,6 +467,49 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête de ApiService : $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> postReview({
+    required int placeId,
+    required String placeTable,
+    required String comment,
+    int? parentId,
+    int? rating,
+  }) async {
+    print("demande de postavis du service à $baseUrl");
+    final String url = '$baseUrl/api/postavis';
+    final String? token = await AuthService.getToken();
+
+    if (token == null) {
+      return {'success': false, 'error': 'Token non trouvé'};
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'accesstoken': token,
+          'place_id': placeId,
+          'place_table': placeTable,
+          'lavis': comment,
+          'avis_parent': parentId,
+          'nb_etoile': rating,
+        }),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (response.statusCode == 201 && responseData['success'] == true) {
+        return {'success': true, 'data': responseData};
+      } else {
+        return {
+          'success': false,
+          'error': responseData['error'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
     }
   }
 }
