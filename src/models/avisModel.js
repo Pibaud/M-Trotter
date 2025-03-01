@@ -11,27 +11,45 @@ exports.newavis =  async ({ user_id, place_id, place_table, lavis, avis_parent, 
 
 exports.fetchAvisbyUser = async (user_id) => {
     const result = await pool.query(
-        `SELECT * FROM avis WHERE user_id = $1`,
+        `SELECT a.*, 
+                COALESCE(l.like_count, 0) AS like_count,
+                json_agg(p.id_photo) AS photos
+         FROM avis a 
+         LEFT JOIN (
+             SELECT avis_id, COUNT(*) AS like_count
+             FROM avis_likes
+             GROUP BY avis_id
+         ) l ON a.avis_id = l.avis_id
+         LEFT JOIN photos p ON a.avis_id = p.id_avis
+         WHERE a.user_id = $1
+         GROUP BY a.avis_id, l.like_count`,
         [user_id]
     );
-    return result.rows.length > 0 ? result.rows : null;
+
+    const avisList = result.rows;
+
+    return avisList.length > 0 ? avisList : null;
 };
 
 exports.fetchAvisById = async (place_id, startid) => {
     const result = await pool.query(
         `SELECT a.*, 
-                COALESCE(l.like_count, 0) AS like_count
+                COALESCE(l.like_count, 0) AS like_count,
+                json_agg(p.id_photo) AS photos
          FROM avis a
          LEFT JOIN (
              SELECT avis_id, COUNT(*) AS like_count
              FROM avis_likes
              GROUP BY avis_id
          ) l ON a.avis_id = l.avis_id
+         LEFT JOIN photos p ON a.avis_id = p.id_avis
          WHERE a.place_id = $1
          AND a.avis_id > $2
+         GROUP BY a.avis_id, l.like_count
          LIMIT 10`,
         [place_id, startid]
     );
+
     return result.rows.length > 0 ? result.rows : null;
 };
 

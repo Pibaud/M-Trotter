@@ -1,4 +1,5 @@
 const {newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike, fetchAvisbyUser} = require('../models/avisModel');
+const uploadService = require('../services/uploadService');
 const jwt = require('jsonwebtoken');
 
 const ACCESS_TOKEN_SECRET = 'votre_secret_access';
@@ -50,9 +51,11 @@ exports.getAvisbyUser = async(req,res) => {
 
 exports.postAvis = async (req, res) => {
     try {
-        const { accesstoken, place_id, place_table, lavis, avis_parent, nb_etoile } = req.body;
+        const { accesstoken, place_id, place_table, lavis, avis_parent, nb_etoile, photo } = req.body;
 
         console.log("les données reçues : ", req.body);
+
+        let resphoto = "pas de photos"
 
         // Vérification des champs obligatoires
         if (!accesstoken || !place_id || !place_table || !lavis) {
@@ -87,7 +90,15 @@ exports.postAvis = async (req, res) => {
             nb_etoile: nb_etoile || null
         });
 
-        res.status(201).json({ success: true, message: 'Avis ajouté avec succès', avis: nouvelAvis });
+        if (!(!photo)){
+            const id_avis = nouvelAvis.avis_id;
+            const id_lieu = place_id;
+            const id_user = user_id;
+            const id_photo = photo;
+            const resphoto = await uploadService.processAndUploadImage(id_avis, id_lieu, id_user, id_photo);
+        }
+
+        res.status(201).json({ success: true, message: 'Avis ajouté avec succès', avis: nouvelAvis , Image : resphoto});
     } catch (error) {
         console.error('Erreur lors de l\'ajout d\'un avis:', error);
         res.status(500).json({ success: false, error: 'Erreur interne du serveur' });
