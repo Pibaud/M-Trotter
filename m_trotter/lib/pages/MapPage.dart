@@ -388,8 +388,6 @@ class _MapPageState extends State<MapPage> {
         transitWays.add(wayInfos);
       }
 
-      logger.i(transitWays[0]);
-
       setState(() {
         _transitWays = transitWays;
       });
@@ -474,7 +472,7 @@ class _MapPageState extends State<MapPage> {
         fittingPlaces = res.map<Place>((data) => Place.fromJson(data)).toList();
       });
     } catch (e) {
-      print('Erreur lors de la récupération des places : $e');
+      print('Erreur lors de la récupération des places pour une amenity : $e');
     }
   }
 

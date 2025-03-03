@@ -63,13 +63,13 @@ exports.postAvis = async (req, res) => {
         }
         
         // Vérification de la valeur de nb_etoile
-        if (avis_parent === undefined && (nb_etoile === undefined || nb_etoile < 1 || nb_etoile > 5)) {
+        if (avis_parent === null && (nb_etoile === null || nb_etoile < 1 || nb_etoile > 5)) {
             return res.status(400).json({ error: 'Les avis principaux doivent contenir une note entre 1 et 5 étoiles.' });
         }
 
-        if (avis_parent !== undefined) {
+        if (avis_parent !== null) {
             // Un avis qui est une réponse ne doit pas avoir de note
-            if (nb_etoile !== undefined) {
+            if (nb_etoile !== null) {
                 return res.status(400).json({ error: 'Les réponses aux avis ne doivent pas contenir de note.' });
             }
         }

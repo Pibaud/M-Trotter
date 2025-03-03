@@ -34,7 +34,6 @@ class ApiService {
         for (var point in pointsData) {
           point['place_table'] = "planet_osm_point";
         }
-        logger.i('API FETCH PLACES places: $pointsData');
         return pointsData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
@@ -56,6 +55,9 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
+        for (var point in responseData) {
+          point['place_table'] = "planet_osm_point";
+        }
         return responseData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
@@ -85,7 +87,6 @@ class ApiService {
         for (var point in responseData) {
           point['place_table'] = "planet_osm_point";
         }
-        logger.i('API FETCH PLACES places: $responseData');
         return responseData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
@@ -238,7 +239,6 @@ class ApiService {
 
   // Connexion
   Future<Map<String, dynamic>> logIn(String email, String password) async {
-    print("demande de connexion du service à $baseUrl");
     try {
       final url = Uri.parse('$baseUrl/comptes/connexion');
       final body = jsonEncode({
@@ -256,7 +256,6 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        print("je recois ca de connexion ${response.body}");
         final String? accessToken = responseData['accessToken'];
         final String? refreshToken = responseData['refreshToken'];
         if (accessToken != null) {
@@ -345,10 +344,6 @@ class ApiService {
     if (refreshToken == null) {
       return {'success': false, 'error': 'Aucun refresh token trouvé'};
     }
-
-    print("Mon Refresh Token: $refreshToken");
-    print("demande du token à $baseUrl");
-
     try {
       final url = Uri.parse('$baseUrl/comptes/recupAccessToken');
       final body = jsonEncode({'refreshToken': refreshToken});
@@ -361,7 +356,6 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        print("je recois ça de recupAccessToken ${response.body}");
 
         final String? accessToken = responseData['accessToken'];
         if (accessToken != null) {
@@ -399,7 +393,6 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body)['photos'];
-        print("responseData : $responseData");
         return Future.wait(responseData.map((data) async {
           final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
           return Photo(
@@ -477,7 +470,6 @@ class ApiService {
     int? parentId,
     int? rating,
   }) async {
-    print("demande de postavis du service à $baseUrl");
     final String url = '$baseUrl/api/postavis';
     final String? token = await AuthService.getToken();
 
@@ -509,7 +501,8 @@ class ApiService {
         };
       }
     } catch (e) {
-      throw Exception('Erreur lors de la requête : $e');
+      print('Erreur lors de la requête : $e');
+      return {'success': false, 'error': e.toString()};
     }
   }
 }

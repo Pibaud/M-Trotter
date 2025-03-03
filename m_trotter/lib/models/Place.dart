@@ -69,7 +69,7 @@ class Place {
       amenity: json['amenity'] ?? 'Unknown',
       latitude: json['latitude'] ?? json['lat'] ?? 0.0,
       longitude: json['longitude'] ?? json['lon'] ?? 0.0,
-      avgStars: json['avg_stars'] ?? 0.0,
+      avgStars: (json['avg_stars'] != null) ? double.parse(json['avg_stars'].toString()) : 0.0,
       numReviews: int.parse(json['nb_avis_stars']),
       phone: tags['phone'],
       cuisine: tags['cuisine'],

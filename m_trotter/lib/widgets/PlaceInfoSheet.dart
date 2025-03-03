@@ -96,12 +96,14 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   List<Uint8List> images = [];
   Set<String> allTags = {};
   String? selectedTag;
+  bool replySent = false;
 
   late Future<void> _fetchReviewsFuture;
 
   @override
   void initState() {
     super.initState();
+    reviews = [];
     _fetchReviewsFuture = fetchReviews();
   }
 
@@ -168,30 +170,29 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
   void postReview(String text, {int? rating, int? parentId}) async {
     if (rating != null) {
-      print("c'est un avis avec note");
       try {
         ApiService apiService = ApiService();
         final response = await apiService.postReview(
           placeId: widget.place.id,
           placeTable: widget.place.placeTable,
           comment: text,
-          parentId: parentId,
           rating: rating,
         );
 
         if (response['success']) {
-          setState(() {
-            reviews.add(Review.fromJson(response['data']));
-          });
+          print('Avis posté avec succès');
+          await fetchReviews();
         } else {
           print(
               'Erreur lors de la publication de l\'avis : ${response['error']}');
         }
       } catch (e) {
-        print('Erreur : $e');
+        print('Erreur du try de apiservice avec note: $e');
       }
     } else {
-      print("c'est un avis sans note");
+      setState(() {
+        replySent = true;
+      });
       try {
         ApiService apiService = ApiService();
         final response = await apiService.postReview(
@@ -202,20 +203,17 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         );
 
         if (response['success']) {
-          setState(() {
-            reviews.add(Review.fromJson(response['data']));
-          });
+          print('Réponse postée avec succès');
+          await fetchReviews();
         } else {
           print(
               'Erreur lors de la publication de l\'avis : ${response['error']}');
         }
       } catch (e) {
-        print('Erreur : $e');
+        print('Erreur du try de apiservice sans note: $e');
       }
     }
   }
-
-  void addReply(String text, String parentId) {}
 
   void updateLikes(String reviewId) {
     setState(() {
@@ -346,30 +344,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                       .id; // On définit quel avis on est en train de répondre
                 }),
                 child: const Text("Répondre"),
-              ),
-
-            // Afficher le champ de texte pour répondre si on répond à cette réponse (replyingTo)
-            if (replyingTo == reply.id)
-              Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: TextField(
-                  onChanged: (value) => setState(() => replyText = value),
-                  decoration: InputDecoration(
-                    hintText: "Votre réponse...",
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.send),
-                      onPressed: replyText.isEmpty
-                          ? null
-                          : () {
-                              addReply(replyText, reply.id);
-                              setState(() {
-                                replyText =
-                                    ''; // Réinitialiser le texte après envoi
-                              });
-                            },
-                    ),
-                  ),
-                ),
               ),
           ],
         );
@@ -696,17 +670,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                           if (replies.isEmpty)
                             TextButton(
                               onPressed: () {
-                                postReview(newReviewText,
-                                    rating: null,
-                                    parentId: int.tryParse(review.id));
                                 setState(() {
                                   newReviewText = "";
-                                  replyingTo = null;
+                                  replyingTo = review.id;
+                                  replySent = false;
                                 });
                               },
                               child: const Text("Répondre"),
                             ),
-                          if (replyingTo == review.id)
+                          if (replyingTo == review.id && !replySent)
                             TextField(
                               onChanged: (value) =>
                                   setState(() => replyText = value),
@@ -716,7 +688,9 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                   icon: const Icon(Icons.send),
                                   onPressed: replyText.isEmpty
                                       ? null
-                                      : () => addReply(replyText, review.id),
+                                      : () => postReview(replyText,
+                                          rating: null,
+                                          parentId: int.tryParse(review.id)),
                                 ),
                               ),
                             ),
