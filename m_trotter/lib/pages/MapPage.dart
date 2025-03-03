@@ -99,6 +99,7 @@ class _MapPageState extends State<MapPage> {
     getUserLocation();
     _positionSubscription = _locationService.listenToPositionChanges(
       onPositionUpdate: (Position position) {
+        debugPrint('Nouvelle position reçue dans MapPage : $position');
         setState(() {
           _currentLocation = LatLng(position.latitude, position.longitude);
         });
@@ -568,7 +569,7 @@ class _MapPageState extends State<MapPage> {
                     );
                   }).toList(),
                 ),
-                if (_selectedPlace != null)
+              if (_selectedPlace != null)
                 MarkerLayer(
                   markers: [
                     Marker(
@@ -995,6 +996,7 @@ class _MapPageState extends State<MapPage> {
   void dispose() {
     _focusNode.dispose(); // Libère le FocusNode
     _positionSubscription?.cancel();
+    _locationService.stopListening();
     _mapEventSubscription?.cancel();
     super.dispose();
   }

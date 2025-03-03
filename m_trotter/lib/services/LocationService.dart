@@ -47,7 +47,7 @@ class LocationService {
     print("Permission acceptée");
     // Configure les paramètres de localisation
     LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.medium,
+      accuracy: LocationAccuracy.low,
       distanceFilter: 0,
     );
 
@@ -70,23 +70,42 @@ class LocationService {
     required Function(Position) onPositionUpdate,
     required Function(dynamic) onError,
   }) {
+    if (_positionStreamSubscription != null) {
+      debugPrint('Écoute des changements de position déjà démarrée.');
+      return _positionStreamSubscription!;
+    }
+
+    debugPrint('Démarrage de l\'écoute des changements de position...');
     LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.medium, // Précision élevée
+      accuracy: LocationAccuracy.low, // Précision élevée
       distanceFilter: 10, // Mise à jour après un déplacement de 10 mètres
     );
 
     _positionStreamSubscription = Geolocator.getPositionStream(
       locationSettings: locationSettings,
     ).listen(
-      onPositionUpdate,
-      onError: onError,
+      (Position position) {
+        debugPrint('Position mise à jour dans le stream : $position');
+        onPositionUpdate(position);
+      },
+      onError: (dynamic error) {
+        debugPrint('Erreur de position dans le stream : $error');
+        onError(error);
+      },
     );
 
+    debugPrint('Écoute des changements de position démarrée.');
     return _positionStreamSubscription!;
   }
 
   /// Arrête le suivi de la position
   void stopListening() {
-    _positionStreamSubscription?.cancel();
+    if (_positionStreamSubscription != null) {
+      _positionStreamSubscription?.cancel();
+      _positionStreamSubscription = null;
+      debugPrint('Écoute des changements de position arrêtée.');
+    } else {
+      debugPrint('Aucune écoute des changements de position à arrêter.');
+    }
   }
 }
