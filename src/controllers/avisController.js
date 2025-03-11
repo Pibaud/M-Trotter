@@ -78,7 +78,6 @@ exports.postAvis = async (req, res) => {
         console.log("le token : ", accesstoken, " le payload décodé : ", decodedToken);
         const user_id = decodedToken.id;
         console.log("le user_id : ", user_id);
-    
 
         // Appel du modèle pour ajouter l'avis
         const nouvelAvis = await newavis({

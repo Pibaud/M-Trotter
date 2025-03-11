@@ -147,7 +147,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         if (index < rating.floor()) {
           return const Icon(Icons.star, color: Colors.amber);
         } else if (index < rating) {
-          return const Icon(Icons.star_half, color: Colors.amber);
+          return const Icon(Icons.star_half, color: Color(0xFFFFC107));
         } else {
           return const Icon(Icons.star_border, color: Colors.grey);
         }
@@ -349,6 +349,23 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         );
       }).toList(),
     );
+  }
+
+  void deleteReview(String reviewId) async {
+    try {
+      ApiService apiService = ApiService();
+      final response = await apiService.deleteReview(reviewId);
+
+      if (response['success']) {
+        print('Avis supprimé avec succès');
+        await fetchReviews();
+      } else {
+        print(
+            'Erreur lors de la suppression de l\'avis : ${response['error']}');
+      }
+    } catch (e) {
+      print('Erreur lors de la suppression de l\'avis : $e');
+    }
   }
 
   @override
