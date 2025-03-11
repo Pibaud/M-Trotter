@@ -55,7 +55,7 @@ class _MapPageState extends State<MapPage> {
   bool _isPlaceInfoSheetVisible = false;
   Place? _selectedPlace;
   String? _selectedAmenity;
-  double _bottomSheetHeight = 100.0;
+  double _bottomSheetHeight = 80.0;
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
@@ -616,6 +616,7 @@ class _MapPageState extends State<MapPage> {
             },
             onTextChanged: _onTextChanged,
           ),
+          if (!_isLayerVisible && !_isPlaceInfoSheetVisible)
           Positioned(
             top: 85.0,
             left: 0.0,
@@ -714,35 +715,35 @@ class _MapPageState extends State<MapPage> {
             ),
           if (!_isLayerVisible)
             Positioned(
-              top: 120.0,
+              top: 140.0,
               right: 10.0,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10.0),
                 child: Stack(
-                  children: [
+                    children: [
                     // BackdropFilter pour le flou foncé
                     Positioned.fill(
                       child: BackdropFilter(
-                        filter:
-                            ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Flou
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Color(
-                                0x10000000), // Fond semi-transparent foncé (alpha = 0.2)
-                            borderRadius: BorderRadius.circular(
-                                10.0), // Facultatif pour arrondir les coins
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(
-                                    0x10000000), // Légère ombre noire avec alpha = 0.2
-                                blurRadius: 5.0, // Flou de l'ombre
-                                spreadRadius: 2.0, // Espace de l'ombre
-                                offset: Offset(
-                                    0, 2), // Position de l'ombre (décalage)
-                              ),
-                            ],
+                      filter:
+                        ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Flou
+                      child: Container(
+                        decoration: BoxDecoration(
+                        color: Color(
+                          0x10000000), // Fond semi-transparent foncé (alpha = 0.2)
+                        borderRadius: BorderRadius.circular(
+                          10.0), // Facultatif pour arrondir les coins
+                        boxShadow: [
+                          BoxShadow(
+                          color: Color(
+                            0x10000000), // Légère ombre noire avec alpha = 0.2
+                          blurRadius: 5.0, // Flou de l'ombre
+                          spreadRadius: 2.0, // Espace de l'ombre
+                          offset: Offset(
+                            0, 2), // Position de l'ombre (décalage)
                           ),
+                        ],
                         ),
+                      ),
                       ),
                     ),
 
@@ -805,7 +806,7 @@ class _MapPageState extends State<MapPage> {
           if (fittingPlaces.isNotEmpty && !_isPlaceInfoSheetVisible)
             PlaceListSheet(
                 initialHeight: MediaQuery.of(context).size.height * 0.45,
-                fullHeight: MediaQuery.of(context).size.height,
+                fullHeight: MediaQuery.of(context).size.height*0.95,
                 midHeight: MediaQuery.of(context).size.height * 0.45,
                 collapsedHeight: 100.0,
                 onClose: () {
@@ -834,7 +835,7 @@ class _MapPageState extends State<MapPage> {
               },
               onDragEnd: () {
                 final List<double> positions = [
-                  100.0,
+                  MediaQuery.of(context).size.height * 0.95,
                   MediaQuery.of(context).size.height * 0.45,
                   MediaQuery.of(context).size.height,
                 ];
@@ -877,7 +878,7 @@ class _MapPageState extends State<MapPage> {
           if (_routes.isNotEmpty)
             ItinerarySheet(
               initialHeight: MediaQuery.of(context).size.height * 0.45,
-              fullHeight: MediaQuery.of(context).size.height,
+              fullHeight: MediaQuery.of(context).size.height * 0.95,
               midHeight: MediaQuery.of(context).size.height * 0.45,
               collapsedHeight: 100.0,
               routes: _routes, // Routes pour tous les modes

@@ -66,6 +66,7 @@ class PlaceInfoSheet extends StatefulWidget {
   final Function()? onWebsiteTap;
   final Function()? onClose;
   final List<Photo> photos; // Add this line
+  final List<Photo>? reviewPhotos; // Add this line
 
   const PlaceInfoSheet({
     Key? key,
@@ -78,6 +79,7 @@ class PlaceInfoSheet extends StatefulWidget {
     this.onWebsiteTap,
     this.onClose,
     required this.photos, // Add this line
+    this.reviewPhotos, // Add this line
   }) : super(key: key);
 
   @override
@@ -172,11 +174,16 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     if (rating != null) {
       try {
         ApiService apiService = ApiService();
+        File? imageFile;
+        if (widget.reviewPhotos != null && widget.reviewPhotos!.isNotEmpty) {
+          imageFile = File.fromRawPath(widget.reviewPhotos!.first.imageData);
+        }
         final response = await apiService.postReview(
           placeId: widget.place.id,
           placeTable: widget.place.placeTable,
           comment: text,
           rating: rating,
+          imageFile: imageFile,
         );
 
         if (response['success']) {
@@ -225,7 +232,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     });
   }
 
-  Future<void> pickImage(ImageSource source) async {
+  Future<void> pickImage(ImageSource source, {bool? isReview}) async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -238,36 +245,46 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
         if (!mounted) return;
 
-        String? tag = await showDialog<String>(
-          context: context,
-          builder: (context) => TagSelectionDialog(existingTags: allTags),
-        );
+        if (isReview == true) {
+          // Add the photo to reviewPhotos without tag selection
+          setState(() {
+            widget.reviewPhotos?.add(Photo(
+              imageData: imageBytes,
+              tag: null,
+            ));
+          });
+        } else {
+          String? tag = await showDialog<String>(
+            context: context,
+            builder: (context) => TagSelectionDialog(existingTags: allTags),
+          );
 
-        if (!mounted) return;
+          if (!mounted) return;
 
-        if (tag != null) {
-          // Appeler la fonction uploadImage après avoir sélectionné le tag
-          try {
-            ApiService apiService = ApiService();
-            File imageFile = File(image.path); // Convertir XFile en File
-            String placeId =
-                widget.place.id.toString(); // Convert int to String
+          if (tag != null) {
+            // Appeler la fonction uploadImage après avoir sélectionné le tag
+            try {
+              ApiService apiService = ApiService();
+              File imageFile = File(image.path); // Convertir XFile en File
+              String placeId =
+                  widget.place.id.toString(); // Convert int to String
 
-            Map<String, dynamic> response =
-                await apiService.uploadImage(imageFile, placeId);
+              Map<String, dynamic> response =
+                  await apiService.uploadImage(imageFile, placeId);
 
-            print('Image upload response: $response');
+              print('Image upload response: $response');
 
-            // Ajouter la photo à la liste après l'upload réussi
-            setState(() {
-              widget.photos.add(Photo(
-                imageData: imageBytes,
-                tag: tag == "NO_TAG" ? null : tag,
-              ));
-              if (tag != "NO_TAG") allTags.add(tag);
-            });
-          } catch (e) {
-            print('Erreur lors de l\'upload de l\'image : $e');
+              // Ajouter la photo à la liste après l'upload réussi
+              setState(() {
+                widget.photos.add(Photo(
+                  imageData: imageBytes,
+                  tag: tag == "NO_TAG" ? null : tag,
+                ));
+                if (tag != "NO_TAG") allTags.add(tag);
+              });
+            } catch (e) {
+              print('Erreur lors de l\'upload de l\'image : $e');
+            }
           }
         }
       }
@@ -277,7 +294,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   }
 
 // Fonction pour afficher le dialogue de choix
-  void showImageSourceDialog() {
+  void showImageSourceDialog({bool? isReview}) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -291,7 +308,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 title: const Text('Galerie'),
                 onTap: () {
                   Navigator.pop(context);
-                  pickImage(ImageSource.gallery);
+                  pickImage(ImageSource.gallery, isReview: isReview == true ? true : false);
                 },
               ),
               ListTile(
@@ -299,7 +316,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 title: const Text('Appareil photo'),
                 onTap: () {
                   Navigator.pop(context);
-                  pickImage(ImageSource.camera);
+                  pickImage(ImageSource.camera, isReview: isReview == true ? true : false);
                 },
               ),
             ],
@@ -595,24 +612,36 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 onChanged: (value) => setState(() => newReviewText = value),
                 decoration: InputDecoration(
                   hintText: "Écrire un avis...",
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: newReviewText.isEmpty
-                        ? null
-                        : () {
-                            if (newReviewRating == 0) {
-                              setState(() => ratingError =
-                                  "Veuillez attribuer au moins une étoile.");
-                            } else {
-                              postReview(newReviewText,
-                                  rating: newReviewRating, parentId: null);
-                              setState(() {
-                                newReviewText = "";
-                                newReviewRating = 0;
-                                ratingError = "";
-                              });
-                            }
-                          },
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.add_a_photo_rounded),
+                        onPressed: () {
+                          showImageSourceDialog(isReview: true);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.send_rounded),
+                        onPressed: newReviewText.isEmpty
+                            ? null
+                            : () {
+                                if (newReviewRating == 0) {
+                                  setState(() => ratingError =
+                                      "Veuillez attribuer au moins une étoile.");
+                                } else {
+                                  postReview(newReviewText,
+                                      rating: newReviewRating, parentId: null);
+                                  setState(() {
+                                    newReviewText = "";
+                                    newReviewRating = 0;
+                                    ratingError = "";
+                                    widget.reviewPhotos!.clear();
+                                  });
+                                }
+                              },
+                      ),
+                    ],
                   ),
                 ),
               ),

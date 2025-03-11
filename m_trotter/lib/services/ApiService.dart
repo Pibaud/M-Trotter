@@ -31,6 +31,8 @@ class ApiService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> pointsData = responseData['points'];
+        print("je reçois les points suivants :");
+        logger.i(pointsData);
         for (var point in pointsData) {
           point['place_table'] = "planet_osm_point";
         }
@@ -467,6 +469,7 @@ class ApiService {
     required int placeId,
     required String placeTable,
     required String comment,
+    File? imageFile,
     int? parentId,
     int? rating,
   }) async {
@@ -478,17 +481,26 @@ class ApiService {
     }
 
     try {
+      final Map<String, dynamic> body = {
+        'accesstoken': token,
+        'place_id': placeId,
+        'place_table': placeTable,
+        'lavis': comment,
+        'avis_parent': parentId,
+        'nb_etoile': rating,
+      };
+
+      if (imageFile != null) {
+        List<int> imageBytes = await imageFile.readAsBytes();
+        String base64Image = base64Encode(imageBytes);
+        body['photo'] = base64Image;
+        print("Image envoyée : $base64Image");
+      }
+
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'accesstoken': token,
-          'place_id': placeId,
-          'place_table': placeTable,
-          'lavis': comment,
-          'avis_parent': parentId,
-          'nb_etoile': rating,
-        }),
+        body: json.encode(body),
       );
 
       final Map<String, dynamic> responseData = json.decode(response.body);

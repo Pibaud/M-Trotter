@@ -1,4 +1,4 @@
-const {newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike, fetchAvisbyUser} = require('../models/avisModel');
+const { newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike, fetchAvisbyUser } = require('../models/avisModel');
 const uploadService = require('../services/uploadService');
 const jwt = require('jsonwebtoken');
 
@@ -25,7 +25,7 @@ exports.getAvisByPlaceId = async (req, res) => {
     }
 };
 
-exports.getAvisbyUser = async(req,res) => {
+exports.getAvisbyUser = async (req, res) => {
     try {
         const { accessToken } = req.body; // On récupère user_id dans le corps de la requête
 
@@ -51,33 +51,38 @@ exports.getAvisbyUser = async(req,res) => {
 
 exports.postAvis = async (req, res) => {
     try {
-        const { accesstoken, place_id, place_table, lavis, avis_parent, nb_etoile, photo } = req.body;
+        const { accesstoken, place_id, place_table, lavis, avis_parent, nb_etoile } = req.body;
+        console.log("Contenu de req.file :", req.file);
+
+        // Récupérer le chemin de la photo
+        const photo = req.file ? req.file.path : null;
+        console.log("le path de la photo : ", photo);
 
         console.log("les données reçues : ", req.body);
 
-        let resphoto = "pas de photos"
+        let resphoto = "pas de photos";
 
         // Vérification des champs obligatoires
         if (!accesstoken || !place_id || !place_table || !lavis) {
             return res.status(400).json({ error: 'Champs obligatoires manquants' });
         }
-        
+
         // Vérification de la valeur de nb_etoile
-        if (avis_parent === null && (nb_etoile === null || nb_etoile < 1 || nb_etoile > 5)) {
+        if (!avis_parent && (nb_etoile === null || nb_etoile < 1 || nb_etoile > 5)) {
             return res.status(400).json({ error: 'Les avis principaux doivent contenir une note entre 1 et 5 étoiles.' });
         }
 
-        if (avis_parent !== null) {
-            // Un avis qui est une réponse ne doit pas avoir de note
-            if (nb_etoile !== null) {
-                return res.status(400).json({ error: 'Les réponses aux avis ne doivent pas contenir de note.' });
-            }
+        if (avis_parent && nb_etoile !== null) {
+            return res.status(400).json({ error: 'Une réponse à un avis ne doit pas contenir de note.' });
         }
-        //on récupère le user_id à partir du token
-        const decodedToken = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET);
-        console.log("le token : ", accesstoken, " le payload décodé : ", decodedToken);
-        const user_id = decodedToken.id;
-        console.log("le user_id : ", user_id);
+
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
 
         // Appel du modèle pour ajouter l'avis
         const nouvelAvis = await newavis({
@@ -85,24 +90,26 @@ exports.postAvis = async (req, res) => {
             place_id,
             place_table,
             lavis,
-            avis_parent : avis_parent || null,
+            avis_parent: avis_parent || null,
             nb_etoile: nb_etoile || null
         });
 
-        if (!(!photo)){
+        if (photo) {
+            console.log("le code detecte une image")
             const id_avis = nouvelAvis.avis_id;
             const id_lieu = place_id;
             const id_user = user_id;
             const id_photo = photo;
-            const resphoto = await uploadService.processAndUploadImage(id_avis, id_lieu, id_user, id_photo);
+            resphoto = await uploadService.processAndUploadImage(id_avis, id_lieu, id_user, id_photo);
         }
 
-        res.status(201).json({ success: true, message: 'Avis ajouté avec succès', avis: nouvelAvis , Image : resphoto});
+        res.status(201).json({ success: true, message: 'Avis ajouté avec succès', avis: nouvelAvis, Image: resphoto });
     } catch (error) {
         console.error('Erreur lors de l\'ajout d\'un avis:', error);
         res.status(500).json({ success: false, error: 'Erreur interne du serveur' });
     }
 };
+
 
 exports.deleteAvis = async (req, res) => {
     try {
@@ -149,7 +156,7 @@ exports.likeAvis = async (req, res) => {
 };
 
 exports.unlikeAvis = async (req, res) => {
-    try{ 
+    try {
         const { avis_id, user_id } = req.body; // Récupère l'ID de l'avis et l'ID de l'utilisateur dans le corps de la requête
 
         if (!avis_id || !user_id) {

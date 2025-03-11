@@ -87,7 +87,8 @@ exports.ListePlaces = async (search, startid) => {
                 sim: null
             }))
         };
-        console.log("points :", finalResults.points);
+        console.log("points :");
+        console.dir(finalResults.points);
         return finalResults; // Renvoie un objet avec les résultats séparés par type
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);

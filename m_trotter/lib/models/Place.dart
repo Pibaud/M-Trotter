@@ -64,13 +64,17 @@ class Place {
 
     return Place(
       id: int.parse(json['id']),
-      placeTable: json['place_table'],
+      placeTable: json['place_table'] ?? 'Unknown',
       name: json['name'] ?? 'Unknown',
       amenity: json['amenity'] ?? 'Unknown',
       latitude: json['latitude'] ?? json['lat'] ?? 0.0,
       longitude: json['longitude'] ?? json['lon'] ?? 0.0,
-      avgStars: (json['avg_stars'] != null) ? double.parse(json['avg_stars'].toString()) : 0.0,
-      numReviews: int.parse(json['nb_avis_stars']),
+      avgStars: (json['avg_stars'] != null)
+          ? double.parse(json['avg_stars'].toString())
+          : 0.0,
+      numReviews: (json['nb_avis_stars'] != null)
+          ? int.parse(json['nb_avis_stars'].toString())
+          : 0,
       phone: tags['phone'],
       cuisine: tags['cuisine'],
       website: tags['website'],
