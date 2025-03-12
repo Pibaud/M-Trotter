@@ -1,4 +1,4 @@
-const { ListePlaces, BoxPlaces, AmenityPlaces } = require('../models/placesModel');
+const { ListePlaces, BoxPlaces, AmenityPlaces, BestPlaces } = require('../models/placesModel');
 
 // GET pour récupérer des lieux
 exports.LPlaces = async (req, res) => {
@@ -25,6 +25,16 @@ exports.bboxPlaces = async (minlat, minlon, maxlat, maxlon) => {
 exports.amenitylist = async (amenity, startid) => {
     try {
         const lieux = await AmenityPlaces(amenity, startid);
+        return lieux;
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}
+
+exports.bestPlaces = async () => {
+    try {
+        const lieux = await BestPlaces();
         return lieux;
     } catch (error) {
         console.error(error);

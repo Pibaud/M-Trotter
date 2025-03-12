@@ -1,4 +1,4 @@
-const { LPlaces, bboxPlaces, amenitylist } = require('../services/placesService'); // Assure-toi que l'importation est correcte
+const { LPlaces, bboxPlaces, amenitylist, bestPlaces } = require('../services/placesService'); // Assure-toi que l'importation est correcte
 
 exports.postPlaces = async (req, res) => {
     try {
@@ -43,6 +43,21 @@ exports.amenitylist = async(req, res) => {
         return res.status(200).json(liste);
     } catch (error) {
         console.error("Erreur dans amenitylist :", error);
+        return res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}
+
+exports.bestPlaces = async(req, res) => {
+    try {
+        const liste = await bestPlaces();
+        //on fait passer avgstars de string à float
+        liste.forEach((element) => {
+            element.avg_stars = parseFloat(element.avg_stars);
+        });
+        
+        return res.status(200).json(liste);
+    } catch (error) {
+        console.error("Erreur dans bestPlaces :", error);
         return res.status(500).json({ message: "Erreur interne du serveur." });
     }
 }
