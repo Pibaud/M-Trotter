@@ -9,6 +9,6 @@ router.post('/placesbbox', bboxPlaces);
 
 router.post('/amenitylist/',amenitylist);
 
-router.get('/bestplaces/',bestPlaces);
+router.post('/bestplaces/',bestPlaces);
 
 module.exports = router;
