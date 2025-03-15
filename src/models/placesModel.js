@@ -166,12 +166,13 @@ exports.BestPlaces = async () => {
                     ST_Y(ST_Transform(p.way, 4326)) AS lat,
                     STRING_AGG(p.tags::TEXT, '; ') AS tags,
                     AVG(a.nb_etoiles) AS avg_stars,
-                    count(a.nb_etoiles) AS nb_avis_stars
+                    COUNT(a.nb_etoiles) AS nb_avis_stars
             FROM planet_osm_point p
             LEFT JOIN avis a ON p.osm_id = a.place_id
-            WHERE p.name IS NOT NULL 
+            WHERE p.name IS NOT NULL
             GROUP BY p.osm_id, p.name, p.amenity, p.way
-            ORDER BY AVG(a.nb_etoiles) DESC
+            HAVING COUNT(a.nb_etoiles) > 0
+            ORDER BY nb_avis_stars DESC, avg_stars DESC
             LIMIT 10`
         );
 

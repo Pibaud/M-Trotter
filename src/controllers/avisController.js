@@ -100,7 +100,7 @@ exports.postAvis = async (req, res) => {
             const id_lieu = place_id;
             const id_user = user_id;
             const id_photo = photo;
-            resphoto = await uploadService.processAndUploadImage(id_avis, id_lieu, id_user, id_photo);
+            resphoto = await uploadService.processAndUploadImage(id_photo, id_lieu, id_avis);
         }
 
         res.status(201).json({ success: true, message: 'Avis ajouté avec succès', avis: nouvelAvis, Image: resphoto });

@@ -28,7 +28,7 @@ exports.connexions = async (req, res) => {
     }
 
     try {
-        const utilisateur = await getUtilisateur(EorU);
+        const utilisateur = await getUtilisateurconnect(EorU);
         if (!utilisateur) {
             return res.status(401).json({ message: "Utilisateur non trouvé." });
         }

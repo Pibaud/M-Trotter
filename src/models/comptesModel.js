@@ -17,7 +17,7 @@ async function inscriptionUtilisateur(email, username, password) {
     }
 }
 
-async function getUtilisateur(emailOrUsername) {
+async function getUtilisateurconnect(emailOrUsername) {
     try {
         const query = `
             SELECT id, email, username, password_hash
@@ -69,6 +69,6 @@ async function updateUtilisateur(id, updatedFields){
 
 module.exports = {
     inscriptionUtilisateur,
-    getUtilisateur,
+    getUtilisateurconnect,
     updateUtilisateur
 };

@@ -10,6 +10,7 @@ const MAX_PIXELS = 2073600; // Limite de 2 073 600 pixels (Full HD)
 
 const processAndUploadImage = async (filePath, id_lieu, id_avis = null) => {
     try {
+        console.log(`📸 Traitement de l’image ${filePath} pour le lieu ${id_lieu}...`);
         if (!filePath.endsWith('.jpg')) {
             throw new Error('Seuls les fichiers .jpg sont autorisés');
         }
