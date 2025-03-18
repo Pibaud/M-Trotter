@@ -873,7 +873,6 @@ class _MapPageState extends State<MapPage> {
                         listen: false)
                     .showBottomNav();
               },
-              photos: photos, // Pass the photos list here
             ),
           if (_routes.isNotEmpty)
             ItinerarySheet(

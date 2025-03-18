@@ -18,7 +18,7 @@ const uploadImage = async (req, res) => {
         const id_avi = id_avis==="null" ?  null : id_avis;
 
         const result = await uploadService.processAndUploadImage(filePath, id_lieu, id_avi);
-        res.status(201).json(result);
+        res.status(201).json({result});
     } catch (error) {
         console.error("Erreur lors de l'upload :", error);
         res.status(500).json({ error: 'Erreur serveur dans uploadController' });
@@ -36,7 +36,7 @@ const getImagesByPlaceId = async (req, res) => {
         }
 
         const photos = await uploadService.fetchImagesByPlaceId(place_id);
-        res.json( photos );
+        res.status(200).json( {photos} );
     } catch (error) {
         console.error('Erreur lors de la récupération des images :', error);
         res.status(500).json({ error: 'Impossible de récupérer les images.' });

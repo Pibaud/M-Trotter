@@ -15,7 +15,7 @@ exports.getAvisByPlaceId = async (req, res) => {
         const avis = await fetchAvisById(place_id, startid || 0);
 
         if (!avis || avis.length === 0) {
-            return res.status(404).json({ error: 'Aucun avis trouvé pour ce lieu.' });
+            return res.status(200).json({avis: []});
         }
 
         res.status(200).json({ avis });
@@ -38,7 +38,7 @@ exports.getAvisbyUser = async (req, res) => {
         const avis = await fetchAvisbyUser(user_id);
 
         if (!avis || avis.length === 0) {
-            return res.status(404).json({ error: 'Aucun avis trouvé pour cet utilisateur.' });
+            return res.status(200).json({ error: 'Aucun avis trouvé pour cet utilisateur.' });
         }
 
         res.status(200).json({ avis });
@@ -50,6 +50,9 @@ exports.getAvisbyUser = async (req, res) => {
 
 
 exports.postAvis = async (req, res) => {
+    console.log("paramètres reçus :")
+    console.dir(req.body);
+    console.log("Contenu de req.file :", req.file);
     try {
         const { accesstoken, place_id, place_table, lavis, avis_parent, nb_etoile } = req.body;
         console.log("Contenu de req.file :", req.file);

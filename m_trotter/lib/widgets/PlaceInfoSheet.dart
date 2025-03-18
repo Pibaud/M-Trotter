@@ -65,8 +65,6 @@ class PlaceInfoSheet extends StatefulWidget {
   final Function()? onCallTap;
   final Function()? onWebsiteTap;
   final Function()? onClose;
-  final List<Photo> photos; // Add this line
-  final List<Photo>? reviewPhotos; // Add this line
 
   const PlaceInfoSheet({
     Key? key,
@@ -78,8 +76,6 @@ class PlaceInfoSheet extends StatefulWidget {
     this.onCallTap,
     this.onWebsiteTap,
     this.onClose,
-    required this.photos, // Add this line
-    this.reviewPhotos, // Add this line
   }) : super(key: key);
 
   @override
@@ -87,6 +83,7 @@ class PlaceInfoSheet extends StatefulWidget {
 }
 
 class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
+  List<File> reviewPhotos = [];
   List<Review> reviews = [];
   bool isSortedByDate = true;
   String newReviewText = '';
@@ -99,22 +96,35 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   Set<String> allTags = {};
   String? selectedTag;
   bool replySent = false;
+  List<Photo> photos = [];
+
+  final TextEditingController _reviewController = TextEditingController();
 
   late Future<void> _fetchReviewsFuture;
+  late Future<void> _fetchPhotosFuture;
 
   @override
   void initState() {
     super.initState();
-    reviews = [];
     _fetchReviewsFuture = fetchReviews();
+    _fetchPhotosFuture = fetchPhotos();
+  }
+
+  Future<void> fetchPhotos() async {
+    ApiService apiService = ApiService();
+    print("appel avec l'id : ${widget.place.id.toString()}");
+    List<Photo> response =
+        await apiService.fetchImagesByPlaceId(widget.place.id.toString());
+    setState(() {
+      photos = response;
+    });
   }
 
   Future<void> fetchReviews() async {
     try {
       ApiService apiService = ApiService();
-      List<dynamic> response = await apiService.fetchReviewsByPlaceId(
-          widget.place.id.toString(),
-          0); //incrémenter le startid pour obtenir les avis suivants
+      List<dynamic> response =
+          await apiService.fetchReviewsByPlaceId(widget.place.id.toString(), 0);
 
       setState(() {
         reviews = // Convertir la liste de Map en liste de Review
@@ -175,15 +185,25 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       try {
         ApiService apiService = ApiService();
         File? imageFile;
-        if (widget.reviewPhotos != null && widget.reviewPhotos!.isNotEmpty) {
-          imageFile = File.fromRawPath(widget.reviewPhotos!.first.imageData);
+        if (reviewPhotos.isNotEmpty) {
+          imageFile = reviewPhotos.first;
+          try {
+            final uploadResponse = await apiService.uploadImage(
+                imageFile, widget.place.id.toString());
+            if (uploadResponse['success']) {
+              print('Image uploaded successfully');
+            } else {
+              print('Error uploading image: ${uploadResponse['error']}');
+            }
+          } catch (e) {
+            print('Error during image upload: $e');
+          }
         }
         final response = await apiService.postReview(
-          placeId: widget.place.id,
+          placeId: widget.place.id.toString(),
           placeTable: widget.place.placeTable,
           comment: text,
           rating: rating,
-          imageFile: imageFile,
         );
 
         if (response['success']) {
@@ -203,7 +223,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       try {
         ApiService apiService = ApiService();
         final response = await apiService.postReview(
-          placeId: widget.place.id,
+          placeId: widget.place.id.toString(),
           placeTable: widget.place.placeTable,
           comment: text,
           parentId: parentId,
@@ -248,10 +268,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         if (isReview == true) {
           // Add the photo to reviewPhotos without tag selection
           setState(() {
-            widget.reviewPhotos?.add(Photo(
-              imageData: imageBytes,
-              tag: null,
-            ));
+            reviewPhotos.add(File(image.path));
           });
         } else {
           String? tag = await showDialog<String>(
@@ -273,15 +290,12 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                   await apiService.uploadImage(imageFile, placeId);
 
               print('Image upload response: $response');
-
-              // Ajouter la photo à la liste après l'upload réussi
-              setState(() {
-                widget.photos.add(Photo(
-                  imageData: imageBytes,
-                  tag: tag == "NO_TAG" ? null : tag,
-                ));
-                if (tag != "NO_TAG") allTags.add(tag);
-              });
+              if (response['message'] == "Photo enregistrée") {
+                await fetchPhotos();
+                print('Image uploaded successfully with tag: $tag');
+              } else {
+                print('Error uploading image with tag: ${response['error']}');
+              }
             } catch (e) {
               print('Erreur lors de l\'upload de l\'image : $e');
             }
@@ -308,7 +322,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 title: const Text('Galerie'),
                 onTap: () {
                   Navigator.pop(context);
-                  pickImage(ImageSource.gallery, isReview: isReview == true ? true : false);
+                  pickImage(ImageSource.gallery,
+                      isReview: isReview == true ? true : false);
                 },
               ),
               ListTile(
@@ -316,7 +331,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 title: const Text('Appareil photo'),
                 onTap: () {
                   Navigator.pop(context);
-                  pickImage(ImageSource.camera, isReview: isReview == true ? true : false);
+                  pickImage(ImageSource.camera,
+                      isReview: isReview == true ? true : false);
                 },
               ),
             ],
@@ -570,7 +586,22 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                   }
                                 },
                               )
-                            : buildPhotosSection(),
+                            : FutureBuilder<void>(
+                                future: _fetchPhotosFuture,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  } else if (snapshot.hasError) {
+                                    return Center(
+                                        child:
+                                            Text('Erreur: ${snapshot.error}'));
+                                  } else {
+                                    return buildPhotosSection();
+                                  }
+                                },
+                              ),
                       ),
                     ],
                   ),
@@ -609,6 +640,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
+                controller: _reviewController,
                 onChanged: (value) => setState(() => newReviewText = value),
                 decoration: InputDecoration(
                   hintText: "Écrire un avis...",
@@ -636,7 +668,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                     newReviewText = "";
                                     newReviewRating = 0;
                                     ratingError = "";
-                                    widget.reviewPhotos!.clear();
+                                    reviewPhotos.clear();
+                                    _reviewController.clear();
                                   });
                                 }
                               },
@@ -645,7 +678,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 5),
               Row(
                 children: List.generate(5, (index) {
                   return IconButton(
@@ -665,6 +697,64 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 Text(
                   ratingError,
                   style: const TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              if (reviewPhotos.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: List.generate(reviewPhotos.length, (index) {
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4.0),
+                              child: Image.memory(
+                                File(reviewPhotos[index].path)
+                                    .readAsBytesSync(),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: -10,
+                            top: -10,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    reviewPhotos.removeAt(index);
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ),
                 ),
             ],
           ),
@@ -804,8 +894,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
   Widget buildPhotosSection() {
     List<Photo> filteredPhotos = selectedTag == null
-        ? widget.photos // Use widget.photos instead of photos
-        : widget.photos.where((photo) => photo.tag == selectedTag).toList();
+        ? photos // Use widget.photos instead of photos
+        : photos.where((photo) => photo.tag == selectedTag).toList();
 
     return Stack(
       children: [
@@ -944,6 +1034,12 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _reviewController.dispose();
+    super.dispose();
   }
 }
 

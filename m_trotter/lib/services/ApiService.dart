@@ -394,12 +394,12 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body)['photos'];
-        return Future.wait(responseData.map((data) async {
+        final List<dynamic> responseData = json.decode(response.body)['photos']['photos'];
+        return Future.wait(responseData.map<Future<Photo>>((data) async {
           final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
           return Photo(
             imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
-            tag: data['tag'],
+            tag: data['tag'] != null ? data['tag'] as String : null,
           );
         }).toList());
       } else {
@@ -440,6 +440,59 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> postReview({
+    required String placeId,
+    required String placeTable,
+    required String comment,
+    File? imageFile,
+    int? parentId,
+    int? rating,
+  }) async {
+    final String url = '$baseUrl/api/postavis';
+    final String? token = await AuthService.getToken();
+
+    if (token == null) {
+      return {'success': false, 'error': 'Token non trouvé'};
+    }
+
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(url))
+        ..fields['accesstoken'] = token
+        ..fields['place_id'] = placeId
+        ..fields['place_table'] = placeTable
+        ..fields['lavis'] = comment;
+
+      if (parentId != null) {
+        request.fields['avis_parent'] = parentId.toString();
+      }
+
+      if (rating != null) {
+        request.fields['nb_etoile'] = rating.toString();
+      }
+
+      if (imageFile != null) {
+        request.files
+            .add(await http.MultipartFile.fromPath('file', imageFile.path));
+      }
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+      final Map<String, dynamic> jsonResponse = json.decode(responseData);
+
+      if (response.statusCode == 201 && jsonResponse['success'] == true) {
+        return {'success': true, 'data': jsonResponse};
+      } else {
+        return {
+          'success': false,
+          'error': jsonResponse['error'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      print('Erreur lors de la requête : $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   Future<List<dynamic>> fetchReviewsByPlaceId(
       String placeId, int startId) async {
     final String url = '$baseUrl/api/getavis';
@@ -462,59 +515,6 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête de ApiService : $e');
-    }
-  }
-
-  Future<Map<String, dynamic>> postReview({
-    required int placeId,
-    required String placeTable,
-    required String comment,
-    File? imageFile,
-    int? parentId,
-    int? rating,
-  }) async {
-    final String url = '$baseUrl/api/postavis';
-    final String? token = await AuthService.getToken();
-
-    if (token == null) {
-      return {'success': false, 'error': 'Token non trouvé'};
-    }
-
-    try {
-      final Map<String, dynamic> body = {
-        'accesstoken': token,
-        'place_id': placeId,
-        'place_table': placeTable,
-        'lavis': comment,
-        'avis_parent': parentId,
-        'nb_etoile': rating,
-      };
-
-      if (imageFile != null) {
-        List<int> imageBytes = await imageFile.readAsBytes();
-        String base64Image = base64Encode(imageBytes);
-        body['photo'] = base64Image;
-        print("Image envoyée : $base64Image");
-      }
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(body),
-      );
-
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      if (response.statusCode == 201 && responseData['success'] == true) {
-        return {'success': true, 'data': responseData};
-      } else {
-        return {
-          'success': false,
-          'error': responseData['error'] ?? 'Erreur inconnue'
-        };
-      }
-    } catch (e) {
-      print('Erreur lors de la requête : $e');
-      return {'success': false, 'error': e.toString()};
     }
   }
 
