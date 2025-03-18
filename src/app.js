@@ -5,6 +5,9 @@ const connexions = require('./routes/connexions');
 const departtrajet = require ('./routes/depart')
 const avis = require('./routes/avis');
 const upload = require('./routes/uploadRoutes');
+const modfication = require('./routes/modificationRoutes');
+const cron = require('node-cron');
+const verifierModifications = require('./script/verifierModif');
 require('dotenv').config();
 
 const app = express();
@@ -18,6 +21,7 @@ app.use('/api', departtrajet); //départ
 app.use('/api', avis); //avis
 app.use('/api', upload); //upload
 app.use('/comptes', connexions); //connexion
+app.use('/modification', modfication); //modification
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
@@ -28,4 +32,9 @@ app.use((err, req, res, next) => {
 // Démarrer le serveur
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+});
+
+cron.schedule('0 2 * * *', () => {
+    console.log('⏳ Exécution de la vérification des modifications...');
+    verifierModifications();
 });
