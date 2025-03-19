@@ -36,6 +36,7 @@ const getImagesByPlaceId = async (req, res) => {
         }
 
         const photos = await uploadService.fetchImagesByPlaceId(place_id);
+        console.log('Photos récupérées :', photos);
         res.status(200).json( {photos} );
     } catch (error) {
         console.error('Erreur lors de la récupération des images :', error);
