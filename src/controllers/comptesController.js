@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { inscriptionUtilisateur, getUtilisateur, updateUtilisateur } = require('../models/comptesModel');
+const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur } = require('../models/comptesModel');
 
 const ACCESS_TOKEN_SECRET = 'votre_secret_access';
 const REFRESH_TOKEN_SECRET = 'votre_secret_refresh';
