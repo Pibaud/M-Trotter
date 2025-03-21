@@ -494,27 +494,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         ),
                       ),
                       // Action buttons
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10.0, horizontal: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TextButton(
-                              onPressed: widget.onItineraryTap,
-                              child: const Text('Itinéraire'),
-                            ),
-                            TextButton(
-                              onPressed: widget.onCallTap,
-                              child: const Text('Appeler'),
-                            ),
-                            TextButton(
-                              onPressed: widget.onWebsiteTap,
-                              child: const Text('Site Web'),
-                            ),
-                          ],
-                        ),
-                      ),
+                      buildActionButtons(),
 
                       const Divider(
                           thickness: 1, height: 1, color: Colors.grey),
@@ -618,6 +598,109 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildActionButtons() {
+    int nbPossibleActions = 1; // Default actions: Itinéraire and Infos
+    if (widget.place.phone != null) nbPossibleActions++;
+    if (widget.place.website != null) nbPossibleActions++;
+
+    double horizontalPadding = 20.0 / nbPossibleActions;
+
+    print('horizontalPadding: $horizontalPadding');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 5.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          OutlinedButton(
+            onPressed: widget.onItineraryTap,
+            style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFF147FD6),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                side: BorderSide.none,
+                padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding, vertical: 5.0)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("Itinéraire"),
+                const Icon(Icons.directions_car_rounded,
+                    color: Colors.white, size: 24),
+              ],
+            ),
+          ),
+          if (widget.place.phone != null)
+            OutlinedButton(
+              onPressed: widget.onCallTap,
+              style: OutlinedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEBEBEB),
+                  foregroundColor: const Color(0xFF147FD6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  side: BorderSide.none,
+                  padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding, vertical: 5.0)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Appeler"),
+                  const Icon(Icons.call_rounded,
+                      color: Color(0xFF147FD6), size: 24),
+                ],
+              ),
+            ),
+          if (widget.place.website != null)
+            OutlinedButton(
+              onPressed: widget.onWebsiteTap,
+              style: OutlinedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEBEBEB),
+                  foregroundColor: const Color(0xFF147FD6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  side: BorderSide.none,
+                  padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding, vertical: 5.0)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Site Web"),
+                  const Icon(Icons.language,
+                      color: Color(0xFF147FD6), size: 24),
+                ],
+              ),
+            ),
+          OutlinedButton(
+            onPressed: () {
+              // Action factice pour le bouton Infos
+            },
+            style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFEBEBEB),
+                foregroundColor: const Color(0xFF147FD6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                side: BorderSide.none,
+                padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding, vertical: 5.0)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("Infos"),
+                const Icon(Icons.info_rounded,
+                    color: Color(0xFF147FD6), size: 24),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

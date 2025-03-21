@@ -103,15 +103,15 @@ class MyAppState extends State<MyApp> {
                 ? BottomNavigationBar(
                     items: const <BottomNavigationBarItem>[
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.home),
+                        icon: Icon(Icons.home_rounded),
                         label: 'Accueil',
                       ),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.map),
+                        icon: Icon(Icons.map_rounded),
                         label: 'Carte',
                       ),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.person),
+                        icon: Icon(Icons.person_rounded),
                         label: 'Profil',
                       ),
                     ],
