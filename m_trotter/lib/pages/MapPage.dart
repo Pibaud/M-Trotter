@@ -10,6 +10,7 @@ import '../services/MapInteractions.dart';
 import '../services/ApiService.dart';
 import '../services/AmenitiesService.dart';
 import 'dart:async';
+import '../widgets/PlacePresentationSheet.dart';
 import '../widgets/PlaceInfoSheet.dart';
 import '../widgets/ItinerarySheet.dart';
 import '../widgets/CustomSearchBar.dart';
@@ -52,7 +53,7 @@ class _MapPageState extends State<MapPage> {
       []; // places correspondant à l'amenity (extensible à d'autres filtres ?)
   List<String> suggestedAmenities = [];
   bool _isLayerVisible = false;
-  bool _isPlaceInfoSheetVisible = false;
+  bool _isPlacePresentationSheetVisible = false;
   Place? _selectedPlace;
   String? _selectedAmenity;
   double _bottomSheetHeight = 80.0;
@@ -228,7 +229,7 @@ class _MapPageState extends State<MapPage> {
       _selectedPlace = place; // Mettre à jour le lieu sélectionné
       suggestedPlaces.clear(); // Vide la liste des suggestions
       _isLayerVisible = false;
-      _isPlaceInfoSheetVisible = true;
+      _isPlacePresentationSheetVisible = true;
     });
 
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
@@ -251,7 +252,7 @@ class _MapPageState extends State<MapPage> {
   void _onMarkerTap(Place place) {
     setState(() {
       _selectedPlace = place;
-      _isPlaceInfoSheetVisible = true;
+      _isPlacePresentationSheetVisible = true;
     });
 
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
@@ -616,25 +617,25 @@ class _MapPageState extends State<MapPage> {
             },
             onTextChanged: _onTextChanged,
           ),
-          if (!_isLayerVisible && !_isPlaceInfoSheetVisible)
-          Positioned(
-            top: 85.0,
-            left: 0.0,
-            right: 0.0,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildAmenityChip('Supermarché'),
-                  _buildAmenityChip('Restaurant'),
-                  _buildAmenityChip('Bar'),
-                  _buildAmenityChip('Station-service'),
-                  _buildAmenityChip('Hôtel'),
-                  _buildAmenityChip('Plus'),
-                ],
+          if (!_isLayerVisible && !_isPlacePresentationSheetVisible)
+            Positioned(
+              top: 85.0,
+              left: 0.0,
+              right: 0.0,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildAmenityChip('Supermarché'),
+                    _buildAmenityChip('Restaurant'),
+                    _buildAmenityChip('Bar'),
+                    _buildAmenityChip('Station-service'),
+                    _buildAmenityChip('Hôtel'),
+                    _buildAmenityChip('Plus'),
+                  ],
+                ),
               ),
             ),
-          ),
           if ((_isLayerVisible && suggestedPlaces.isNotEmpty) ||
               _isLayerVisible && suggestedAmenities.isNotEmpty)
             Positioned(
@@ -720,30 +721,30 @@ class _MapPageState extends State<MapPage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10.0),
                 child: Stack(
-                    children: [
+                  children: [
                     // BackdropFilter pour le flou foncé
                     Positioned.fill(
                       child: BackdropFilter(
-                      filter:
-                        ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Flou
-                      child: Container(
-                        decoration: BoxDecoration(
-                        color: Color(
-                          0x10000000), // Fond semi-transparent foncé (alpha = 0.2)
-                        borderRadius: BorderRadius.circular(
-                          10.0), // Facultatif pour arrondir les coins
-                        boxShadow: [
-                          BoxShadow(
-                          color: Color(
-                            0x10000000), // Légère ombre noire avec alpha = 0.2
-                          blurRadius: 5.0, // Flou de l'ombre
-                          spreadRadius: 2.0, // Espace de l'ombre
-                          offset: Offset(
-                            0, 2), // Position de l'ombre (décalage)
+                        filter:
+                            ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // Flou
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color(
+                                0x10000000), // Fond semi-transparent foncé (alpha = 0.2)
+                            borderRadius: BorderRadius.circular(
+                                10.0), // Facultatif pour arrondir les coins
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(
+                                    0x10000000), // Légère ombre noire avec alpha = 0.2
+                                blurRadius: 5.0, // Flou de l'ombre
+                                spreadRadius: 2.0, // Espace de l'ombre
+                                offset: Offset(
+                                    0, 2), // Position de l'ombre (décalage)
+                              ),
+                            ],
                           ),
-                        ],
                         ),
-                      ),
                       ),
                     ),
 
@@ -803,10 +804,10 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          if (fittingPlaces.isNotEmpty && !_isPlaceInfoSheetVisible)
+          if (fittingPlaces.isNotEmpty && !_isPlacePresentationSheetVisible)
             PlaceListSheet(
                 initialHeight: MediaQuery.of(context).size.height * 0.45,
-                fullHeight: MediaQuery.of(context).size.height*0.95,
+                fullHeight: MediaQuery.of(context).size.height * 0.95,
                 midHeight: MediaQuery.of(context).size.height * 0.45,
                 collapsedHeight: 100.0,
                 onClose: () {
@@ -826,7 +827,7 @@ class _MapPageState extends State<MapPage> {
           if (_selectedPlace != null &&
               _routes.isEmpty &&
               _tramPolyLinesPoints.isEmpty)
-            PlaceInfoSheet(
+            PlacePresentationSheet(
               height: _bottomSheetHeight,
               onDragUpdate: (dy) {
                 setState(() {
@@ -862,10 +863,46 @@ class _MapPageState extends State<MapPage> {
               onWebsiteTap: () {
                 print("Ouvrir le site web du lieu sélectionné");
               },
+              onInfosTap: () {
+                setState(() {
+                  _isPlacePresentationSheetVisible = true;
+                });
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (context) {
+                    return PlaceInfoSheet(
+                      height: _bottomSheetHeight,
+                      onDragUpdate: (dy) {
+                        setState(() {
+                          _bottomSheetHeight -= dy;
+                        });
+                      },
+                      onDragEnd: () {
+                        final List<double> positions = [
+                          MediaQuery.of(context).size.height * 0.95,
+                          MediaQuery.of(context).size.height * 0.45,
+                          MediaQuery.of(context).size.height,
+                        ];
+                        double closestPosition = positions.reduce((a, b) =>
+                            (a - _bottomSheetHeight).abs() <
+                                    (b - _bottomSheetHeight).abs()
+                                ? a
+                                : b);
+
+                        setState(() {
+                          _bottomSheetHeight = closestPosition;
+                        });
+                      },
+                      place: _selectedPlace!,
+                    );
+                  },
+                );
+              },
               onClose: () {
                 setState(() {
                   _selectedPlace = null;
-                  _isPlaceInfoSheetVisible = false;
+                  _isPlacePresentationSheetVisible = false;
                   _controller.text = "";
                 });
 
