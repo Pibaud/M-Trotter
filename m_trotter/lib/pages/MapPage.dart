@@ -828,59 +828,61 @@ class _MapPageState extends State<MapPage> {
           if (_selectedPlace != null &&
               _routes.isEmpty &&
               _tramPolyLinesPoints.isEmpty)
-            PlacePresentationSheet(
-              height: _bottomSheetHeight,
-              onDragUpdate: (dy) {
-                setState(() {
-                  _bottomSheetHeight -= dy;
-                });
-              },
-              onDragEnd: () {
-                final List<double> positions = [
-                  MediaQuery.of(context).size.height * 0.95,
-                  MediaQuery.of(context).size.height * 0.45,
-                  MediaQuery.of(context).size.height,
-                ];
-                double closestPosition = positions.reduce((a, b) =>
-                    (a - _bottomSheetHeight).abs() <
-                            (b - _bottomSheetHeight).abs()
-                        ? a
-                        : b);
+            if (_isPlacePresentationSheetVisible)
+              PlacePresentationSheet(
+                height: _bottomSheetHeight,
+                onDragUpdate: (dy) {
+                  setState(() {
+                    _bottomSheetHeight -= dy;
+                  });
+                },
+                onDragEnd: () {
+                  final List<double> positions = [
+                    MediaQuery.of(context).size.height * 0.95,
+                    MediaQuery.of(context).size.height * 0.45,
+                    MediaQuery.of(context).size.height,
+                  ];
+                  double closestPosition = positions.reduce((a, b) =>
+                      (a - _bottomSheetHeight).abs() <
+                              (b - _bottomSheetHeight).abs()
+                          ? a
+                          : b);
 
-                setState(() {
-                  _bottomSheetHeight = closestPosition;
-                });
-              },
-              place: _selectedPlace!,
-              onItineraryTap: () {
-                _fetchRoutesForAllModes(_selectedPlace!);
-                setState(() {
-                  _loadedPlaces = [];
-                });
-              },
-              onCallTap: () {
-                print("Appeler le lieu sélectionné");
-              },
-              onWebsiteTap: () {
-                print("Ouvrir le site web du lieu sélectionné");
-              },
-              onInfosTap: () {
-                setState(() {
-                  _isPlaceInfoSheetVisible = true;
-                });
-              },
-              onClose: () {
-                setState(() {
-                  _selectedPlace = null;
-                  _isPlacePresentationSheetVisible = false;
-                  _controller.text = "";
-                });
+                  setState(() {
+                    _bottomSheetHeight = closestPosition;
+                  });
+                },
+                place: _selectedPlace!,
+                onItineraryTap: () {
+                  _fetchRoutesForAllModes(_selectedPlace!);
+                  setState(() {
+                    _loadedPlaces = [];
+                  });
+                },
+                onCallTap: () {
+                  print("Appeler le lieu sélectionné");
+                },
+                onWebsiteTap: () {
+                  print("Ouvrir le site web du lieu sélectionné");
+                },
+                onInfosTap: () {
+                  setState(() {
+                    _isPlaceInfoSheetVisible = true;
+                    _isPlacePresentationSheetVisible = false;
+                  });
+                },
+                onClose: () {
+                  setState(() {
+                    _selectedPlace = null;
+                    _isPlacePresentationSheetVisible = false;
+                    _controller.text = "";
+                  });
 
-                Provider.of<BottomNavBarVisibilityProvider>(context,
-                        listen: false)
-                    .showBottomNav();
-              },
-            ),
+                  Provider.of<BottomNavBarVisibilityProvider>(context,
+                          listen: false)
+                      .showBottomNav();
+                },
+              ),
           if (_routes.isNotEmpty)
             ItinerarySheet(
               initialHeight: MediaQuery.of(context).size.height * 0.45,

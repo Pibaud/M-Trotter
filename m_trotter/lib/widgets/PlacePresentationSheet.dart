@@ -114,7 +114,6 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
 
   Future<void> fetchPhotos() async {
     ApiService apiService = ApiService();
-    print("appel avec l'id : ${widget.place.id.toString()}");
     List<Photo> response =
         await apiService.fetchImagesByPlaceId(widget.place.id.toString());
     setState(() {
@@ -611,8 +610,6 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
 
     double horizontalPadding = 20.0 / nbPossibleActions;
 
-    print('horizontalPadding: $horizontalPadding');
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 5.0),
       child: Row(
@@ -683,7 +680,6 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
           OutlinedButton(
             onPressed: () {
               widget.onInfosTap!();
-              print("sheet dit à mappage de passer la visibilité à true");
             },
             style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFEBEBEB),
