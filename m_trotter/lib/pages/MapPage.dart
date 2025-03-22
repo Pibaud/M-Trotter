@@ -54,6 +54,7 @@ class _MapPageState extends State<MapPage> {
   List<String> suggestedAmenities = [];
   bool _isLayerVisible = false;
   bool _isPlacePresentationSheetVisible = false;
+  bool _isPlaceInfoSheetVisible = false;
   Place? _selectedPlace;
   String? _selectedAmenity;
   double _bottomSheetHeight = 80.0;
@@ -865,39 +866,8 @@ class _MapPageState extends State<MapPage> {
               },
               onInfosTap: () {
                 setState(() {
-                  _isPlacePresentationSheetVisible = true;
+                  _isPlaceInfoSheetVisible = true;
                 });
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (context) {
-                    return PlaceInfoSheet(
-                      height: _bottomSheetHeight,
-                      onDragUpdate: (dy) {
-                        setState(() {
-                          _bottomSheetHeight -= dy;
-                        });
-                      },
-                      onDragEnd: () {
-                        final List<double> positions = [
-                          MediaQuery.of(context).size.height * 0.95,
-                          MediaQuery.of(context).size.height * 0.45,
-                          MediaQuery.of(context).size.height,
-                        ];
-                        double closestPosition = positions.reduce((a, b) =>
-                            (a - _bottomSheetHeight).abs() <
-                                    (b - _bottomSheetHeight).abs()
-                                ? a
-                                : b);
-
-                        setState(() {
-                          _bottomSheetHeight = closestPosition;
-                        });
-                      },
-                      place: _selectedPlace!,
-                    );
-                  },
-                );
               },
               onClose: () {
                 setState(() {
@@ -1021,6 +991,38 @@ class _MapPageState extends State<MapPage> {
                   _transitWays = [];
                   _tramPolyLinesPoints = [];
                   _walkTramPoints = [];
+                });
+              },
+            ),
+          if (_isPlaceInfoSheetVisible)
+            PlaceInfoSheet(
+              height: _bottomSheetHeight,
+              onDragUpdate: (dy) {
+                setState(() {
+                  _bottomSheetHeight -= dy;
+                });
+              },
+              onDragEnd: () {
+                final List<double> positions = [
+                  MediaQuery.of(context).size.height * 0.95,
+                  MediaQuery.of(context).size.height * 0.45,
+                  MediaQuery.of(context).size.height,
+                ];
+                double closestPosition = positions.reduce((a, b) =>
+                    (a - _bottomSheetHeight).abs() <
+                            (b - _bottomSheetHeight).abs()
+                        ? a
+                        : b);
+
+                setState(() {
+                  _bottomSheetHeight = closestPosition;
+                });
+              },
+              place: _selectedPlace!,
+              onClose: () {
+                setState(() {
+                  _isPlaceInfoSheetVisible = false;
+                  _isPlacePresentationSheetVisible = true;
                 });
               },
             ),

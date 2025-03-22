@@ -682,7 +682,8 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
             ),
           OutlinedButton(
             onPressed: () {
-              // Action factice pour le bouton Infos
+              widget.onInfosTap!();
+              print("sheet dit à mappage de passer la visibilité à true");
             },
             style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFEBEBEB),
