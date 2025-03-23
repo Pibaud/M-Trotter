@@ -405,7 +405,7 @@ class ApiService {
               tag: data['tag'] != null ? data['tag'] as String : null,
             );
           }).toList());
-        } else{
+        } else {
           return [];
         }
       } else {
@@ -554,6 +554,44 @@ class ApiService {
     } catch (e) {
       print('Erreur lors de la requête : $e');
       return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<void> proposeModifications(
+      {required int osmId,
+      required List<Map<String, String>> modifications}) async {
+    final String url = '$baseUrl/modification';
+    final String? token = await AuthService.getToken();
+    print('modifie avec ${modifications.toString()} et id ${osmId.toString()}');
+
+    if (token == null) {
+      throw Exception('Token non trouvé');
+    }
+
+    for (var modification in modifications) {
+      try {
+        print('modification: ${modification.toString()}');
+        final response = await http.post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'osm_id': osmId,
+            'champ_modifie': modification['champ_modifie'],
+            'ancienne_valeur': modification['ancienne_valeur'],
+            'nouvelle_valeur': modification['nouvelle_valeur'],
+            'accesstoken': token,
+          }),
+        );
+
+        if (response.statusCode == 201) {
+          final responseData = json.decode(response.body);
+          print(responseData['message']);
+        }else{   
+          print('Erreur lors de la modification: ${response.statusCode}');
+        }
+      } catch (e) {
+        throw Exception('Erreur lors de la requête : $e');
+      }
     }
   }
 }

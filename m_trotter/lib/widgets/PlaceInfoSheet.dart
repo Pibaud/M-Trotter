@@ -98,10 +98,13 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                           title: const Text('Type du lieu'),
                           subtitle: Text(widget.place.amenity ?? 'N/A'),
                         ),
-                        if (widget.place.tags['addr:city'] != null || widget.place.tags['addr:street'] != null || widget.place.tags['addr:postcode'] != null)
+                        if (widget.place.tags['addr:city'] != null ||
+                            widget.place.tags['addr:street'] != null ||
+                            widget.place.tags['addr:postcode'] != null)
                           ListTile(
                             title: const Text('Adresse'),
-                            subtitle: Text('${widget.place.tags['addr:street']}, ${widget.place.tags['addr:postcode']}, ${widget.place.tags['addr:city']}'),
+                            subtitle: Text(
+                                '${widget.place.tags['addr:street']}, ${widget.place.tags['addr:postcode']}, ${widget.place.tags['addr:city']}'),
                           ),
                         ListTile(
                           title: const Text('Coordonées'),
@@ -151,19 +154,20 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         if (widget.place.tags['wheelchair_accessible'] != null)
                           ListTile(
                             title: const Text('Accès fauteuil roulant'),
-                            subtitle: Text(widget.place.tags['wheelchair_accessible']!),
+                            subtitle: Text(
+                                widget.place.tags['wheelchair_accessible']!),
                           ),
                         if (widget.place.tags['outdoorSeating'] != null)
                           ListTile(
                             title: const Text('Sièges extérieurs'),
-                            subtitle: Text(
-                                widget.place.tags['outdoorSeating']!),
+                            subtitle:
+                                Text(widget.place.tags['outdoorSeating']!),
                           ),
                         if (widget.place.tags['airConditioning'] != null)
                           ListTile(
                             title: const Text('Climatisation'),
-                            subtitle: Text(
-                                widget.place.tags['airConditioning']!),
+                            subtitle:
+                                Text(widget.place.tags['airConditioning']!),
                           ),
                         if (widget.place.tags['facebook'] != null)
                           ListTile(
@@ -185,7 +189,22 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               bottom: 16,
               right: 16,
               child: FloatingActionButton(
-                onPressed: () {
+                onPressed: () async {
+                  if (isEditing) {
+                    // Call proposeModifications method
+                    final modifications = [
+                      {
+                        'champ_modifie': 'tags',
+                        'ancienne_valeur': '"wheelchair"=>"yes"',
+                        'nouvelle_valeur': '"wheelchair"=>"no"',
+                      }
+                    ];
+
+                    await ApiService().proposeModifications(
+                      osmId: widget.place.id,
+                      modifications: modifications,
+                    );
+                  }
                   setState(() {
                     isEditing = !isEditing;
                   });
