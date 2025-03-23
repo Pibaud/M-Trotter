@@ -9,6 +9,7 @@ import 'providers/LanguageNotifier.dart';
 import 'providers/BottomNavBarVisibilityProvider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import '../services/ApiService.dart';
+import '../utils/GlobalData.dart'; // Importez votre nouvelle classe
 
 final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
 
@@ -37,27 +38,37 @@ class MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    _initializeApp();
+  }
+  
+  Future<void> _initializeApp() async {
+    // Charger les amenities globalement
+    await GlobalData.loadAmenities();
+    
     _pages = [
       HomePage(onTabChange: _onItemTapped),
       MapPage(focusOnSearch: _focusOnSearch),
       const ProfilePage(),
     ];
+    
     _apiService = ApiService();
-    _apiService.recupAccessToken().then((result) {
-      if (result['success'] == false &&
-          result['error'] ==
-              'Refresh token invalide, veuillez vous reconnecter') {
-        print(
-            "Le refresh token est invalide, redirection vers la connexion...");
-        AuthPage();
-      } else {
-        print("Token rafraîchi avec succès !");
-      }
-    });
+    final result = await _apiService.recupAccessToken();
+    if (result['success'] == false &&
+        result['error'] == 'Refresh token invalide, veuillez vous reconnecter') {
+      print("Le refresh token est invalide, redirection vers la connexion...");
+      AuthPage();
+    } else {
+      print("Token rafraîchi avec succès !");
+    }
 
     // Ensure BottomNavBar is visible on initialization
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
         .showBottomNav();
+        
+    // Forcer une reconstruction après l'initialisation
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onItemTapped(int index) {

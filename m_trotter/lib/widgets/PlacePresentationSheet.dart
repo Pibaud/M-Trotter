@@ -605,8 +605,8 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
 
   Widget buildActionButtons() {
     int nbPossibleActions = 1; // Default actions: Itinéraire and Infos
-    if (widget.place.phone != null) nbPossibleActions++;
-    if (widget.place.website != null) nbPossibleActions++;
+    if (widget.place.tags['phone'] != null) nbPossibleActions++;
+    if (widget.place.tags['website'] != null) nbPossibleActions++;
 
     double horizontalPadding = 20.0 / nbPossibleActions;
 
@@ -635,7 +635,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
               ],
             ),
           ),
-          if (widget.place.phone != null)
+          if (widget.place.tags['phone'] != null)
             OutlinedButton(
               onPressed: widget.onCallTap,
               style: OutlinedButton.styleFrom(
@@ -656,7 +656,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                 ],
               ),
             ),
-          if (widget.place.website != null)
+          if (widget.place.tags['website'] != null)
             OutlinedButton(
               onPressed: widget.onWebsiteTap,
               style: OutlinedButton.styleFrom(

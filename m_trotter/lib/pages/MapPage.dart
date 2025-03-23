@@ -866,6 +866,7 @@ class _MapPageState extends State<MapPage> {
                   print("Ouvrir le site web du lieu sélectionné");
                 },
                 onInfosTap: () {
+                  print(_selectedPlace!);
                   setState(() {
                     _isPlaceInfoSheetVisible = true;
                     _isPlacePresentationSheetVisible = false;

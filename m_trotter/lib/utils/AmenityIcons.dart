@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/GlobalData.dart'; // Import de vos données globales
 
 // Mapping des icônes par catégorie d'amenities
 const Map<List<String>, IconData> amenityIconMapping = {
@@ -128,7 +129,7 @@ const Map<List<String>, Color> amenityColorMapping = {
 
 IconData getAmenityIcon(String amenity) {
   for (var entry in amenityIconMapping.entries) {
-    if (entry.key.contains(amenity)) {
+    if (entry.key.contains(GlobalData.amenities[amenity])) {
       return entry.value;
     }
   }
@@ -137,7 +138,7 @@ IconData getAmenityIcon(String amenity) {
 
 Color getAmenityColor(String amenity) {
   for (var entry in amenityColorMapping.entries) {
-    if (entry.key.contains(amenity)) {
+    if (entry.key.contains(GlobalData.amenities[amenity])) {
       return entry.value;
     }
   }

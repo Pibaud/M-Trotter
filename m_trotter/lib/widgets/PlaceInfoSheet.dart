@@ -98,79 +98,82 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                           title: const Text('Type du lieu'),
                           subtitle: Text(widget.place.amenity ?? 'N/A'),
                         ),
+                        if (widget.place.tags['addr:city'] != null || widget.place.tags['addr:street'] != null || widget.place.tags['addr:postcode'] != null)
+                          ListTile(
+                            title: const Text('Adresse'),
+                            subtitle: Text('${widget.place.tags['addr:street']}, ${widget.place.tags['addr:postcode']}, ${widget.place.tags['addr:city']}'),
+                          ),
                         ListTile(
-                          title: const Text('Adresse'),
+                          title: const Text('Coordonées'),
                           subtitle: Text(
                               '${widget.place.latitude.toStringAsFixed(4)}, ${widget.place.longitude.toStringAsFixed(4)}'),
                         ),
-                        if (widget.place.phone != null)
+                        if (widget.place.tags['phone'] != null)
                           ListTile(
                             title: const Text('Téléphone'),
-                            subtitle: Text(widget.place.phone!),
+                            subtitle: Text(widget.place.tags['phone']!),
                           ),
-                        if (widget.place.cuisine != null)
+                        if (widget.place.tags['cuisine'] != null)
                           ListTile(
                             title: const Text('Cuisine'),
-                            subtitle: Text(widget.place.cuisine!),
+                            subtitle: Text(widget.place.tags['cuisine']!),
                           ),
-                        if (widget.place.website != null)
+                        if (widget.place.tags['website'] != null)
                           ListTile(
                             title: const Text('Site web'),
-                            subtitle: Text(widget.place.website!),
+                            subtitle: Text(widget.place.tags['website']!),
                           ),
-                        if (widget.place.email != null)
+                        if (widget.place.tags['email'] != null)
                           ListTile(
                             title: const Text('Email'),
-                            subtitle: Text(widget.place.email!),
+                            subtitle: Text(widget.place.tags['email']!),
                           ),
-                        if (widget.place.city != null)
+                        if (widget.place.tags['city'] != null)
                           ListTile(
                             title: const Text('Ville'),
-                            subtitle: Text(widget.place.city!),
+                            subtitle: Text(widget.place.tags['city']!),
                           ),
-                        if (widget.place.street != null)
+                        if (widget.place.tags['street'] != null)
                           ListTile(
                             title: const Text('Rue'),
-                            subtitle: Text(widget.place.street!),
+                            subtitle: Text(widget.place.tags['street']!),
                           ),
-                        if (widget.place.postcode != null)
+                        if (widget.place.tags['postcode'] != null)
                           ListTile(
                             title: const Text('Code postal'),
-                            subtitle: Text(widget.place.postcode!),
+                            subtitle: Text(widget.place.tags['postcode']!),
                           ),
-                        if (widget.place.openingHours != null)
+                        if (widget.place.tags['opening_hours'] != null)
                           ListTile(
                             title: const Text('Heures d\'ouverture'),
-                            subtitle: Text(widget.place.openingHours!),
+                            subtitle: Text(widget.place.tags['opening_hours']!),
                           ),
-                        if (widget.place.wheelchairAccessible != null)
+                        if (widget.place.tags['wheelchair_accessible'] != null)
                           ListTile(
                             title: const Text('Accès fauteuil roulant'),
-                            subtitle: Text(widget.place.wheelchairAccessible!
-                                ? 'Oui'
-                                : 'Non'),
+                            subtitle: Text(widget.place.tags['wheelchair_accessible']!),
                           ),
-                        if (widget.place.outdoorSeating != null)
+                        if (widget.place.tags['outdoorSeating'] != null)
                           ListTile(
                             title: const Text('Sièges extérieurs'),
                             subtitle: Text(
-                                widget.place.outdoorSeating! ? 'Oui' : 'Non'),
+                                widget.place.tags['outdoorSeating']!),
                           ),
-                        if (widget.place.airConditioning != null)
+                        if (widget.place.tags['airConditioning'] != null)
                           ListTile(
                             title: const Text('Climatisation'),
                             subtitle: Text(
-                                widget.place.airConditioning! ? 'Oui' : 'Non'),
+                                widget.place.tags['airConditioning']!),
                           ),
-                        if (widget.place.facebook != null)
+                        if (widget.place.tags['facebook'] != null)
                           ListTile(
                             title: const Text('Facebook'),
-                            subtitle: Text(widget.place.facebook!),
+                            subtitle: Text(widget.place.tags['facebook']!),
                           ),
-                        if (widget.place.operator != null)
+                        if (widget.place.tags['operator'] != null)
                           ListTile(
                             title: const Text('Opérateur'),
-                            subtitle: Text(widget.place.operator!),
+                            subtitle: Text(widget.place.tags['operator']!),
                           ),
                       ],
                     ),
