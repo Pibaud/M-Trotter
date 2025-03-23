@@ -2,13 +2,21 @@ const modificationsModel = require('../models/modificationModel');
 
 exports.proposerModification = async (req, res) => {
     try {
-        const { osm_id, champ_modifie, ancienne_valeur, nouvelle_valeur, id_utilisateur } = req.body;
+        const { osm_id, champ_modifie, ancienne_valeur, nouvelle_valeur, accesstoken } = req.body;
 
-        if (!osm_id || !champ_modifie || !nouvelle_valeur || !id_utilisateur) {
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
+
+        if (!osm_id || !champ_modifie || !nouvelle_valeur) {
             return res.status(400).json({ error: 'Données manquantes' });
         }
 
-        const modification = await modificationsModel.ajouterModification({ osm_id, champ_modifie, ancienne_valeur, nouvelle_valeur, id_utilisateur });
+        const modification = await modificationsModel.ajouterModification({ osm_id, champ_modifie, ancienne_valeur, nouvelle_valeur, user_id });
 
         res.status(201).json({ message: 'Modification proposée avec succès', modification });
     } catch (error) {
