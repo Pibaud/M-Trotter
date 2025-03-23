@@ -38,10 +38,10 @@ class MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _pages = [
-          HomePage(onTabChange: _onItemTapped),
-          MapPage(focusOnSearch: _focusOnSearch),
-          const ProfilePage(),
-        ];
+      HomePage(onTabChange: _onItemTapped),
+      MapPage(focusOnSearch: _focusOnSearch),
+      const ProfilePage(),
+    ];
     _apiService = ApiService();
     _apiService.recupAccessToken().then((result) {
       if (result['success'] == false &&
@@ -54,7 +54,10 @@ class MyAppState extends State<MyApp> {
         print("Token rafraîchi avec succès !");
       }
     });
-    //refresh token avec apiservice.redfresh
+
+    // Ensure BottomNavBar is visible on initialization
+    Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
+        .showBottomNav();
   }
 
   void _onItemTapped(int index) {
@@ -103,15 +106,15 @@ class MyAppState extends State<MyApp> {
                 ? BottomNavigationBar(
                     items: const <BottomNavigationBarItem>[
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.home),
+                        icon: Icon(Icons.home_rounded),
                         label: 'Accueil',
                       ),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.map),
+                        icon: Icon(Icons.map_rounded),
                         label: 'Carte',
                       ),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.person),
+                        icon: Icon(Icons.person_rounded),
                         label: 'Profil',
                       ),
                     ],

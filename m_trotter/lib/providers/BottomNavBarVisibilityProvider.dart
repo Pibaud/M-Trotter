@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 class BottomNavBarVisibilityProvider extends ChangeNotifier {
   bool _isBottomNavVisible = true;
 
+  BottomNavBarVisibilityProvider() {
+    _isBottomNavVisible = true; // Ensure visibility is true on initialization
+  }
+
   bool get isBottomNavVisible => _isBottomNavVisible;
 
   // Fonction pour cacher ou afficher la BottomNavigationBar

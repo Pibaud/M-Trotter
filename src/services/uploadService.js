@@ -69,7 +69,7 @@ const fetchImagesByPlaceId = async (placeId) => {
         console.log('Images récupérées de la BDD :', images);
 
         if (!images || images.length === 0) {
-            console.error('Aucune image trouvée pour ce lieu.');
+            console.log('Aucune image trouvée pour ce lieu.');
             return []; // Retourner un tableau vide plutôt que de lever une erreur
         }
 

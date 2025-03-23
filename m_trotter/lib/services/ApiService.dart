@@ -394,14 +394,20 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body)['photos']['photos'];
-        return Future.wait(responseData.map<Future<Photo>>((data) async {
-          final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
-          return Photo(
-            imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
-            tag: data['tag'] != null ? data['tag'] as String : null,
-          );
-        }).toList());
+        if (json.decode(response.body)['photos'].isNotEmpty) {
+          final List<dynamic> responseData =
+              json.decode(response.body)['photos']['photos'];
+
+          return Future.wait(responseData.map<Future<Photo>>((data) async {
+            final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
+            return Photo(
+              imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
+              tag: data['tag'] != null ? data['tag'] as String : null,
+            );
+          }).toList());
+        } else{
+          return [];
+        }
       } else {
         final errorResponse = json.decode(response.body);
         throw Exception(
