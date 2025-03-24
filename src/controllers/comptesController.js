@@ -17,7 +17,7 @@ exports.inscription = async (req, res) => {
         const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
         const refreshToken = jwt.sign({ id: utilisateur.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
 
-        const subject = "Bienvenu dans la famille M'trotter";
+        const subject = "Bienvenue dans la famille M'trotter";
         const text = `Bonjour, je suis Gaël, votre guide M'trotter. Bienvenu dans la famille M'trotter !`;
         const html = `<p>Bonjour,</p>
                     <p>Merci de vous être inscrit sur M'trotter !</p>
