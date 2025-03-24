@@ -1,4 +1,5 @@
 const modificationsModel = require('../models/modificationModel');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 exports.proposerModification = async (req, res) => {
