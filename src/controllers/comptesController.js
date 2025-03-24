@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur } = require('../models/comptesModel');
 require('dotenv').config();
+const sendEmail = require('../config/email');
+
 
 
 exports.inscription = async (req, res) => {
@@ -14,6 +16,15 @@ exports.inscription = async (req, res) => {
         const utilisateur = await inscriptionUtilisateur(email, username, password);
         const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
         const refreshToken = jwt.sign({ id: utilisateur.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
+
+        const subject = "Bienvenu dans la famille M'trotter";
+        const text = `Bonjour, je suis Gaël, votre guide M'trotter. Bienvenu dans la famille M'trotter !`;
+        const html = `<p>Bonjour,</p>
+                    <p>Merci de vous être inscrit sur M'trotter !</p>
+                    <p>N'hésitez pas à parler de nous sur les reseaux sociaux ou à vos amis</p>`;
+
+        await sendEmail(email, subject, text, html);
+
         res.json({ success: true, accessToken, refreshToken });
     } catch (error) {
         res.status(500).json({ message: error.message });
