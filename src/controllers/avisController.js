@@ -33,8 +33,14 @@ exports.getAvisbyUser = async (req, res) => {
             return res.status(400).json({ error: "token d'acces est requis." });
         }
 
-        const user_id = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET).id;
-
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
+        
         const avis = await fetchAvisbyUser(user_id);
 
         if (!avis || avis.length === 0) {

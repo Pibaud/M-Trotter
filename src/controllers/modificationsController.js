@@ -1,5 +1,4 @@
 const modificationsModel = require('../models/modificationModel');
-
 require('dotenv').config();
 
 exports.proposerModification = async (req, res) => {

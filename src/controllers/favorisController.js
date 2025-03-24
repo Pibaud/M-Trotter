@@ -1,7 +1,6 @@
 const favorisModel = require('../models/favorisModel');
 const jwt = require('jsonwebtoken');
-
-const ACCESS_TOKEN_SECRET = 'votre_secret_access';
+require('dotenv').config();
 
 exports.addFavorite = async (req, res) => {
     try {
@@ -11,9 +10,15 @@ exports.addFavorite = async (req, res) => {
             return res.status(400).json({ error: 'osm_id et accessToken requis' });
         }
 
-        const userId = jwt.verify(accessToken, ACCESS_TOKEN_SECRET).id;
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
 
-        await favorisModel.addFavorite(userId, osm_id);
+        await favorisModel.addFavorite(user_id, osm_id);
 
         res.status(201).json({ message: 'Lieu ajouté aux favoris' });
     } catch (error) {
@@ -29,9 +34,15 @@ exports.delFavorite = async (req, res) => {
             return res.status(400).json({ error: 'osm_id et accessToken requis' });
         }
 
-        const userId = jwt.verify(accessToken, ACCESS_TOKEN_SECRET).id;
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
 
-        await favorisModel.delFavorite(userId, osm_id);
+        await favorisModel.delFavorite(user_id, osm_id);
 
         res.status(200).json({ message: 'Lieu supprimé des favoris' });
     } catch (error) {
@@ -47,11 +58,17 @@ exports.getFavorites = async (req, res) => {
             return res.status(400).json({ error: 'accessToken requis' });
         }
 
-        const userId = jwt.verify(accessToken, ACCESS_TOKEN_SECRET).id;
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
 
-        console.log("userId", userId);
+        console.log("userId", user_id);
 
-        const { rows } = await favorisModel.getFavorites(userId);
+        const { rows } = await favorisModel.getFavorites(user_id);
 
         console.log("rows", rows);
 

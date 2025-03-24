@@ -19,6 +19,6 @@ router.post('/logout', logout);
 router.post('/getProfil', getProfil);
 
 // Mettre à jour le profil utilisateur
-router.post('/updateProfil', authenticateUser, updateProfil);
+router.post('/updateProfil', updateProfil);
 
 module.exports = router;

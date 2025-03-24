@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
-
-const ACCESS_TOKEN_SECRET = 'votre_secret_access';
+require('dotenv').config();
 
 const authenticateUser = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -11,7 +10,7 @@ const authenticateUser = (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
-    jwt.verify(token, ACCESS_TOKEN_SECRET, (err, decoded) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
             return res.status(403).json({ message: "Token invalide ou expiré." });
         }

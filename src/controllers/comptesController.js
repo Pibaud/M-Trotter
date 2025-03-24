@@ -1,9 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur } = require('../models/comptesModel');
+require('dotenv').config();
 
-const ACCESS_TOKEN_SECRET = 'votre_secret_access';
-const REFRESH_TOKEN_SECRET = 'votre_secret_refresh';
 
 exports.inscription = async (req, res) => {
     const { email, username, password } = req.body;
@@ -13,8 +12,8 @@ exports.inscription = async (req, res) => {
 
     try {
         const utilisateur = await inscriptionUtilisateur(email, username, password);
-        const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-        const refreshToken = jwt.sign({ id: utilisateur.id }, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
+        const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        const refreshToken = jwt.sign({ id: utilisateur.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
         res.json({ success: true, accessToken, refreshToken });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -38,8 +37,8 @@ exports.connexions = async (req, res) => {
             return res.status(401).json({ message: "Mot de passe incorrect." });
         }
 
-        const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-        const refreshToken = jwt.sign({ id: utilisateur.id }, REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
+        const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        const refreshToken = jwt.sign({ id: utilisateur.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
 
         res.json({ accessToken, refreshToken });
     } catch (error) {
@@ -53,10 +52,10 @@ exports.refreshToken = (req, res) => {
         return res.status(401).json({ message: "Token manquant." });
     }
 
-    jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) return res.status(403).json({ message: "Token invalide." });
 
-        const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        const newAccessToken = jwt.sign({ id: user.id, username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
         res.json({ accessToken: newAccessToken });
     });
 };
@@ -77,15 +76,26 @@ exports.getProfil = async (req, res) => {
 };
 
 exports.updateProfil = async (req, res) => {
-    const userId = req.user.id; // Récupération de l'ID depuis le middleware
-    const updatedFields = req.body;
+    const { accessToken, updatedFields } = req.body;
+
+    if (!accessToken) {
+        return res.status(401).json
+    }
+
+    let user_id;
+    try {
+        const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+        user_id = decodedToken.id;
+    } catch (err) {
+        return res.status(401).json({ error: 'Token invalide ou expiré' });
+    }
 
     if (!updatedFields || Object.keys(updatedFields).length === 0) {
         return res.status(400).json({ message: "Aucune donnée à mettre à jour." });
     }
 
     try {
-        const utilisateurMisAJour = await updateUtilisateur(userId, updatedFields);
+        const utilisateurMisAJour = await updateUtilisateur(user_id, updatedFields);
         res.json({ message: "Profil mis à jour.", utilisateur: utilisateurMisAJour });
     } catch (error) {
         res.status(500).json({ message: error.message });
