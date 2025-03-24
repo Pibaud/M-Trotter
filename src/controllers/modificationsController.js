@@ -18,7 +18,7 @@ exports.proposerModification = async (req, res) => {
             return res.status(400).json({ error: 'Données manquantes' });
         }
 
-        const modification = await modificationsModel.ajouterModification({ osm_id, champ_modifie, ancienne_valeur, nouvelle_valeur, user_id });
+        const modification = await modificationsModel.ajouterModification({ osm_id, champ_modifie, ancienne_valeur, nouvelle_valeur, id_utilisateur: user_id });
 
         res.status(201).json({ message: 'Modification proposée avec succès', modification });
     } catch (error) {
