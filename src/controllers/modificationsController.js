@@ -1,6 +1,6 @@
 const modificationsModel = require('../models/modificationModel');
 
-const ACCESS_TOKEN_SECRET = 'votre_secret_access';
+require('dotenv').config();
 
 exports.proposerModification = async (req, res) => {
     try {
@@ -8,7 +8,7 @@ exports.proposerModification = async (req, res) => {
 
         let user_id;
         try {
-            const decodedToken = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET);
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
             user_id = decodedToken.id;
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });

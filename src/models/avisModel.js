@@ -54,12 +54,13 @@ exports.fetchAvisById = async (place_id, startid) => {
 };
 
 
-exports.deleteAvisById = async (avis_id) => {
+exports.deleteAvisById = async (avis_id, user_id) => {
     const result = await pool.query(
         `DELETE FROM avis
          WHERE avis_id = $1
+         AND user_id = $2
          RETURNING *`,
-        [avis_id]
+        [avis_id, user_id]
     );
 
     return result.rows.length > 0 ? result.rows[0] : null;

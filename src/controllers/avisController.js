@@ -1,8 +1,8 @@
+const { user } = require('pg/lib/defaults');
 const { newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike, fetchAvisbyUser } = require('../models/avisModel');
 const uploadService = require('../services/uploadService');
 const jwt = require('jsonwebtoken');
-
-const ACCESS_TOKEN_SECRET = 'votre_secret_access';
+require('dotenv').config();
 
 exports.getAvisByPlaceId = async (req, res) => {
     try {
@@ -33,7 +33,7 @@ exports.getAvisbyUser = async (req, res) => {
             return res.status(400).json({ error: "token d'acces est requis." });
         }
 
-        const user_id = jwt.verify(accessToken, ACCESS_TOKEN_SECRET).id;
+        const user_id = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET).id;
 
         const avis = await fetchAvisbyUser(user_id);
 
@@ -81,7 +81,7 @@ exports.postAvis = async (req, res) => {
 
         let user_id;
         try {
-            const decodedToken = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET);
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
             user_id = decodedToken.id;
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
@@ -116,14 +116,22 @@ exports.postAvis = async (req, res) => {
 
 exports.deleteAvis = async (req, res) => {
     try {
-        const { avis_id } = req.body; // Récupère l'ID de l'avis dans le corps de la requête
+        const { avis_id, accessToken} = req.body; // Récupère l'ID de l'avis dans le corps de la requête
 
-        if (!avis_id) {
+        if (!avis_id, !accessToken) {
             return res.status(400).json({ error: 'avis_id est requis.' });
         }
 
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
+
         // Appel du modèle pour supprimer l'avis
-        const deletedAvis = await deleteAvisById(avis_id);
+        const deletedAvis = await deleteAvisById(avis_id, user_id);
 
         if (!deletedAvis) {
             return res.status(404).json({ error: 'Avis non trouvé.' });
@@ -138,10 +146,18 @@ exports.deleteAvis = async (req, res) => {
 
 exports.likeAvis = async (req, res) => {
     try {
-        const { avis_id, user_id } = req.body; // Récupère l'ID de l'avis et l'ID de l'utilisateur dans le corps de la requête
+        const { avis_id, accessToken } = req.body; // Récupère l'ID de l'avis et l'ID de l'utilisateur dans le corps de la requête
 
-        if (!avis_id || !user_id) {
+        if (!avis_id || !accessToken) {
             return res.status(400).json({ error: 'avis_id et user_id sont requis.' });
+        }
+
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
         }
 
         // Appel du modèle pour ajouter le like
@@ -160,10 +176,18 @@ exports.likeAvis = async (req, res) => {
 
 exports.unlikeAvis = async (req, res) => {
     try {
-        const { avis_id, user_id } = req.body; // Récupère l'ID de l'avis et l'ID de l'utilisateur dans le corps de la requête
+        const { avis_id, accessToken } = req.body; // Récupère l'ID de l'avis et l'ID de l'utilisateur dans le corps de la requête
 
-        if (!avis_id || !user_id) {
+        if (!avis_id || !accessToken) {
             return res.status(400).json({ error: 'avis_id et user_id sont requis.' });
+        }
+
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
         }
 
         // Appel du modèle pour supprimer le like
