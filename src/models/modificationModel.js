@@ -24,3 +24,13 @@ exports.getLieuxProches = async (latitude, longitude, rayon = 100) => {
     const { rows } = await db.query(query, [longitude, latitude, rayon]);
     return rows;
 };
+
+exports.ajouterVote = async (id_modification, id_utilisateur, vote) => {
+    return db.query(`
+        INSERT INTO validation_modification (id_modification, id_utilisateur, vote)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (id_modification, id_utilisateur)
+        DO UPDATE SET vote = EXCLUDED.vote
+        RETURNING *;
+    `, [id_modification, id_utilisateur, vote]);
+};
