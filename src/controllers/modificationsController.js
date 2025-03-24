@@ -1,5 +1,7 @@
 const modificationsModel = require('../models/modificationModel');
 
+const ACCESS_TOKEN_SECRET = 'votre_secret_access';
+
 exports.proposerModification = async (req, res) => {
     try {
         const { osm_id, champ_modifie, ancienne_valeur, nouvelle_valeur, accesstoken } = req.body;
