@@ -11,10 +11,12 @@ exports.ajouterModification = async ({ osm_id, champ_modifie, ancienne_valeur, n
 
 exports.getLieuxProches = async (latitude, longitude, rayon = 100) => {
     const query = `
-        SELECT osm_id, name, ST_AsGeoJSON(way) AS geojson
-        FROM planet_osm_point
-        WHERE ST_DWithin(
-            way,
+        SELECT DISTINCT p.osm_id, p.name, ST_AsGeoJSON(p.way) AS geojson
+        FROM planet_osm_point p
+        JOIN modifications m ON p.osm_id = m.osm_id
+        WHERE m.etat = 'pending'
+        AND ST_DWithin(
+            p.way,
             ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
             $3
         )
@@ -24,6 +26,7 @@ exports.getLieuxProches = async (latitude, longitude, rayon = 100) => {
     const { rows } = await db.query(query, [longitude, latitude, rayon]);
     return rows;
 };
+
 
 exports.ajouterVote = async (id_modification, id_utilisateur, vote) => {
     return db.query(`
