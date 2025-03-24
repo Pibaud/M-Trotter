@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:m_trotter/models/Place.dart';
+import '../utils/GlobalData.dart';
 import '../services/ApiService.dart';
 
 class PlaceInfoSheet extends StatefulWidget {
@@ -24,6 +25,19 @@ class PlaceInfoSheet extends StatefulWidget {
 
 class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   bool isEditing = false;
+  List<Map<String, String>> modifications = [];
+  String? selectedAmenity;
+  String searchQuery = '';
+  List<String> suggestedAmenities = [];
+  /*exemple:
+  modifications = [
+                      {
+                        'champ_modifie': 'tags',
+                        'ancienne_valeur': '"wheelchair"=>"yes"',
+                        'nouvelle_valeur': '"wheelchair"=>"no"',
+                      }
+                    ];
+*/
 
   @override
   Widget build(BuildContext context) {
@@ -96,8 +110,59 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                       children: [
                         ListTile(
                           title: const Text('Type du lieu'),
-                          subtitle: Text(widget.place.amenity ?? 'N/A'),
+                          subtitle: Text(
+                              isEditing ? '' : widget.place.amenity!),
                         ),
+                        if (isEditing)
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 1.0),
+                            child: Column(
+                              children: [
+                                TextField(
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        widget.place.amenity,
+                                    prefixIcon: Icon(Icons.search),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      searchQuery = value.toLowerCase();
+                                      suggestedAmenities = GlobalData
+                                          .amenities.keys
+                                          .where((amenity) => amenity
+                                              .toLowerCase()
+                                              .contains(searchQuery))
+                                          .toList();
+                                    });
+                                  },
+                                ),
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: suggestedAmenities.length,
+                                  itemBuilder: (context, index) {
+                                    return ListTile(
+                                      title: Text(suggestedAmenities[index]),
+                                      onTap: () {
+                                        setState(() {
+                                          selectedAmenity =
+                                              suggestedAmenities[index];
+                                          modifications.add({
+                                            'champ_modifie': 'amenity',
+                                            'ancienne_valeur':
+                                                widget.place.amenity!,
+                                            'nouvelle_valeur': selectedAmenity!,
+                                          });
+                                          searchQuery = '';
+                                          suggestedAmenities.clear();
+                                        });
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
                         if (widget.place.tags['addr:city'] != null ||
                             widget.place.tags['addr:street'] != null ||
                             widget.place.tags['addr:postcode'] != null)
@@ -192,14 +257,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                 onPressed: () async {
                   if (isEditing) {
                     // Call proposeModifications method
-                    final modifications = [
-                      {
-                        'champ_modifie': 'tags',
-                        'ancienne_valeur': '"wheelchair"=>"yes"',
-                        'nouvelle_valeur': '"wheelchair"=>"no"',
-                      }
-                    ];
-
                     await ApiService().proposeModifications(
                       osmId: widget.place.id,
                       modifications: modifications,

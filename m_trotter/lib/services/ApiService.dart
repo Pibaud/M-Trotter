@@ -562,7 +562,6 @@ class ApiService {
       required List<Map<String, String>> modifications}) async {
     final String url = '$baseUrl/modification';
     final String? token = await AuthService.getToken();
-    print('modifie avec ${modifications.toString()} et id ${osmId.toString()}');
 
     if (token == null) {
       throw Exception('Token non trouvé');

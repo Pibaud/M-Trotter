@@ -840,7 +840,7 @@ class _MapPageState extends State<MapPage> {
                   final List<double> positions = [
                     MediaQuery.of(context).size.height * 0.95,
                     MediaQuery.of(context).size.height * 0.45,
-                    MediaQuery.of(context).size.height,
+                    MediaQuery.of(context).size.height * 0.2,
                   ];
                   double closestPosition = positions.reduce((a, b) =>
                       (a - _bottomSheetHeight).abs() <
@@ -1009,7 +1009,7 @@ class _MapPageState extends State<MapPage> {
                 final List<double> positions = [
                   MediaQuery.of(context).size.height * 0.95,
                   MediaQuery.of(context).size.height * 0.45,
-                  MediaQuery.of(context).size.height,
+                  MediaQuery.of(context).size.height * 0.2,
                 ];
                 double closestPosition = positions.reduce((a, b) =>
                     (a - _bottomSheetHeight).abs() <
