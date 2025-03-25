@@ -110,57 +110,34 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                       children: [
                         ListTile(
                           title: const Text('Type du lieu'),
-                          subtitle: Text(
-                              isEditing ? '' : widget.place.amenity!),
+                          subtitle:
+                              Text(isEditing ? '' : widget.place.amenity!),
                         ),
                         if (isEditing)
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 1.0),
-                            child: Column(
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(
-                                    labelText:
-                                        widget.place.amenity,
-                                    prefixIcon: Icon(Icons.search),
-                                  ),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      searchQuery = value.toLowerCase();
-                                      suggestedAmenities = GlobalData
-                                          .amenities.keys
-                                          .where((amenity) => amenity
-                                              .toLowerCase()
-                                              .contains(searchQuery))
-                                          .toList();
-                                    });
-                                  },
-                                ),
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: suggestedAmenities.length,
-                                  itemBuilder: (context, index) {
-                                    return ListTile(
-                                      title: Text(suggestedAmenities[index]),
-                                      onTap: () {
-                                        setState(() {
-                                          selectedAmenity =
-                                              suggestedAmenities[index];
-                                          modifications.add({
-                                            'champ_modifie': 'amenity',
-                                            'ancienne_valeur':
-                                                widget.place.amenity!,
-                                            'nouvelle_valeur': selectedAmenity!,
-                                          });
-                                          searchQuery = '';
-                                          suggestedAmenities.clear();
-                                        });
-                                      },
-                                    );
-                                  },
-                                ),
-                              ],
+                            child: DropdownButton<String>(
+                              value: selectedAmenity,
+                              hint: Text('Sélectionner une commodité'),
+                              items: GlobalData.amenities.keys
+                                  .map<DropdownMenuItem<String>>(
+                                      (String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  selectedAmenity = newValue;
+                                  modifications.add({
+                                    'champ_modifie': 'amenity',
+                                    'ancienne_valeur': widget.place.amenity!,
+                                    'nouvelle_valeur': selectedAmenity!,
+                                  });
+                                });
+                              },
                             ),
                           ),
                         if (widget.place.tags['addr:city'] != null ||
@@ -171,15 +148,23 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                             subtitle: Text(
                                 '${widget.place.tags['addr:street']}, ${widget.place.tags['addr:postcode']}, ${widget.place.tags['addr:city']}'),
                           ),
-                        ListTile(
-                          title: const Text('Coordonées'),
-                          subtitle: Text(
-                              '${widget.place.latitude.toStringAsFixed(4)}, ${widget.place.longitude.toStringAsFixed(4)}'),
-                        ),
                         if (widget.place.tags['phone'] != null)
                           ListTile(
                             title: const Text('Téléphone'),
-                            subtitle: Text(widget.place.tags['phone']!),
+                            subtitle: isEditing
+                                ? TextField(
+                                    controller: TextEditingController(text: widget.place.tags['phone']),
+                                    onChanged: (newValue) {
+                                      setState(() {
+                                        modifications.add({
+                                          'champ_modifie': 'tags',
+                                          'ancienne_valeur': '"phone"=>"${widget.place.tags['phone']}"',
+                                          'nouvelle_valeur': '"phone"=>"$newValue"',
+                                        });
+                                      });
+                                    },
+                                  )
+                                : Text(widget.place.tags['phone']!),
                           ),
                         if (widget.place.tags['cuisine'] != null)
                           ListTile(
