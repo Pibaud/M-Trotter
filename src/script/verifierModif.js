@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const sendEmail = require('../config/email');
 const { log } = Math;
 
 const calculerValeurUtilisateur = (fiabilite) => {
@@ -11,12 +12,12 @@ const calculerValeurUtilisateur = (fiabilite) => {
 const verifierModifications = async () => {
     try {
         const modifications = await db.query(`
-            SELECT id_modification
+            SELECT id_modification, propose_par
             FROM modifications
             WHERE etat = 'pending' AND date_proposition <= NOW() - INTERVAL '7 days'
         `);
 
-        for (const { id_modification } of modifications.rows) {
+        for (const { id_modification, propose_par } of modifications.rows) {
             const votes = await db.query(`
                 SELECT v.vote, v.id_utilisateur, u.fiabilite
                 FROM validation_modification v
@@ -38,6 +39,48 @@ const verifierModifications = async () => {
             });
 
             const nouveauEtat = score > 0 ? 'validee' : 'refusee';
+
+            if (nouveauEtat === 'validee') {
+                const subject = "Demande de modification lieux M'trotter";
+
+                // Récupérer l'email de l'utilisateur et le nom du lieu
+                const userAndLieu = await db.query(`
+                    SELECT u.email, l.nom AS nomlieu
+                    FROM users u
+                    JOIN modifications m ON u.id = m.propose_par
+                    JOIN lieux l ON m.id_lieu = l.id
+                    WHERE m.id_modification = $1
+                `, [id_modification]);
+
+                const { email, nomlieu } = userAndLieu.rows[0];
+
+                const text = `Bonjour, votre demande de modification pour le lieu ${nomlieu} a été acceptée !`;
+                const html = `<p>Bonjour,</p>
+                    <p>Dernièrement, vous avez proposé une modification pour le lieu ${nomlieu} et celle-ci a été acceptée.</p>
+                    <p>Nous vous remercions pour tous les efforts que vous faites pour continuer à rendre l'application toujours plus optimale. Vous pouvez être fier.</p>`;
+
+                await sendEmail(email, subject, text, html);
+            } else {
+                const subject = "Demande de modification lieux M'trotter";
+
+                // Récupérer l'email de l'utilisateur et le nom du lieu
+                const userAndLieu = await db.query(`
+                    SELECT u.email, l.nom AS nomlieu
+                    FROM users u
+                    JOIN modifications m ON u.id = m.propose_par
+                    JOIN lieux l ON m.id_lieu = l.id
+                    WHERE m.id_modification = $1
+                `, [id_modification]);
+
+                const { email, nomlieu } = userAndLieu.rows[0];
+
+                const text = `Bonjour, votre demande de modification pour le lieu ${nomlieu} a été refusée !`;
+                const html = `<p>Bonjour,</p>
+                    <p>Dernièrement, vous avez proposé une modification pour le lieu ${nomlieu} et celle-ci a été refusée.</p>
+                    <p>Nous vous remercions pour tous les efforts que vous faites pour continuer à rendre l'application toujours plus optimale. Vous pouvez être fier.</p>`;
+
+                await sendEmail(email, subject, text, html);
+            }
 
             await db.query('BEGIN'); // Début de la transaction
             try {
