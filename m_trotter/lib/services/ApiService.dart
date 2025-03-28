@@ -316,26 +316,36 @@ class ApiService {
     String? age,
     File? profileImage,
   }) async {
-    var url = Uri.parse('$baseUrl/comptes/updateProfil');
-    var request = http.MultipartRequest('POST', url)..fields['pseudo'] = pseudo;
+    final String url = '$baseUrl/comptes/updateProfil';
+    final String? token = await AuthService.getToken();
 
-    if (age != null && age.isNotEmpty) {
-      request.fields['age'] = age;
-    }
-
-    if (profileImage != null) {
-      List<int> imageBytes = await profileImage.readAsBytes();
-      String base64Image = base64Encode(imageBytes); // Conversion en Base64
-      request.fields['profile_image'] = base64Image;
+    if (token == null) {
+      return {'success': false, 'error': 'Token non trouvé'};
     }
 
     try {
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = json.decode(responseData);
-      return jsonResponse;
+      final request = http.MultipartRequest('POST', Uri.parse(url))
+        ..fields['pseudo'] = pseudo
+        ..fields['accesstoken'] = token;
+
+      if (age != null && age.isNotEmpty) {
+        request.fields['age'] = age;
+      }
+
+      if (profileImage != null) {
+        request.files.add(await http.MultipartFile.fromPath('profile_image', profileImage.path));
+      }
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(responseData);
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
     } catch (e) {
-      return {"error": "Erreur de connexion"};
+      throw Exception('Erreur lors de la mise à jour du profil : $e');
     }
   }
 
@@ -562,7 +572,6 @@ class ApiService {
       required List<Map<String, String>> modifications}) async {
     final String url = '$baseUrl/modification';
     final String? token = await AuthService.getToken();
-    print('modifie avec ${modifications.toString()} et id ${osmId.toString()}');
 
     if (token == null) {
       throw Exception('Token non trouvé');
