@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur, getUtilisateurById, getUtilisateur } = require('../models/comptesModel');
+const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur, getUtilisateurById, getUtilisateur, updatelastlogin } = require('../models/comptesModel');
 require('dotenv').config();
 const sendEmail = require('../config/email');
 
@@ -46,6 +46,13 @@ exports.connexions = async (req, res) => {
         const valide = await bcrypt.compare(password, utilisateur.password_hash);
         if (!valide) {
             return res.status(401).json({ message: "Mot de passe incorrect." });
+        }
+
+        //modification de la date de derniere connexion
+        try {
+            await updatelastlogin(utilisateur.id);
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour de la dernière connexion :", error);
         }
 
         const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });

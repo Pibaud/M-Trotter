@@ -93,6 +93,20 @@ async function getUtilisateur(id) {
     }
 }
 
+async function updatelastlogin(id){
+    const query = `
+        UPDATE users
+        SET last_login = NOW()
+        WHERE id = $1;
+    `;
+    const values = [id];
+    try {
+        await pool.query(query, values);
+    } catch (error) {
+        throw new Error("Erreur lors de la mise à jour de la date de dernière connexion : " + error.message);
+    }
+}
+
 
 
 module.exports = {
@@ -100,5 +114,6 @@ module.exports = {
     getUtilisateurconnect,
     updateUtilisateur,
     getUtilisateurById,
-    getUtilisateur
+    getUtilisateur, 
+    updatelastlogin
 };
