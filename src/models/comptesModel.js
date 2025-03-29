@@ -82,7 +82,7 @@ async function updateUtilisateur(id, updatedFields){
 async function getUtilisateur(id) {
     try {
         const query = `
-            SELECT id, email, username, created_at, updated_at, darkmode, language, profile_pic, two_factor_enabled, fiabilite, last_login
+            SELECT id, email, username, created_at, updated_at, dark_mode, language, profile_pic, two_factor_enabled, fiabilite, last_login
             FROM users
             WHERE id = $1;
         `;
