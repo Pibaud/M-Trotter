@@ -78,6 +78,20 @@ async function updateUtilisateur(id, updatedFields){
         throw new Error("Échec de la mise à jour du profil.");
     }
 };
+// Fonction pour récupérer un utilisateur par son id, celui renvoie des données sensibles
+async function getUtilisateur(id) {
+    try {
+        const query = `
+            SELECT id, email, username, created_at, updated_at, darkmode, language, profile_pic, two_factor_enabled, fiabilite, last_login
+            FROM users
+            WHERE id = $1;
+        `;
+        const result = await pool.query(query, [id]);
+        return result.rows[0] || null;
+    } catch (error) {
+        throw new Error("Erreur lors de la récupération de l'utilisateur : " + error.message);
+    }
+}
 
 
 
@@ -85,5 +99,6 @@ module.exports = {
     inscriptionUtilisateur,
     getUtilisateurconnect,
     updateUtilisateur,
-    getUtilisateurById 
+    getUtilisateurById,
+    getUtilisateur
 };

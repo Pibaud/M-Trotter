@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur, getUtilisateurById  } = require('../models/comptesModel');
+const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur, getUtilisateurById, getUtilisateur } = require('../models/comptesModel');
 require('dotenv').config();
 const sendEmail = require('../config/email');
 
@@ -76,9 +76,16 @@ exports.logout = (req, res) => {
 };
 
 exports.getProfil = async (req, res) => {
-    const { pseudo } = req.body;
+    const { accessToken } = req.body;
+    let userId;
     try {
-        const utilisateur = await getUtilisateur(pseudo);
+        const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+        userId = decodedToken.id;  // Correction ici
+    } catch (err) {
+        return res.status(401).json({ error: 'Token invalide ou expiré' });
+    }
+    try {
+        const utilisateur = await getUtilisateur(userId);
         if (!utilisateur) return res.status(404).json({ message: "Utilisateur non trouvé." });
         res.json(utilisateur);
     } catch (error) {
