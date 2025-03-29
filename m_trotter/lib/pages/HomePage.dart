@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/AuthNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
+import '../services/ApiService.dart';
+import '../widgets/PlaceInfoSheet.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(int) onTabChange;
@@ -13,15 +15,51 @@ class HomePage extends StatefulWidget {
   HomePageState createState() => HomePageState();
 }
 
+void showPlaceSheet(BuildContext context, Place place) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return PlaceInfoSheet(
+        place: place,
+        onClose: () => Navigator.of(context).pop(),
+      );
+    },
+  );
+}
+
 class HomePageState extends State<HomePage> {
-  // Fonction pour réinitialiser isFirstLaunch
+  List<dynamic> bestPlaces = [];
+  List<dynamic> favorisPlaces = [];;
+
+  @override
+  void initState() {
+    super.initState();
+    loadBestPlaces();
+    loadFavoris();
+  }
+
+  Future<void> loadBestPlaces() async {
+    List<dynamic> places = await ApiService.trouveBestPlaces();
+    setState(() {
+      bestPlaces = places;
+    });
+  }
+
+  Future<void> loadFavoris() async {
+    List<dynamic> favoris = await ApiService.getFavoris(); // Retourne directement une liste dynamique
+    setState(() {
+      favorisPlaces = favoris;
+    });
+  }
+
   Future<void> resetIsFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('isFirstLaunch');
     print("isFirstLaunch réinitialisé");
   }
 
-  // Fonction pour réinitialiser isLoggedIn
   Future<void> resetIsLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('isLoggedIn');
@@ -65,45 +103,52 @@ class HomePageState extends State<HomePage> {
           ),
           Text("Favoris"),
           Expanded(
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (var i = 1; i <= 10; i++)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 150,
-                      color: Colors.blue[100 * (i % 9)],
-                      child: Center(
-                        child: Text('Favori $i',
-                            style: const TextStyle(fontSize: 18)),
-                      ),
-                    ),
+            child: favorisPlaces.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: favorisPlaces.map((place) {
+                      return GestureDetector(
+                        onTap: () => showPlaceSheet(context, place),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: 150,
+                            color: Colors.blue[200],
+                            child: Center(
+                              child: Text(place['name'] ?? 'Lieu inconnu',
+                                  style: TextStyle(fontSize: 18)),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-              ],
-            ),
           ),
           Text("Populaires en ce moment"),
           Expanded(
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (var i = 1; i <= 10; i++)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 150,
-                      color: Colors.blue[100 * (i % 9)],
-                      child: Center(
-                        child:
-                            Text('Élément $i', style: TextStyle(fontSize: 18)),
-                      ),
-                    ),
+            child: bestPlaces.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: bestPlaces.map((place) {
+                      return GestureDetector(
+                        onTap: () => showPlaceSheet(context, place),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: 150,
+                            color: Colors.blue[200],
+                            child: Center(
+                              child: Text(place['name'] ?? 'Lieu inconnu',
+                                  style: TextStyle(fontSize: 18)),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-              ],
-            ),
           ),
-          // Boutons de réinitialisation des préférences
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(

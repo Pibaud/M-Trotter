@@ -603,4 +603,159 @@ class ApiService {
       }
     }
   }
+
+  //récupération bestplace
+
+  Future<List<dynamic>> trouveBestPlaces() async {
+
+    final String url = '$baseUrl/api/bestplace';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
+}
+
+//ajouter un favoris
+
+  Future<Map<String, dynamic>> addFavoris({required int osmId}) async {
+    final String? token = await AuthService.getToken();
+    if (token == null) {
+      throw Exception('Token non trouvé');
+    }
+    try {
+      final url = Uri.parse('$baseUrl/favoris/add');
+      final body = jsonEncode({
+        'accessToken': accessToken,
+        'osm_id': osmId,
+      });
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: body,
+      );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      return {'success': true, 'data': responseData};
+    } else {
+      final error = jsonDecode(response.body);
+      return {
+        'success': false,
+        'error': error['message'] ?? 'Erreur inconnue'
+      };
+    }
+  } catch (e) {
+    throw Exception('Erreur lors de la requête : $e');
+  }
+}
+
+//retirer un favoris
+
+Future<Map<String, dynamic>> deleteFavoris({required int osmId}) async {
+    final String? token = await AuthService.getToken();
+    if (token == null) {
+      throw Exception('Token non trouvé');
+    }
+    try {
+      final url = Uri.parse('$baseUrl/favoris/delete');
+      final body = jsonEncode({
+        'accessToken': accessToken,
+        'osm_id': osmId,
+      });
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: body,
+      );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      return {'success': true, 'data': responseData};
+    } else {
+      final error = jsonDecode(response.body);
+      return {
+        'success': false,
+        'error': error['message'] ?? 'Erreur inconnue'
+      };
+    }
+  } catch (e) {
+    throw Exception('Erreur lors de la requête : $e');
+  }
+}
+
+//recuperer les favoris
+
+Future<List<dynamic>> getFavoris({required int osmId}) async {
+  String? accessToken = await AuthService.getToken();
+  final String url = '$baseUrl/favoris/get';
+
+  if (accessToken == null) {
+    return {'success': false, 'error': 'Aucun access token trouvé'};
+  }
+
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json'},
+      body: json.encode({
+        'accessToken': accessToken}),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Erreur serveur : ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Erreur lors de la requête : $e');
+  }
+}
+
+//test si un endroit est en favoris
+
+Future<bool> estFavoris({required int osmId}) async {
+  String? accessToken = await AuthService.getToken();
+  final String url = '$baseUrl/favoris/get';
+
+  if (accessToken == null) {
+    throw Exception('Aucun access token trouvé');
+  }
+
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'accessToken': accessToken,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> favoris = json.decode(response.body);
+      return favoris.contains(osmId);
+    } else {
+      throw Exception('Erreur serveur : ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Erreur lors de la requête : $e');
+  }
+}
+
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:m_trotter/models/Place.dart';
-import '../utils/GlobalData.dart';
 import '../services/ApiService.dart';
 
 class PlaceInfoSheet extends StatefulWidget {
@@ -25,19 +24,34 @@ class PlaceInfoSheet extends StatefulWidget {
 
 class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   bool isEditing = false;
+  bool isFavorite = false;
   List<Map<String, String>> modifications = [];
   String? selectedAmenity;
-  String searchQuery = '';
-  List<String> suggestedAmenities = [];
-  /*exemple:
-  modifications = [
-                      {
-                        'champ_modifie': 'tags',
-                        'ancienne_valeur': '"wheelchair"=>"yes"',
-                        'nouvelle_valeur': '"wheelchair"=>"no"',
-                      }
-                    ];
-*/
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfFavorite();
+  }
+
+  Future<void> _checkIfFavorite() async {
+    bool favoriteStatus = await ApiService.estFavoris(widget.place.id);
+    setState(() {
+      isFavorite = favoriteStatus;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (isFavorite) {
+      await ApiService.deleteFavoris(widget.place.id);
+    } else {
+      await ApiService.addFavoris(widget.place.id);
+    }
+
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,33 +127,20 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                           subtitle:
                               Text(isEditing ? '' : widget.place.amenity!),
                         ),
-                        if (isEditing)
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 1.0),
-                            child: DropdownButton<String>(
-                              value: selectedAmenity,
-                              hint: Text('Sélectionner une commodité'),
-                              items: GlobalData.amenities.keys
-                                  .map<DropdownMenuItem<String>>(
-                                      (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  selectedAmenity = newValue;
-                                  modifications.add({
-                                    'champ_modifie': 'amenity',
-                                    'ancienne_valeur': widget.place.amenity!,
-                                    'nouvelle_valeur': selectedAmenity!,
-                                  });
-                                });
-                              },
+                        //bouton Favoris
+                        ListTile(
+                          title: const Text('Ajouter aux favoris'),
+                          trailing: IconButton(
+                            icon: Icon(
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: isFavorite ? Colors.red : null,
                             ),
+                            onPressed: _toggleFavorite,
                           ),
+                        ),
+                        // Autres informations sur le lieu (par exemple adresse, téléphone, etc.)
                         if (widget.place.tags['addr:city'] != null ||
                             widget.place.tags['addr:street'] != null ||
                             widget.place.tags['addr:postcode'] != null)
@@ -153,7 +154,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                             title: const Text('Téléphone'),
                             subtitle: isEditing
                                 ? TextField(
-                                    controller: TextEditingController(text: widget.place.tags['phone']),
+                                    controller: TextEditingController(text: widget.place.tags['phone']!),
                                     onChanged: (newValue) {
                                       setState(() {
                                         modifications.add({
@@ -165,69 +166,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                     },
                                   )
                                 : Text(widget.place.tags['phone']!),
-                          ),
-                        if (widget.place.tags['cuisine'] != null)
-                          ListTile(
-                            title: const Text('Cuisine'),
-                            subtitle: Text(widget.place.tags['cuisine']!),
-                          ),
-                        if (widget.place.tags['website'] != null)
-                          ListTile(
-                            title: const Text('Site web'),
-                            subtitle: Text(widget.place.tags['website']!),
-                          ),
-                        if (widget.place.tags['email'] != null)
-                          ListTile(
-                            title: const Text('Email'),
-                            subtitle: Text(widget.place.tags['email']!),
-                          ),
-                        if (widget.place.tags['city'] != null)
-                          ListTile(
-                            title: const Text('Ville'),
-                            subtitle: Text(widget.place.tags['city']!),
-                          ),
-                        if (widget.place.tags['street'] != null)
-                          ListTile(
-                            title: const Text('Rue'),
-                            subtitle: Text(widget.place.tags['street']!),
-                          ),
-                        if (widget.place.tags['postcode'] != null)
-                          ListTile(
-                            title: const Text('Code postal'),
-                            subtitle: Text(widget.place.tags['postcode']!),
-                          ),
-                        if (widget.place.tags['opening_hours'] != null)
-                          ListTile(
-                            title: const Text('Heures d\'ouverture'),
-                            subtitle: Text(widget.place.tags['opening_hours']!),
-                          ),
-                        if (widget.place.tags['wheelchair_accessible'] != null)
-                          ListTile(
-                            title: const Text('Accès fauteuil roulant'),
-                            subtitle: Text(
-                                widget.place.tags['wheelchair_accessible']!),
-                          ),
-                        if (widget.place.tags['outdoorSeating'] != null)
-                          ListTile(
-                            title: const Text('Sièges extérieurs'),
-                            subtitle:
-                                Text(widget.place.tags['outdoorSeating']!),
-                          ),
-                        if (widget.place.tags['airConditioning'] != null)
-                          ListTile(
-                            title: const Text('Climatisation'),
-                            subtitle:
-                                Text(widget.place.tags['airConditioning']!),
-                          ),
-                        if (widget.place.tags['facebook'] != null)
-                          ListTile(
-                            title: const Text('Facebook'),
-                            subtitle: Text(widget.place.tags['facebook']!),
-                          ),
-                        if (widget.place.tags['operator'] != null)
-                          ListTile(
-                            title: const Text('Opérateur'),
-                            subtitle: Text(widget.place.tags['operator']!),
                           ),
                       ],
                     ),
@@ -260,3 +198,4 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     );
   }
 }
+
