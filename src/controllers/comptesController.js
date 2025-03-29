@@ -118,19 +118,20 @@ exports.getOtherProfil = async (req, res) => {
     }
 };
 
+// Fonction pour mettre à jour un utilisateur
 exports.updateProfil = async (req, res) => {
     const { accessToken, updatedFields } = req.body;
 
     if (!accessToken) {
-        return res.status(401).json
+        return res.status(401).json({ error: "Token manquant" });
     }
 
     let user_id;
     try {
-        const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+        const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
         user_id = decodedToken.id;
     } catch (err) {
-        return res.status(401).json({ error: 'Token invalide ou expiré' });
+        return res.status(401).json({ error: "Token invalide ou expiré" });
     }
 
     if (!updatedFields || Object.keys(updatedFields).length === 0) {
@@ -138,6 +139,11 @@ exports.updateProfil = async (req, res) => {
     }
 
     try {
+        // Si l'utilisateur met à jour `profile_pic`, convertir base64 en Buffer
+        if (updatedFields.profile_pic) {
+            updatedFields.profile_pic = Buffer.from(updatedFields.profile_pic, "base64");
+        }
+
         const utilisateurMisAJour = await updateUtilisateur(user_id, updatedFields);
         res.json({ message: "Profil mis à jour.", utilisateur: utilisateurMisAJour });
     } catch (error) {

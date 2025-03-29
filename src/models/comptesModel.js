@@ -46,7 +46,7 @@ async function getUtilisateurById(id) {
 }
 
 // Fonction pour mettre à jour un utilisateur
-async function updateUtilisateur(id, updatedFields){
+async function updateUtilisateur(id, updatedFields) {
     if (!id || Object.keys(updatedFields).length === 0) {
         throw new Error("ID utilisateur ou données de mise à jour manquants.");
     }
@@ -57,18 +57,22 @@ async function updateUtilisateur(id, updatedFields){
 
     // Construction dynamique des champs et valeurs
     for (const [key, value] of Object.entries(updatedFields)) {
-        fields.push(`${key} = $${index}`);
-        values.push(value);
+        if (key === "profile_pic") {
+            // Stocker l'image sous forme de `BYTEA`
+            fields.push(`${key} = $${index}`);
+            values.push(value);
+        } else {
+            fields.push(`${key} = $${index}`);
+            values.push(value);
+        }
         index++;
     }
 
-    // Ajout du champ updated_at avec la date et heure actuelle
+    // Ajout du champ `updated_at` avec la date et heure actuelle
     fields.push(`updated_at = NOW()`);
-
-    // Ajout de l'ID à la liste des valeurs pour la condition WHERE
     values.push(id);
 
-    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${index} RETURNING *;`;
+    const query = `UPDATE users SET ${fields.join(", ")} WHERE id = $${index} RETURNING *;`;
 
     try {
         const result = await pool.query(query, values);
@@ -77,7 +81,9 @@ async function updateUtilisateur(id, updatedFields){
         console.error("Erreur lors de la mise à jour du profil :", error);
         throw new Error("Échec de la mise à jour du profil.");
     }
-};
+}
+
+
 // Fonction pour récupérer un utilisateur par son id, celui renvoie des données sensibles
 async function getUtilisateur(id) {
     try {
