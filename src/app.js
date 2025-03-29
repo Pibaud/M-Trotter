@@ -8,7 +8,9 @@ const upload = require('./routes/uploadRoutes');
 const modfication = require('./routes/modificationRoutes');
 const cron = require('node-cron');
 const verifierModifications = require('./script/verifierModif');
+const verifierLieux = require('./script/verifierLieux');
 const favoris = require('./routes/favorisRoutes');
+const lieux = require('./routes/lieuxRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -24,6 +26,7 @@ app.use('/api', upload); //upload
 app.use('/comptes', connexions); //connexion
 app.use('/modification', modfication); //modification
 app.use('/favoris', favoris); //favoris
+app.use('/lieux', lieux); //lieux
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
@@ -39,4 +42,8 @@ app.listen(PORT, () => {
 cron.schedule('0 2 * * *', () => {
     console.log('⏳ Exécution de la vérification des modifications...');
     verifierModifications();
+    console.log('✅ Vérification des modifications terminée.');
+    console.log('⏳ Exécution de la vérification des ajouts et suppressions...');
+    verifierLieux();
+    console.log('✅ Vérification des ajouts et suppressions terminée.');
 });
