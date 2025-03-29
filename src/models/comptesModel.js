@@ -57,16 +57,11 @@ async function updateUtilisateur(id, updatedFields) {
 
     // Construction dynamique des champs et valeurs
     for (const [key, value] of Object.entries(updatedFields)) {
-        if (key === "profile_pic") {
-            // Stocker l'image sous forme de `BYTEA`
-            fields.push(`${key} = $${index}`);
-            values.push(value);
-        } else {
-            fields.push(`${key} = $${index}`);
-            values.push(value);
-        }
+        fields.push(`${key} = $${index}`);
+        values.push(value);
         index++;
     }
+    
 
     // Ajout du champ `updated_at` avec la date et heure actuelle
     fields.push(`updated_at = NOW()`);
