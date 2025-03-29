@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur } = require('../models/comptesModel');
+const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur, getUtilisateurById  } = require('../models/comptesModel');
 require('dotenv').config();
 const sendEmail = require('../config/email');
 
@@ -80,6 +80,24 @@ exports.getProfil = async (req, res) => {
     try {
         const utilisateur = await getUtilisateur(pseudo);
         if (!utilisateur) return res.status(404).json({ message: "Utilisateur non trouvé." });
+        res.json(utilisateur);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getOtherProfil = async (req, res) => {
+    const { id_user } = req.body;
+
+    if (!id_user) {
+        return res.status(400).json({ message: "ID utilisateur manquant." });
+    }
+
+    try {
+        const utilisateur = await getUtilisateurById(id_user);
+        if (!utilisateur) {
+            return res.status(404).json({ message: "Utilisateur non trouvé." });
+        }
         res.json(utilisateur);
     } catch (error) {
         res.status(500).json({ message: error.message });

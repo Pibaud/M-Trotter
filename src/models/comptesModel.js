@@ -31,6 +31,20 @@ async function getUtilisateurconnect(emailOrUsername) {
     }
 }
 
+async function getUtilisateurById(id) {
+    try {
+        const query = `
+            SELECT id, username, profile_pic
+            FROM users
+            WHERE id = $1;
+        `;
+        const result = await pool.query(query, [id]);
+        return result.rows[0] || null;
+    } catch (error) {
+        throw new Error("Erreur lors de la récupération de l'utilisateur : " + error.message);
+    }
+}
+
 // Fonction pour mettre à jour un utilisateur
 async function updateUtilisateur(id, updatedFields){
     if (!id || Object.keys(updatedFields).length === 0) {
@@ -70,5 +84,6 @@ async function updateUtilisateur(id, updatedFields){
 module.exports = {
     inscriptionUtilisateur,
     getUtilisateurconnect,
-    updateUtilisateur
+    updateUtilisateur,
+    getUtilisateurById 
 };
