@@ -54,10 +54,10 @@ exports.connexions = async (req, res) => {
         } catch (error) {
             console.error("Erreur lors de la mise à jour de la dernière connexion :", error);
         }
+        console.log("Dans login. Si ça bloque là regarde le .env");
 
         const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
         const refreshToken = jwt.sign({ id: utilisateur.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
-
         res.json({ accessToken, refreshToken });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -8,6 +8,7 @@ class Place {
   final String name;
   final double latitude;
   final double longitude;
+  final int houseNumber;
   final double avgStars;
   final int numReviews;
   final Map<String, String> tags;
@@ -21,6 +22,7 @@ class Place {
       required this.amenity,
       required this.latitude,
       required this.longitude,
+      required this.houseNumber,
       required this.avgStars,
       required this.numReviews});
 
@@ -48,6 +50,7 @@ class Place {
         amenity: foundAmenity,
         latitude: json['latitude'] ?? json['lat'] ?? 0.0,
         longitude: json['longitude'] ?? json['lon'] ?? 0.0,
+        houseNumber: json['addr:housenumber'] != null ? int.parse(json['addr:housenumber'].toString()) : -1,
         avgStars: (json['avg_stars'] != null)
             ? double.parse(json['avg_stars'].toString())
             : 0.0,

@@ -111,7 +111,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         ListTile(
                           title: const Text('Type du lieu'),
                           subtitle:
-                              Text(isEditing ? '' : widget.place.amenity!),
+                              Text(isEditing ? '' : widget.place.amenity!), // s
                         ),
                         if (isEditing)
                           Padding(
@@ -119,7 +119,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                 const EdgeInsets.symmetric(horizontal: 1.0),
                             child: DropdownButton<String>(
                               value: selectedAmenity,
-                              hint: Text('Sélectionner une commodité'),
+                              hint: Text('Sélectionner un type de lieu'),
                               items: GlobalData.amenities.keys
                                   .map<DropdownMenuItem<String>>(
                                       (String value) {
@@ -146,20 +146,84 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                           ListTile(
                             title: const Text('Adresse'),
                             subtitle: Text(
-                                '${widget.place.tags['addr:street']}, ${widget.place.tags['addr:postcode']}, ${widget.place.tags['addr:city']}'),
+                                '${widget.place.houseNumber} ${widget.place.tags['addr:street']}, ${widget.place.tags['addr:postcode']}, ${widget.place.tags['addr:city']}'),
                           ),
+                        if (isEditing) ...[
+                          TextField(
+                            controller: TextEditingController(
+                                text: widget.place.houseNumber.toString()),
+                            onChanged: (newValue) {
+                              setState(() {
+                                modifications.add({
+                                  'champ_modifie': 'houseNumber',
+                                  'ancienne_valeur':
+                                      '"addr:housenumber"=>"${widget.place.houseNumber}"',
+                                  'nouvelle_valeur':
+                                      '"addr:housenumber"=>"$newValue"',
+                                });
+                              });
+                            },
+                          ),
+                          TextField(
+                            controller: TextEditingController(
+                                text: widget.place.tags['addr:street']),
+                            onChanged: (newValue) {
+                              setState(() {
+                                modifications.add({
+                                  'champ_modifie': 'tags',
+                                  'ancienne_valeur':
+                                      '"addr:street"=>"${widget.place.tags['addr:street']}"',
+                                  'nouvelle_valeur':
+                                      '"addr:street"=>"$newValue"',
+                                });
+                              });
+                            },
+                          ),
+                          TextField(
+                            controller: TextEditingController(
+                                text: widget.place.tags['addr:postcode']),
+                            onChanged: (newValue) {
+                              setState(() {
+                                modifications.add({
+                                  'champ_modifie': 'tags',
+                                  'ancienne_valeur':
+                                      '"addr:postcode"=>"${widget.place.tags['addr:postcode']}"',
+                                  'nouvelle_valeur':
+                                      '"addr:postcode"=>"$newValue"',
+                                });
+                              });
+                            },
+                          ),
+                          TextField(
+                            controller: TextEditingController(
+                                text: widget.place.tags['addr:city']),
+                            onChanged: (newValue) {
+                              setState(() {
+                                modifications.add({
+                                  'champ_modifie': 'tags',
+                                  'ancienne_valeur':
+                                      '"addr:city"=>"${widget.place.tags['addr:city']}"',
+                                  'nouvelle_valeur': '"addr:city"=>"$newValue"',
+                                });
+                              });
+                            },
+                          ),
+                        ],
                         if (widget.place.tags['phone'] != null)
                           ListTile(
                             title: const Text('Téléphone'),
                             subtitle: isEditing
                                 ? TextField(
-                                    controller: TextEditingController(text: widget.place.tags['phone']),
+                                    controller: TextEditingController(
+                                        text: widget.place.tags['phone']),
                                     onChanged: (newValue) {
                                       setState(() {
                                         modifications.add({
                                           'champ_modifie': 'tags',
-                                          'ancienne_valeur': '"phone"=>"${widget.place.tags['phone']}"',
-                                          'nouvelle_valeur': '"phone"=>"$newValue"',
+                                          'ancienne_valeur':
+                                              '"phone"=>"${widget.place.tags['phone']}"',
+                                          'nouvelle_valeur':
+                                              '"phone"=>"$newValue"',
                                         });
                                       });
                                     },
