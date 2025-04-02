@@ -40,8 +40,12 @@ class Place {
     }
 
     String? foundAmenity;
-    String amenityValue = json['amenity'];
-    foundAmenity = GlobalData.getAmenityKey(amenityValue);
+    String? amenityValue = json['amenity'];
+    if (amenityValue == null) {
+      foundAmenity = "Inconnu";
+    } else {
+      foundAmenity = GlobalData.getAmenityKey(amenityValue);
+    }
 
     return Place(
         id: int.parse(json['id']),
@@ -50,7 +54,9 @@ class Place {
         amenity: foundAmenity,
         latitude: json['latitude'] ?? json['lat'] ?? 0.0,
         longitude: json['longitude'] ?? json['lon'] ?? 0.0,
-        houseNumber: json['addr:housenumber'] != null ? int.parse(json['addr:housenumber'].toString()) : -1,
+        houseNumber: json['addr:housenumber'] != null
+            ? int.parse(json['addr:housenumber'].toString())
+            : -1,
         avgStars: (json['avg_stars'] != null)
             ? double.parse(json['avg_stars'].toString())
             : 0.0,

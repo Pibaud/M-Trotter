@@ -23,18 +23,19 @@ class Review {
   final String placeTable;
   final String userId;
 
-  Review(
-      {required this.id,
-      this.parentId,
-      required this.username,
-      required this.profilePicBytes,
-      required this.comment,
-      required this.likes,
-      this.isLiked = false,
-      required this.date,
-      this.rating = 0,
-      required this.placeTable,
-      this.userId = '',});
+  Review({
+    required this.id,
+    this.parentId,
+    required this.username,
+    required this.profilePicBytes,
+    required this.comment,
+    required this.likes,
+    this.isLiked = false,
+    required this.date,
+    this.rating = 0,
+    required this.placeTable,
+    this.userId = '',
+  });
 
   void updateProfileInfo(String newUsername, Uint8List? newProfilePic) {
     username = newUsername;
@@ -43,19 +44,20 @@ class Review {
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
-        id: json['avis_id'].toString(),
-        parentId: json['avis_parent']?.toString(),
-        username:
-            'toto', // Remplacer par le nom de l'utilisateur quand on fera avec les tokens
-        profilePicBytes: json['profilePicBytes'] != null
-            ? Uint8List.fromList(List<int>.from(json['profilePicBytes']))
-            : null, // Convertir en Uint8List si non null
-        comment: json['lavis'],
-        likes: int.tryParse(json['like_count'].toString()) ?? 0,
-        date: DateTime.parse(json['created_at']),
-        rating: json['nb_etoiles'] ?? 0,
-        placeTable: json['place_table'],
-        userId: json['user_id']?.toString() ?? '',);
+      id: json['avis_id'].toString(),
+      parentId: json['avis_parent']?.toString(),
+      username:
+          'toto', // Remplacer par le nom de l'utilisateur quand on fera avec les tokens
+      profilePicBytes: json['profilePicBytes'] != null
+          ? Uint8List.fromList(List<int>.from(json['profilePicBytes']))
+          : null, // Convertir en Uint8List si non null
+      comment: json['lavis'],
+      likes: int.tryParse(json['like_count'].toString()) ?? 0,
+      date: DateTime.parse(json['created_at']),
+      rating: json['nb_etoiles'] ?? 0,
+      placeTable: json['place_table'],
+      userId: json['user_id']?.toString() ?? '',
+    );
   }
 
   @override
@@ -95,6 +97,7 @@ class PlacePresentationSheet extends StatefulWidget {
 class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   List<File> reviewPhotos = [];
   List<Review> reviews = [];
+  bool isFavorite = false;
   bool isSortedByDate = true;
   String newReviewText = '';
   String replyText = '';
@@ -107,6 +110,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   String? selectedTag;
   bool replySent = false;
   List<Photo> photos = [];
+  final ApiService _apiService = ApiService();
 
   final TextEditingController _reviewController = TextEditingController();
 
@@ -118,6 +122,26 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
     super.initState();
     _fetchReviewsFuture = fetchReviews();
     _fetchPhotosFuture = fetchPhotos();
+    _checkIfFavorite();
+  }
+
+  Future<void> _checkIfFavorite() async {
+    bool favoriteStatus = await _apiService.estFavoris(osmId: widget.place.id);
+    setState(() {
+      isFavorite = favoriteStatus;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (isFavorite) {
+      await _apiService.deleteFavoris(osmId: widget.place.id);
+    } else {
+      await _apiService.addFavoris(osmId: widget.place.id);
+    }
+
+    setState(() {
+      isFavorite = !isFavorite;
+    });
   }
 
   Future<void> fetchPhotos() async {
@@ -132,9 +156,11 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   Future<void> fetchReviews() async {
     try {
       ApiService apiService = ApiService();
-      List<dynamic> response = await apiService.fetchReviewsByPlaceId(widget.place.id.toString(), 0);
+      List<dynamic> response =
+          await apiService.fetchReviewsByPlaceId(widget.place.id.toString(), 0);
 
-      List<Review> newReviews = response.map((e) => Review.fromJson(e)).toList();
+      List<Review> newReviews =
+          response.map((e) => Review.fromJson(e)).toList();
 
       // Pour chaque avis, récupérez les informations de profil
       for (var review in newReviews) {
@@ -143,10 +169,8 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
           var profileData = await apiService.getProfile(userId: userId);
 
           if (profileData['success'] == true) {
-            review.updateProfileInfo(
-                profileData['pseudo'] ?? 'Utilisateur',
-                profileData['profile_image']
-            );
+            review.updateProfileInfo(profileData['pseudo'] ?? 'Utilisateur',
+                profileData['profile_image']);
           }
         }
       }
@@ -476,6 +500,18 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            ListTile(
+                              title: const Text('Ajouter aux favoris'),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  isFavorite
+                                      ? Icons.bookmark
+                                      : Icons.bookmark_border,
+                                  color: isFavorite ? Color(0xFF147FD6) : null,
+                                ),
+                                onPressed: _toggleFavorite,
+                              ),
+                            ),
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
@@ -955,7 +991,11 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
         radius: 30,
         backgroundColor: Colors.grey[300], // Fond gris si pas d'image
         child: review.profilePicBytes == null
-            ? const Icon(Icons.person, color: Colors.white, size: 30,) // Icône grisée
+            ? const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 30,
+              ) // Icône grisée
             : null,
         backgroundImage: review.profilePicBytes != null
             ? MemoryImage(review.profilePicBytes!) // Affichage de l'image

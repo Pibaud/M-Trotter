@@ -12,6 +12,7 @@ const verifierLieux = require('./script/verifierLieux');
 const favoris = require('./routes/favorisRoutes');
 const lieux = require('./routes/lieuxRoutes');
 const tam = require('./routes/tamRoutes');
+const rapport = require('./script/envoieRapport');
 require('dotenv').config();
 
 const app = express();
@@ -48,4 +49,10 @@ cron.schedule('0 2 * * *', () => {
     console.log('⏳ Exécution de la vérification des ajouts et suppressions...');
     verifierLieux();
     console.log('✅ Vérification des ajouts et suppressions terminée.');
+});
+
+cron.schedule('0 7 * * *', () => {
+    console.log('⏳ Envoi du rapport quotidien...');
+    rapport.envoieRapport();
+    console.log('✅ Rapport quotidien envoyé.');
 });

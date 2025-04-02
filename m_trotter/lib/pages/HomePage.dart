@@ -24,15 +24,16 @@ void showPlaceSheet(BuildContext context, Place place) {
     builder: (context) {
       return PlaceInfoSheet(
         place: place,
-        onClose: () => Navigator.of(context).pop(), height: 80,
+        onClose: () => Navigator.of(context).pop(),
+        height: 80,
       );
     },
   );
 }
 
 class HomePageState extends State<HomePage> {
-  List<dynamic> bestPlaces = [];
-  List<dynamic> favorisPlaces = [];
+  List<Place> bestPlaces = [];
+  List<Place> favorisPlaces = [];
   late ApiService _apiService;
 
   @override
@@ -44,14 +45,14 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> loadBestPlaces() async {
-    List<dynamic> places = await _apiService.trouveBestPlaces();
+    List<Place> places = await _apiService.trouveBestPlaces();
     setState(() {
       bestPlaces = places;
     });
   }
 
   Future<void> loadFavoris() async {
-    List<dynamic> favoris = await _apiService.getFavoris(); // Retourne directement une liste dynamique
+    List<Place> favoris = await _apiService.getFavoris();
     setState(() {
       favorisPlaces = favoris;
     });
@@ -69,10 +70,14 @@ class HomePageState extends State<HomePage> {
     print("isLoggedIn réinitialisé");
   }
 
+  void _navigateToMapWithPlace(Place place) {
+    if (myAppKey.currentState != null) {
+      myAppKey.currentState?.navigateToMapWithPlace(place);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authState = Provider.of<AuthState>(context, listen: true);
-
     return Scaffold(
       appBar: AppBar(
           title: Center(
@@ -107,19 +112,24 @@ class HomePageState extends State<HomePage> {
           Text("Favoris"),
           Expanded(
             child: favorisPlaces.isEmpty
-                ? Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: Text(
+                      "Vous n'avez pas encore de favoris",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
                 : ListView(
                     scrollDirection: Axis.horizontal,
                     children: favorisPlaces.map((place) {
                       return GestureDetector(
-                        onTap: () => showPlaceSheet(context, place),
+                        onTap: () => _navigateToMapWithPlace(place),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Container(
                             width: 150,
                             color: Colors.blue[200],
                             child: Center(
-                              child: Text(place['name'] ?? 'Lieu inconnu',
+                              child: Text(place.name,
                                   style: TextStyle(fontSize: 18)),
                             ),
                           ),
@@ -136,14 +146,14 @@ class HomePageState extends State<HomePage> {
                     scrollDirection: Axis.horizontal,
                     children: bestPlaces.map((place) {
                       return GestureDetector(
-                        onTap: () => showPlaceSheet(context, place),
+                        onTap: () => _navigateToMapWithPlace(place),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Container(
                             width: 150,
                             color: Colors.blue[200],
                             child: Center(
-                              child: Text(place['name'] ?? 'Lieu inconnu',
+                              child: Text(place.name,
                                   style: TextStyle(fontSize: 18)),
                             ),
                           ),

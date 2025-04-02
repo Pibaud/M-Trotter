@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:m_trotter/models/Place.dart';
 import '../services/ApiService.dart';
+import '../utils/GlobalData.dart';
 
 class PlaceInfoSheet extends StatefulWidget {
   final double height;
@@ -24,7 +25,6 @@ class PlaceInfoSheet extends StatefulWidget {
 
 class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   bool isEditing = false;
-  bool isFavorite = false;
   List<Map<String, String>> modifications = [];
   String? selectedAmenity;
   late ApiService _apiService;
@@ -33,26 +33,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   void initState() {
     super.initState();
     _apiService = ApiService();
-    _checkIfFavorite();
-  }
-
-  Future<void> _checkIfFavorite() async {
-    bool favoriteStatus = await _apiService.estFavoris(osmId: widget.place.id);
-    setState(() {
-      isFavorite = favoriteStatus;
-    });
-  }
-
-  Future<void> _toggleFavorite() async {
-    if (isFavorite) {
-      await _apiService.deleteFavoris(osmId:widget.place.id);
-    } else {
-      await _apiService.addFavoris(osmId:widget.place.id);
-    }
-
-    setState(() {
-      isFavorite = !isFavorite;
-    });
   }
 
   @override
@@ -120,6 +100,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                   const Divider(),
 
                   // Informations sur le lieu
+                  
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -237,6 +218,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                         modifications.add({
                                           'champ_modifie': 'tags',
                                           'ancienne_valeur':
+                                          //chercher dans tags l'occurrence de phone
                                               '"phone"=>"${widget.place.tags['phone']}"',
                                           'nouvelle_valeur':
                                               '"phone"=>"$newValue"',
