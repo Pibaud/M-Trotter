@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../services/ApiService.dart';
 import '../widgets/PlaceInfoSheet.dart';
+import '../models/Place.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(int) onTabChange;
@@ -23,7 +24,7 @@ void showPlaceSheet(BuildContext context, Place place) {
     builder: (context) {
       return PlaceInfoSheet(
         place: place,
-        onClose: () => Navigator.of(context).pop(),
+        onClose: () => Navigator.of(context).pop(), height: 80,
       );
     },
   );
@@ -31,24 +32,26 @@ void showPlaceSheet(BuildContext context, Place place) {
 
 class HomePageState extends State<HomePage> {
   List<dynamic> bestPlaces = [];
-  List<dynamic> favorisPlaces = [];;
+  List<dynamic> favorisPlaces = [];
+  late ApiService _apiService;
 
   @override
   void initState() {
+    _apiService = ApiService();
     super.initState();
     loadBestPlaces();
     loadFavoris();
   }
 
   Future<void> loadBestPlaces() async {
-    List<dynamic> places = await ApiService.trouveBestPlaces();
+    List<dynamic> places = await _apiService.trouveBestPlaces();
     setState(() {
       bestPlaces = places;
     });
   }
 
   Future<void> loadFavoris() async {
-    List<dynamic> favoris = await ApiService.getFavoris(); // Retourne directement une liste dynamique
+    List<dynamic> favoris = await _apiService.getFavoris(); // Retourne directement une liste dynamique
     setState(() {
       favorisPlaces = favoris;
     });

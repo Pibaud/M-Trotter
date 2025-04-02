@@ -27,15 +27,17 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   bool isFavorite = false;
   List<Map<String, String>> modifications = [];
   String? selectedAmenity;
+  late ApiService _apiService;
 
   @override
   void initState() {
     super.initState();
+    _apiService = ApiService();
     _checkIfFavorite();
   }
 
   Future<void> _checkIfFavorite() async {
-    bool favoriteStatus = await ApiService.estFavoris(widget.place.id);
+    bool favoriteStatus = await _apiService.estFavoris(osmId: widget.place.id);
     setState(() {
       isFavorite = favoriteStatus;
     });
@@ -43,9 +45,9 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
   Future<void> _toggleFavorite() async {
     if (isFavorite) {
-      await ApiService.deleteFavoris(widget.place.id);
+      await _apiService.deleteFavoris(osmId:widget.place.id);
     } else {
-      await ApiService.addFavoris(widget.place.id);
+      await _apiService.addFavoris(osmId:widget.place.id);
     }
 
     setState(() {

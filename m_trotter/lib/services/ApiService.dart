@@ -608,10 +608,10 @@ class ApiService {
 
   Future<List<dynamic>> trouveBestPlaces() async {
 
-    final String url = '$baseUrl/api/bestplace';
+    final String url = '$baseUrl/api/bestplaces';
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.post(Uri.parse(url));
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -633,7 +633,7 @@ class ApiService {
     try {
       final url = Uri.parse('$baseUrl/favoris/add');
       final body = jsonEncode({
-        'accessToken': accessToken,
+        'accessToken': token,
         'osm_id': osmId,
       });
 
@@ -670,7 +670,7 @@ Future<Map<String, dynamic>> deleteFavoris({required int osmId}) async {
     try {
       final url = Uri.parse('$baseUrl/favoris/delete');
       final body = jsonEncode({
-        'accessToken': accessToken,
+        'accessToken': token,
         'osm_id': osmId,
       });
 
@@ -699,12 +699,12 @@ Future<Map<String, dynamic>> deleteFavoris({required int osmId}) async {
 
 //recuperer les favoris
 
-Future<List<dynamic>> getFavoris({required int osmId}) async {
+Future<List<dynamic>> getFavoris() async {
   String? accessToken = await AuthService.getToken();
   final String url = '$baseUrl/favoris/get';
 
   if (accessToken == null) {
-    return {'success': false, 'error': 'Aucun access token trouvé'};
+    throw Exception('Token non trouvé');
   }
 
   try {
