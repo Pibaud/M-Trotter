@@ -134,9 +134,40 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
 
   Future<void> _toggleFavorite() async {
     if (isFavorite) {
+      bool confirm = await showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                    title: const Text("Retirer des favoris"),
+                    content: const Text(
+                        "Êtes-vous sûr de vouloir retirer cet endroit de vos favoris ?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text("Annuler"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text("Oui",
+                            style: TextStyle(color: Colors.red)),
+                      )
+                    ]);
+              }) ??
+          false;
+
+      if (!confirm) return;
+
       await _apiService.deleteFavoris(osmId: widget.place.id);
     } else {
       await _apiService.addFavoris(osmId: widget.place.id);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Center( child:
+            Text("Ajouté aux favoris", style: TextStyle(color: Colors.white))),
+        backgroundColor: Colors.blue,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ));
     }
 
     setState(() {
@@ -205,11 +236,11 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
     return Row(
       children: List.generate(5, (index) {
         if (index < rating.floor()) {
-          return const Icon(Icons.star, color: Colors.amber);
+          return const Icon(Icons.star_rounded, color: Colors.amber);
         } else if (index < rating) {
-          return const Icon(Icons.star_half, color: Color(0xFFFFC107));
+          return const Icon(Icons.star_half_rounded, color: Color(0xFFFFC107));
         } else {
-          return const Icon(Icons.star_border, color: Colors.grey);
+          return const Icon(Icons.star_border_rounded, color: Colors.grey);
         }
       }),
     );
@@ -366,7 +397,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library),
+                leading: const Icon(Icons.photo_library_rounded),
                 title: const Text('Galerie'),
                 onTap: () {
                   Navigator.pop(context);
@@ -375,7 +406,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt),
+                leading: const Icon(Icons.camera_alt_rounded),
                 title: const Text('Appareil photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -500,18 +531,6 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ListTile(
-                              title: const Text('Ajouter aux favoris'),
-                              trailing: IconButton(
-                                icon: Icon(
-                                  isFavorite
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_border,
-                                  color: isFavorite ? Color(0xFF147FD6) : null,
-                                ),
-                                onPressed: _toggleFavorite,
-                              ),
-                            ),
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
@@ -651,9 +670,26 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
             Positioned(
               top: 10,
               right: 10,
-              child: GestureDetector(
-                onTap: () => widget.onClose!(),
-                child: const Icon(Icons.close, color: Colors.black),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      isFavorite
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      color: isFavorite ? Color(0xFF147FD6) : null,
+                    ),
+                    onPressed: _toggleFavorite,
+                  ),
+                  const SizedBox(
+                      width:
+                          0), // Augmenter ou réduire la valeur pour ajuster l'espacement
+                  GestureDetector(
+                    onTap: () => widget.onClose!(),
+                    child: const Icon(Icons.close_rounded, color: Colors.black),
+                  ),
+                ],
               ),
             ),
           ],
@@ -731,7 +767,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text("Site Web"),
-                  const Icon(Icons.language,
+                  const Icon(Icons.language_rounded,
                       color: Color(0xFF147FD6), size: 24),
                 ],
               ),
@@ -823,7 +859,9 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                 children: List.generate(5, (index) {
                   return IconButton(
                     icon: Icon(
-                      index < newReviewRating ? Icons.star : Icons.star_border,
+                      index < newReviewRating
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
                       color:
                           index < newReviewRating ? Colors.amber : Colors.grey,
                     ),
@@ -884,7 +922,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
-                                    Icons.close,
+                                    Icons.close_rounded,
                                     size: 16,
                                     color: Colors.white,
                                   ),
@@ -917,7 +955,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                     ),
                     TextButton.icon(
                       onPressed: toggleSortOrder,
-                      icon: const Icon(Icons.sort),
+                      icon: const Icon(Icons.sort_rounded),
                       label: Text(isSortedByDate
                           ? "Trier par likes"
                           : "Trier par date"),
@@ -962,7 +1000,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                               decoration: InputDecoration(
                                 hintText: "Votre réponse...",
                                 suffixIcon: IconButton(
-                                  icon: const Icon(Icons.send),
+                                  icon: const Icon(Icons.send_rounded),
                                   onPressed: replyText.isEmpty
                                       ? null
                                       : () => postReview(replyText,
@@ -992,7 +1030,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
         backgroundColor: Colors.grey[300], // Fond gris si pas d'image
         child: review.profilePicBytes == null
             ? const Icon(
-                Icons.person,
+                Icons.person_rounded,
                 color: Colors.white,
                 size: 30,
               ) // Icône grisée
@@ -1020,7 +1058,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
             children: [
               IconButton(
                 icon: Icon(
-                  Icons.thumb_up,
+                  Icons.thumb_up_rounded,
                   color: review.isLiked ? Colors.blue : Colors.grey,
                 ),
                 onPressed: () => toggleLike(review),
@@ -1097,7 +1135,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.photo_library_outlined,
+                          Icon(Icons.photo_library_rounded,
                               size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 12),
                           Text(
@@ -1175,7 +1213,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
           child: FloatingActionButton(
             onPressed: showImageSourceDialog,
             backgroundColor: Colors.blue,
-            child: const Icon(Icons.camera_alt, color: Colors.white),
+            child: const Icon(Icons.camera_alt_rounded, color: Colors.white),
           ),
         ),
       ],
