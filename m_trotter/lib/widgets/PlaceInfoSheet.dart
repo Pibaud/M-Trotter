@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:m_trotter/models/Place.dart';
-import '../utils/GlobalData.dart';
 import '../services/ApiService.dart';
 
 class PlaceInfoSheet extends StatefulWidget {
@@ -25,19 +24,36 @@ class PlaceInfoSheet extends StatefulWidget {
 
 class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   bool isEditing = false;
+  bool isFavorite = false;
   List<Map<String, String>> modifications = [];
   String? selectedAmenity;
-  String searchQuery = '';
-  List<String> suggestedAmenities = [];
-  /*exemple:
-  modifications = [
-                      {
-                        'champ_modifie': 'tags',
-                        'ancienne_valeur': '"wheelchair"=>"yes"',
-                        'nouvelle_valeur': '"wheelchair"=>"no"',
-                      }
-                    ];
-*/
+  late ApiService _apiService;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = ApiService();
+    _checkIfFavorite();
+  }
+
+  Future<void> _checkIfFavorite() async {
+    bool favoriteStatus = await _apiService.estFavoris(osmId: widget.place.id);
+    setState(() {
+      isFavorite = favoriteStatus;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (isFavorite) {
+      await _apiService.deleteFavoris(osmId:widget.place.id);
+    } else {
+      await _apiService.addFavoris(osmId:widget.place.id);
+    }
+
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,69 +246,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                   )
                                 : Text(widget.place.tags['phone']!),
                           ),
-                        if (widget.place.tags['cuisine'] != null)
-                          ListTile(
-                            title: const Text('Cuisine'),
-                            subtitle: Text(widget.place.tags['cuisine']!),
-                          ),
-                        if (widget.place.tags['website'] != null)
-                          ListTile(
-                            title: const Text('Site web'),
-                            subtitle: Text(widget.place.tags['website']!),
-                          ),
-                        if (widget.place.tags['email'] != null)
-                          ListTile(
-                            title: const Text('Email'),
-                            subtitle: Text(widget.place.tags['email']!),
-                          ),
-                        if (widget.place.tags['city'] != null)
-                          ListTile(
-                            title: const Text('Ville'),
-                            subtitle: Text(widget.place.tags['city']!),
-                          ),
-                        if (widget.place.tags['street'] != null)
-                          ListTile(
-                            title: const Text('Rue'),
-                            subtitle: Text(widget.place.tags['street']!),
-                          ),
-                        if (widget.place.tags['postcode'] != null)
-                          ListTile(
-                            title: const Text('Code postal'),
-                            subtitle: Text(widget.place.tags['postcode']!),
-                          ),
-                        if (widget.place.tags['opening_hours'] != null)
-                          ListTile(
-                            title: const Text('Heures d\'ouverture'),
-                            subtitle: Text(widget.place.tags['opening_hours']!),
-                          ),
-                        if (widget.place.tags['wheelchair_accessible'] != null)
-                          ListTile(
-                            title: const Text('Accès fauteuil roulant'),
-                            subtitle: Text(
-                                widget.place.tags['wheelchair_accessible']!),
-                          ),
-                        if (widget.place.tags['outdoorSeating'] != null)
-                          ListTile(
-                            title: const Text('Sièges extérieurs'),
-                            subtitle:
-                                Text(widget.place.tags['outdoorSeating']!),
-                          ),
-                        if (widget.place.tags['airConditioning'] != null)
-                          ListTile(
-                            title: const Text('Climatisation'),
-                            subtitle:
-                                Text(widget.place.tags['airConditioning']!),
-                          ),
-                        if (widget.place.tags['facebook'] != null)
-                          ListTile(
-                            title: const Text('Facebook'),
-                            subtitle: Text(widget.place.tags['facebook']!),
-                          ),
-                        if (widget.place.tags['operator'] != null)
-                          ListTile(
-                            title: const Text('Opérateur'),
-                            subtitle: Text(widget.place.tags['operator']!),
-                          ),
                       ],
                     ),
                   ),
@@ -324,3 +277,4 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     );
   }
 }
+
