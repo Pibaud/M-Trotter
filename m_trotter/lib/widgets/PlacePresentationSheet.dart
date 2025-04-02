@@ -60,7 +60,7 @@ class Review {
 
   @override
   String toString() {
-    return 'Review{id: $id, parentId: $parentId, username: $username, profilePicBytes: $profilePicBytes, comment: $comment, likes: $likes, isLiked: $isLiked, date: $date, rating: $rating, placeTable: $placeTable}';
+    return 'Review{id: $id, parentId: $parentId, username: $username, profilePicBytes: $profilePicBytes, comment: $comment, likes: $likes, isLiked: $isLiked, date: $date, rating: $rating, placeTable: $placeTable, userId: $userId}';
   }
 }
 
@@ -952,9 +952,10 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   Widget _buildReviewItem(Review review) {
     return ListTile(
       leading: CircleAvatar(
+        radius: 30,
         backgroundColor: Colors.grey[300], // Fond gris si pas d'image
         child: review.profilePicBytes == null
-            ? const Icon(Icons.person, color: Colors.white) // Icône grisée
+            ? const Icon(Icons.person, color: Colors.white, size: 30,) // Icône grisée
             : null,
         backgroundImage: review.profilePicBytes != null
             ? MemoryImage(review.profilePicBytes!) // Affichage de l'image
