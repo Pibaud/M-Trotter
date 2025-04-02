@@ -25,7 +25,9 @@ const getImagesByIds = async (photoIds) => {
         }
         
         // Construire une requête paramétrée pour sélectionner les images par ID
-        const placeholders = photoIds.map((_, index) => `$${index + 1}`).join(',');
+        if (!photoIds.length) {
+            return [];
+        }        
         const query = `SELECT id_photo, id_lieu, id_avis FROM photos WHERE id_photo IN (${placeholders})`;
         
         const result = await db.query(query, photoIds);
