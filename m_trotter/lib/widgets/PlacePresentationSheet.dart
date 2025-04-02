@@ -13,14 +13,15 @@ Logger logger = Logger();
 class Review {
   final String id;
   final String? parentId;
-  final String username;
-  final Uint8List? profilePicBytes;
+  String username;
+  Uint8List? profilePicBytes;
   final String comment;
   int likes;
   bool isLiked;
   final DateTime date;
   int rating;
   final String placeTable;
+  final String userId;
 
   Review(
       {required this.id,
@@ -32,7 +33,13 @@ class Review {
       this.isLiked = false,
       required this.date,
       this.rating = 0,
-      required this.placeTable});
+      required this.placeTable,
+      this.userId = '',});
+
+  void updateProfileInfo(String newUsername, Uint8List? newProfilePic) {
+    username = newUsername;
+    profilePicBytes = newProfilePic;
+  }
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
@@ -47,7 +54,8 @@ class Review {
         likes: int.tryParse(json['like_count'].toString()) ?? 0,
         date: DateTime.parse(json['created_at']),
         rating: json['nb_etoiles'] ?? 0,
-        placeTable: json['place_table']);
+        placeTable: json['place_table'],
+        userId: json['user_id']?.toString() ?? '',);
   }
 
   @override
@@ -124,12 +132,27 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   Future<void> fetchReviews() async {
     try {
       ApiService apiService = ApiService();
-      List<dynamic> response =
-          await apiService.fetchReviewsByPlaceId(widget.place.id.toString(), 0);
+      List<dynamic> response = await apiService.fetchReviewsByPlaceId(widget.place.id.toString(), 0);
+
+      List<Review> newReviews = response.map((e) => Review.fromJson(e)).toList();
+
+      // Pour chaque avis, récupérez les informations de profil
+      for (var review in newReviews) {
+        var userId = review.userId;
+        if (userId.isNotEmpty) {
+          var profileData = await apiService.getProfile(userId: userId);
+
+          if (profileData['success'] == true) {
+            review.updateProfileInfo(
+                profileData['pseudo'] ?? 'Utilisateur',
+                profileData['profile_image']
+            );
+          }
+        }
+      }
 
       setState(() {
-        reviews = // Convertir la liste de Map en liste de Review
-            response.map((e) => Review.fromJson(e)).toList();
+        reviews = newReviews;
       });
     } catch (e) {
       print('Erreur lors de la récupération des avis : $e');

@@ -8,6 +8,10 @@ import 'package:logger/logger.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'AuthService.dart';
 import '../models/Photo.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'dart:developer';
+
+
 
 // Instancier FlutterSecureStorage
 final FlutterSecureStorage secureStorage = FlutterSecureStorage();
@@ -280,41 +284,89 @@ class ApiService {
   }
 
   //recuperer profil
-  Future<Map<String, dynamic>> getProfile() async {
-    var url = Uri.parse('$baseUrl/comptes/getProfil');
-    try {
-      var response = await http.get(url);
+  Future<Map<String, dynamic>> getProfile({String? userId}) async {
+    String url;
+    Map<String, dynamic> body;
+    String? token;
+
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (userId == null || userId.isEmpty) {
+      try {
+        token = await AuthService.getToken();
+        if (token == null) {
+          return {'success': false, 'error': 'Token non trouvé'};
+        }
+      }catch (e) {
+        print("Erreur de connexion: $e");
+        return {"success": false, "error": "Erreur de connexion"};
+      }
+
+      url = '$baseUrl/comptes/getProfil';
+      body = {'accessToken': token};
+    } else {
+
+      url = '$baseUrl/comptes/getOtherProfil';
+      body = {'id_user': userId};
+    }
+
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(body),
+      );
 
       if (response.statusCode == 200) {
-        var jsonResponse = json.decode(response.body);
+        try {
+          var jsonResponse = json.decode(response.body);
 
-        // Vérifier si l'image est renvoyée en Base64
-        String? base64Image = jsonResponse['profile_image'];
+          if (jsonResponse.containsKey('profile_pic') && jsonResponse['profile_pic'] != null) {
+            var profilePic = jsonResponse['profile_pic'];
 
-        // Convertir l'image Base64 en Uint8List pour pouvoir l'afficher
-        Uint8List? imageBytes =
-            base64Image != null ? base64Decode(base64Image) : null;
+            Uint8List imageBytes;
 
-        // Retourner le profil avec l'image en binaire
-        return {
-          'success': true,
-          'pseudo': jsonResponse['pseudo'],
-          'age': jsonResponse['age'],
-          'profile_image': imageBytes, // L'image en Uint8List
-        };
-      } else {
-        return {"error": "Erreur de récupération des données du profil."};
+            if (profilePic is Map && profilePic.containsKey('data') && profilePic['type'] == 'Buffer') {
+              List<int> rawData = List<int>.from(profilePic['data']);
+
+              String base64String = String.fromCharCodes(rawData);
+
+              imageBytes = base64Decode(base64String);
+
+              return {
+                'success': true,
+                'pseudo': jsonResponse['username'],
+                'profile_image': imageBytes,
+              };
+            } else {
+              return {"success": false, "error": "Image mal formatée ou absente"};
+            }
+          } else {
+            return {
+              'success': true,
+              'pseudo': jsonResponse['username'],
+              'profile_image': null,
+            };
+          }
+        } catch (e) {
+          print("Erreur lors du parsing JSON: $e");
+          return {"success": false, "error": "Erreur de traitement des données"};
+        }
       }
-    } catch (e) {
-      return {"error": "Erreur de connexion"};
+       else {
+        print("Erreur côté serveur: ${response.statusCode} - ${response.body}");
+        return {"success": false, "error": "Erreur serveur, code : ${response.statusCode}"};
+      }
     }
-  }
+
 
   // Mise à jour du profil
   Future<Map<String, dynamic>> updateProfile({
     required String pseudo,
     String? age,
-    File? profileImage,
+    File? profileImage,  // Utilise XFile ici
   }) async {
     final String url = '$baseUrl/comptes/updateProfil';
     final String? token = await AuthService.getToken();
@@ -324,29 +376,103 @@ class ApiService {
     }
 
     try {
-      final request = http.MultipartRequest('POST', Uri.parse(url))
-        ..fields['pseudo'] = pseudo
-        ..fields['accesstoken'] = token;
+      // Structure correcte du body
+      Map<String, dynamic> body = {
+        'accessToken': token, // Correction : "accessToken" avec majuscule
+        'updatedFields': {
+          'username': pseudo,
+        }
+      };
 
-      if (age != null && age.isNotEmpty) {
-        request.fields['age'] = age;
+      if (age != null) {
+        body['updatedFields']['age'] = age;
       }
 
       if (profileImage != null) {
-        request.files.add(await http.MultipartFile.fromPath('profile_image', profileImage.path));
-      }
+        final file = File(profileImage.path);
 
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
+        // Compression de l'image
+        final compressedFile = await compressImage(file, 500);
+        if (compressedFile != null) {
+          // Convertir en base64
+          final bytes = await compressedFile.readAsBytes();
+          String image = base64Encode(bytes);
+          //printImageBase64(image); // Debug
+
+          // Ajouter l'image à updatedFields
+          body['updatedFields']['profile_pic'] = image;
+          print("Image compressée et ajoutée à la requête");
+        } else {
+          print("Échec de la compression de l'image");
+        }
+      }
+      print("Corps de la requête envoyée au serveur :");
+
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return json.decode(responseData);
+        return {'success': true};
+
       } else {
-        throw Exception('Erreur serveur : ${response.statusCode}');
+        return {
+
+          'success': false,
+          'error': 'Erreur serveur : ${response.statusCode} - ${response.body}'
+        };
       }
     } catch (e) {
-      throw Exception('Erreur lors de la mise à jour du profil : $e');
+      print("Exception pendant la mise à jour du profil: $e");
+      return {
+        'success': false,
+        'error': 'Erreur lors de la mise à jour du profil : $e'
+      };
     }
+  }
+
+// Fonction de compression d'image
+  Future<File?> compressImage(File imageFile, int maxSizeKB) async {
+    int quality = 80;
+    int minWidth = 200;
+    int minHeight = 200;
+    XFile? compressedXFile;
+    File? compressedFile;
+
+    do {
+      String targetPath = "${imageFile.path}_compressed.jpeg";
+      compressedXFile = await FlutterImageCompress.compressAndGetFile(
+        imageFile.path,
+        targetPath,
+        quality: quality,
+        minWidth: minWidth,
+        minHeight: minHeight,
+        format: CompressFormat.jpeg,
+      );
+
+      // Convertir XFile en File si la compression a réussi
+      if (compressedXFile != null) {
+        compressedFile = File(compressedXFile.path);
+
+        // Vérification de la taille du fichier compressé
+        int fileSizeKB = compressedFile.lengthSync() ~/ 1024;
+        print("Compression: qualité=$quality, taille=${fileSizeKB}KB");
+
+        if (fileSizeKB <= maxSizeKB) break;
+      } else {
+        return null; // La compression a échoué
+      }
+
+      // Réduction de la qualité et des dimensions pour essayer de réduire la taille
+      quality -= 10;
+      minWidth = (minWidth * 0.9).toInt();
+      minHeight = (minHeight * 0.9).toInt();
+    } while (quality > 4);
+
+    return compressedFile;
   }
 
   //recuperer l'access token
@@ -604,3 +730,4 @@ class ApiService {
     }
   }
 }
+
