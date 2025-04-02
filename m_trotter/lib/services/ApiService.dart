@@ -10,8 +10,7 @@ import 'AuthService.dart';
 import '../models/Photo.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:developer';
-
-
+import '../models/Place.dart';
 
 // Instancier FlutterSecureStorage
 final FlutterSecureStorage secureStorage = FlutterSecureStorage();
@@ -299,7 +298,7 @@ class ApiService {
         if (token == null) {
           return {'success': false, 'error': 'Token non trouvé'};
         }
-      }catch (e) {
+      } catch (e) {
         print("Erreur de connexion: $e");
         return {"success": false, "error": "Erreur de connexion"};
       }
@@ -307,66 +306,68 @@ class ApiService {
       url = '$baseUrl/comptes/getProfil';
       body = {'accessToken': token};
     } else {
-
       url = '$baseUrl/comptes/getOtherProfil';
       body = {'id_user': userId};
     }
 
+    final response = await http.post(
+      Uri.parse(url),
+      headers: headers,
+      body: jsonEncode(body),
+    );
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: jsonEncode(body),
-      );
+    if (response.statusCode == 200) {
+      try {
+        var jsonResponse = json.decode(response.body);
 
-      if (response.statusCode == 200) {
-        try {
-          var jsonResponse = json.decode(response.body);
+        if (jsonResponse.containsKey('profile_pic') &&
+            jsonResponse['profile_pic'] != null) {
+          var profilePic = jsonResponse['profile_pic'];
 
-          if (jsonResponse.containsKey('profile_pic') && jsonResponse['profile_pic'] != null) {
-            var profilePic = jsonResponse['profile_pic'];
+          Uint8List imageBytes;
 
-            Uint8List imageBytes;
+          if (profilePic is Map &&
+              profilePic.containsKey('data') &&
+              profilePic['type'] == 'Buffer') {
+            List<int> rawData = List<int>.from(profilePic['data']);
 
-            if (profilePic is Map && profilePic.containsKey('data') && profilePic['type'] == 'Buffer') {
-              List<int> rawData = List<int>.from(profilePic['data']);
+            String base64String = String.fromCharCodes(rawData);
 
-              String base64String = String.fromCharCodes(rawData);
+            imageBytes = base64Decode(base64String);
 
-              imageBytes = base64Decode(base64String);
-
-              return {
-                'success': true,
-                'pseudo': jsonResponse['username'],
-                'profile_image': imageBytes,
-              };
-            } else {
-              return {"success": false, "error": "Image mal formatée ou absente"};
-            }
-          } else {
             return {
               'success': true,
               'pseudo': jsonResponse['username'],
-              'profile_image': null,
+              'profile_image': imageBytes,
             };
+          } else {
+            return {"success": false, "error": "Image mal formatée ou absente"};
           }
-        } catch (e) {
-          print("Erreur lors du parsing JSON: $e");
-          return {"success": false, "error": "Erreur de traitement des données"};
+        } else {
+          return {
+            'success': true,
+            'pseudo': jsonResponse['username'],
+            'profile_image': null,
+          };
         }
+      } catch (e) {
+        print("Erreur lors du parsing JSON: $e");
+        return {"success": false, "error": "Erreur de traitement des données"};
       }
-       else {
-        print("Erreur côté serveur: ${response.statusCode} - ${response.body}");
-        return {"success": false, "error": "Erreur serveur, code : ${response.statusCode}"};
-      }
+    } else {
+      print("Erreur côté serveur: ${response.statusCode} - ${response.body}");
+      return {
+        "success": false,
+        "error": "Erreur serveur, code : ${response.statusCode}"
+      };
     }
-
+  }
 
   // Mise à jour du profil
   Future<Map<String, dynamic>> updateProfile({
     required String pseudo,
     String? age,
-    File? profileImage,  // Utilise XFile ici
+    File? profileImage, // Utilise XFile ici
   }) async {
     final String url = '$baseUrl/comptes/updateProfil';
     final String? token = await AuthService.getToken();
@@ -408,7 +409,6 @@ class ApiService {
       }
       print("Corps de la requête envoyée au serveur :");
 
-
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -417,10 +417,8 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {'success': true};
-
       } else {
         return {
-
           'success': false,
           'error': 'Erreur serveur : ${response.statusCode} - ${response.body}'
         };
@@ -721,7 +719,7 @@ class ApiService {
         if (response.statusCode == 201) {
           final responseData = json.decode(response.body);
           print(responseData['message']);
-        }else{   
+        } else {
           print('Erreur lors de la modification: ${response.statusCode}');
         }
       } catch (e) {
@@ -732,22 +730,25 @@ class ApiService {
 
   //récupération bestplace
 
-  Future<List<dynamic>> trouveBestPlaces() async {
-
+  Future<List<Place>> trouveBestPlaces() async {
     final String url = '$baseUrl/api/bestplaces';
 
     try {
       final response = await http.post(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final List<dynamic> placesJson = json.decode(response.body);
+        for (var place in placesJson) {
+          place['place_table'] = "planet_osm_point";
+        }
+        return placesJson.map((place) => Place.fromJson(place)).toList();
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
     }
-}
+  }
 
 //ajouter un favoris
 
@@ -762,7 +763,7 @@ class ApiService {
         'accessToken': token,
         'osm_id': osmId,
       });
-
+      print("requete pour addFavori");
       final response = await http.post(
         url,
         headers: {
@@ -771,24 +772,24 @@ class ApiService {
         body: body,
       );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-      return {'success': true, 'data': responseData};
-    } else {
-      final error = jsonDecode(response.body);
-      return {
-        'success': false,
-        'error': error['message'] ?? 'Erreur inconnue'
-      };
+      if (response.statusCode == 201) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return {'success': true, 'data': responseData};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
     }
-  } catch (e) {
-    throw Exception('Erreur lors de la requête : $e');
   }
-}
 
 //retirer un favoris
 
-Future<Map<String, dynamic>> deleteFavoris({required int osmId}) async {
+  Future<Map<String, dynamic>> deleteFavoris({required int osmId}) async {
     final String? token = await AuthService.getToken();
     if (token == null) {
       throw Exception('Token non trouvé');
@@ -808,81 +809,86 @@ Future<Map<String, dynamic>> deleteFavoris({required int osmId}) async {
         body: body,
       );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-      return {'success': true, 'data': responseData};
-    } else {
-      final error = jsonDecode(response.body);
-      return {
-        'success': false,
-        'error': error['message'] ?? 'Erreur inconnue'
-      };
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return {'success': true, 'data': responseData};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
     }
-  } catch (e) {
-    throw Exception('Erreur lors de la requête : $e');
   }
-}
 
 //recuperer les favoris
 
-Future<List<dynamic>> getFavoris() async {
-  String? accessToken = await AuthService.getToken();
-  final String url = '$baseUrl/favoris/get';
+  Future<List<Place>> getFavoris() async {
+    String? accessToken = await AuthService.getToken();
+    final String url = '$baseUrl/favoris/get';
 
-  if (accessToken == null) {
-    throw Exception('Token non trouvé');
-  }
-
-  try {
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json'},
-      body: json.encode({
-        'accessToken': accessToken}),
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Erreur serveur : ${response.statusCode}');
+    if (accessToken == null) {
+      throw Exception('Token non trouvé');
     }
-  } catch (e) {
-    throw Exception('Erreur lors de la requête : $e');
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'accessToken': accessToken}),
+      );
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return [];
+        }
+        final List<dynamic> placesJson = json.decode(response.body);
+        for (var place in placesJson) {
+          place['place_table'] = "planet_osm_point";
+        }
+        return placesJson
+            .map((place) => Place.fromJson(place))
+            .toList();
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
   }
-}
 
 //test si un endroit est en favoris
 
-Future<bool> estFavoris({required int osmId}) async {
-  String? accessToken = await AuthService.getToken();
-  final String url = '$baseUrl/favoris/get';
+  Future<bool> estFavoris({required int osmId}) async {
+    String? accessToken = await AuthService.getToken();
+    final String url = '$baseUrl/favoris/get';
 
-  if (accessToken == null) {
-    throw Exception('Aucun access token trouvé');
-  }
-
-  try {
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'accessToken': accessToken,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      List<dynamic> favoris = json.decode(response.body);
-      return favoris.contains(osmId);
-    } else {
-      throw Exception('Erreur serveur : ${response.statusCode}');
+    if (accessToken == null) {
+      throw Exception('Aucun access token trouvé');
     }
-  } catch (e) {
-    throw Exception('Erreur lors de la requête : $e');
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'accessToken': accessToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> favoris = json.decode(response.body);
+        return favoris.contains(osmId);
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la requête : $e');
+    }
   }
 }
-
-}
-

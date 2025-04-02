@@ -29,8 +29,9 @@ import '../utils/AmenityIcons.dart';
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
+  final Place? selectedPlace;
 
-  const MapPage({super.key, required this.focusOnSearch});
+  const MapPage({super.key, required this.focusOnSearch, this.selectedPlace});
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -98,6 +99,16 @@ class _MapPageState extends State<MapPage> {
         });
       });
     }
+
+    if (widget.selectedPlace != null) {
+      Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
+        .hideBottomNav();
+      setState(() {
+        _selectedPlace = widget.selectedPlace;
+        _isPlacePresentationSheetVisible = true;
+      });
+    }
+
     getUserLocation();
     _positionSubscription = _locationService.listenToPositionChanges(
       onPositionUpdate: (Position position) {

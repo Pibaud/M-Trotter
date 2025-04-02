@@ -3,7 +3,9 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 exports.addFavorite = async (req, res) => {
+    console.log("on est dans le model pour addFavorits");
     try {
+        
         const { osm_id, accessToken } = req.body;
 
         if (!osm_id || !accessToken) {
@@ -12,7 +14,7 @@ exports.addFavorite = async (req, res) => {
 
         let user_id;
         try {
-            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
             user_id = decodedToken.id;
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
@@ -36,7 +38,7 @@ exports.delFavorite = async (req, res) => {
 
         let user_id;
         try {
-            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
             user_id = decodedToken.id;
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
@@ -60,7 +62,7 @@ exports.getFavorites = async (req, res) => {
 
         let user_id;
         try {
-            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
             user_id = decodedToken.id;
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });

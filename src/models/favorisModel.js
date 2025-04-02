@@ -1,6 +1,7 @@
 const db = require('../config/db');
 
 exports.addFavorite = async (userId, osmId) => {
+    console.log("on est dans le model pour addFavorites avec le userId : ", userId);
     return db.query('INSERT INTO favoris (id_user, osm_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [userId, osmId]);
 };
 
@@ -9,7 +10,7 @@ exports.delFavorite = async (userId, osmId) => {
 };
 
 exports.getFavorites = async (userId) => {
-    console.log("on est dans le model pour getFavorites");
+    console.log("on est dans le model pour getFavorites avec le userId : ", userId);
     const querry = `SELECT 
                         f.osm_id AS id,
                         p.name, 

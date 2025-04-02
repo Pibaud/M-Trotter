@@ -10,6 +10,7 @@ import 'providers/BottomNavBarVisibilityProvider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import '../services/ApiService.dart';
 import '../utils/GlobalData.dart'; // Importez votre nouvelle classe
+import '../models/Place.dart';
 
 final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
 
@@ -22,6 +23,7 @@ class MyApp extends StatefulWidget {
 
 class MyAppState extends State<MyApp> {
   int _selectedIndex = 0;
+  Place? _selectedPlace;
   bool _focusOnSearch = false;
   late final List<Widget> _pages;
   late ApiService _apiService;
@@ -35,26 +37,35 @@ class MyAppState extends State<MyApp> {
     });
   }
 
+  void navigateToMapWithPlace(Place place) {
+    print("Navigating to MapPage with selected place...");
+    setState(() {
+      _selectedIndex = 1;
+      _pages[1] = MapPage(focusOnSearch: false, selectedPlace: place);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _initializeApp();
   }
-  
+
   Future<void> _initializeApp() async {
     // Charger les amenities globalement
     await GlobalData.loadAmenities();
-    
+
     _pages = [
       HomePage(onTabChange: _onItemTapped),
       MapPage(focusOnSearch: _focusOnSearch),
       const ProfilePage(),
     ];
-    
+
     _apiService = ApiService();
     final result = await _apiService.recupAccessToken();
     if (result['success'] == false &&
-        result['error'] == 'Refresh token invalide, veuillez vous reconnecter') {
+        result['error'] ==
+            'Refresh token invalide, veuillez vous reconnecter') {
       print("Le refresh token est invalide, redirection vers la connexion...");
       AuthPage();
     } else {
@@ -64,7 +75,7 @@ class MyAppState extends State<MyApp> {
     // Ensure BottomNavBar is visible on initialization
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
         .showBottomNav();
-        
+
     // Forcer une reconstruction après l'initialisation
     if (mounted) {
       setState(() {});
@@ -77,7 +88,8 @@ class MyAppState extends State<MyApp> {
         _focusOnSearch = false;
       }
       _selectedIndex = index;
-      _pages[1] = MapPage(focusOnSearch: _focusOnSearch);
+      _pages[1] =
+          MapPage(focusOnSearch: _focusOnSearch, selectedPlace: _selectedPlace);
     });
   }
 
