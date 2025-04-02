@@ -11,15 +11,14 @@ import '../models/Photo.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'dart:developer';
 import '../models/Place.dart';
+import '../AppConfig.dart';
 
 // Instancier FlutterSecureStorage
 final FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
 class ApiService {
-  final String baseUrl;
+  final String baseUrl = AppConfig.serverUrl;
   final logger = Logger();
-
-  ApiService({String? baseUrl}) : baseUrl = baseUrl ?? dotenv.env['BASE_URL']!;
 
   Future<List<dynamic>> fetchPlaces(String input) async {
     final String url = '$baseUrl/api/places/';

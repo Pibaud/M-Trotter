@@ -23,7 +23,6 @@ class AuthState with ChangeNotifier {
 
   Future<void> logIn({required String email, required String password}) async {
     print("tentative de login dans le service");
-    print("url dans apiservice : ${_apiService.baseUrl}");
     try {
       final result = await _apiService.logIn(email, password);
       if (result['success']) {
