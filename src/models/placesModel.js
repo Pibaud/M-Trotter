@@ -10,6 +10,7 @@ exports.ListePlaces = async (search, startid) => {
                     p.osm_id as id,
                     p.name, 
                     p.amenity, 
+                    p."addr:housenumber",
                     ST_X(ST_Centroid(ST_Collect(ST_Transform(p.way, 4326)))) AS longitude, 
                     ST_Y(ST_Centroid(ST_Collect(ST_Transform(p.way, 4326)))) AS latitude, 
                     STRING_AGG(p.tags::TEXT, '; ') AS tags, 
@@ -21,7 +22,7 @@ exports.ListePlaces = async (search, startid) => {
                 WHERE p.name IS NOT NULL 
                 AND (p.name ILIKE $2 OR similarity(p.name, $1) > 0.4)
                 AND p.osm_id > $3
-                GROUP BY p.osm_id, p.name, p.amenity
+                GROUP BY p.osm_id, p.name, p.amenity, p."addr:housenumber"
                 ORDER BY CASE 
                     WHEN p.name ILIKE $2 THEN 2
                     ELSE MAX(similarity(p.name, $1))
@@ -100,7 +101,7 @@ exports.ListePlaces = async (search, startid) => {
 exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     try {
         const result = await pool.query(
-            `SELECT DISTINCT osm_id as id, name, amenity,
+            `SELECT DISTINCT osm_id as id, name, amenity, "addr:housenumber", 
                 ST_X(ST_Transform(way, 4326)) AS lon, 
                 ST_Y(ST_Transform(way, 4326)) AS lat,
                 STRING_AGG(tags::TEXT, '; ') AS tags,
@@ -133,7 +134,7 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
 exports.AmenityPlaces = async (amenity, startid) => {
     try {
         const result = await pool.query(
-            `SELECT p.osm_id as id, p.name, p.amenity,
+            `SELECT p.osm_id as id, p.name, p.amenity, p."addr:housenumber",
                     ST_X(ST_Transform(p.way, 4326)) AS lon, 
                     ST_Y(ST_Transform(p.way, 4326)) AS lat,
                     STRING_AGG(p.tags::TEXT, '; ') AS tags,
@@ -144,7 +145,7 @@ exports.AmenityPlaces = async (amenity, startid) => {
             WHERE p.name IS NOT NULL 
               AND p.amenity = $1
               AND p.osm_id > $2
-            GROUP BY p.osm_id, p.name, p.amenity, p.way
+            GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
             LIMIT 10`,
             [amenity, startid]
         );
@@ -161,7 +162,7 @@ exports.AmenityPlaces = async (amenity, startid) => {
 exports.BestPlaces = async () => {
     try {
         const result = await pool.query(
-            `SELECT p.osm_id as id, p.name, p.amenity,
+            `SELECT p.osm_id as id, p.name, p.amenity, p."addr:housenumber", 
                     ST_X(ST_Transform(p.way, 4326)) AS lon, 
                     ST_Y(ST_Transform(p.way, 4326)) AS lat,
                     STRING_AGG(p.tags::TEXT, '; ') AS tags,
@@ -170,7 +171,7 @@ exports.BestPlaces = async () => {
             FROM planet_osm_point p
             LEFT JOIN avis a ON p.osm_id = a.place_id
             WHERE p.name IS NOT NULL
-            GROUP BY p.osm_id, p.name, p.amenity, p.way
+            GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
             HAVING COUNT(a.nb_etoiles) > 0
             ORDER BY nb_avis_stars DESC, avg_stars DESC
             LIMIT 10`

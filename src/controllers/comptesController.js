@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur, getUtilisateurById, getUtilisateur } = require('../models/comptesModel');
+const { inscriptionUtilisateur, getUtilisateurconnect, updateUtilisateur, getUtilisateurById, getUtilisateur, updatelastlogin } = require('../models/comptesModel');
 require('dotenv').config();
 const sendEmail = require('../config/email');
 
@@ -48,9 +48,16 @@ exports.connexions = async (req, res) => {
             return res.status(401).json({ message: "Mot de passe incorrect." });
         }
 
+        //modification de la date de derniere connexion
+        try {
+            await updatelastlogin(utilisateur.id);
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour de la dernière connexion :", error);
+        }
+        console.log("Dans login. Si ça bloque là regarde le .env");
+
         const accessToken = jwt.sign({ id: utilisateur.id, username: utilisateur.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
         const refreshToken = jwt.sign({ id: utilisateur.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '90d' });
-
         res.json({ accessToken, refreshToken });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -111,11 +118,12 @@ exports.getOtherProfil = async (req, res) => {
     }
 };
 
+// Fonction pour mettre à jour un utilisateur
 exports.updateProfil = async (req, res) => {
     const { accessToken, updatedFields } = req.body;
 
     if (!accessToken) {
-        return res.status(401).json
+        return res.status(401).json({ error: "Token manquant" });
     }
 
     let user_id;
@@ -123,7 +131,7 @@ exports.updateProfil = async (req, res) => {
         const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
         user_id = decodedToken.id;
     } catch (err) {
-        return res.status(401).json({ error: 'Token invalide ou expiré' });
+        return res.status(401).json({ error: "Token invalide ou expiré" });
     }
 
     if (!updatedFields || Object.keys(updatedFields).length === 0) {
@@ -131,6 +139,11 @@ exports.updateProfil = async (req, res) => {
     }
 
     try {
+        // Si l'utilisateur met à jour `profile_pic`, convertir base64 en Buffer
+        if (updatedFields.profile_pic) {
+            updatedFields.profile_pic = Buffer.from(updatedFields.profile_pic, "base64");
+        }
+
         const utilisateurMisAJour = await updateUtilisateur(user_id, updatedFields);
         res.json({ message: "Profil mis à jour.", utilisateur: utilisateurMisAJour });
     } catch (error) {

@@ -11,6 +11,7 @@ const verifierModifications = require('./script/verifierModif');
 const verifierLieux = require('./script/verifierLieux');
 const favoris = require('./routes/favorisRoutes');
 const lieux = require('./routes/lieuxRoutes');
+const tam = require('./routes/tamRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/comptes', connexions); //connexion
 app.use('/modification', modfication); //modification
 app.use('/favoris', favoris); //favoris
 app.use('/lieux', lieux); //lieux
+app.use('/tam', tam); //tam
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
