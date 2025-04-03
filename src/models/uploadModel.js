@@ -16,6 +16,28 @@ const getImagesByPlaceId = async (id_lieu) => {
     }
 };
 
+// Récupérer les détails d'images par leur ID
+const getImagesByIds = async (photoIds) => {
+    try {
+        // Si la liste est vide, retourner un tableau vide
+        if (!photoIds || photoIds.length === 0) {
+            return [];
+        }
+        
+        // Construire une requête paramétrée pour sélectionner les images par ID
+        if (!photoIds.length) {
+            return [];
+        }        
+        const query = `SELECT id_photo, id_lieu, id_avis FROM photos WHERE id_photo IN (${placeholders})`;
+        
+        const result = await db.query(query, photoIds);
+        return result.rows;
+    } catch (error) {
+        console.error('❌ Erreur lors de la récupération des images par IDs :', error);
+        throw new Error('Impossible de récupérer les images depuis la base de données.');
+    }
+};
+
 // Enregistrer une nouvelle image
 const saveImage = async (imageData) => {
     try {
@@ -36,5 +58,6 @@ const saveImage = async (imageData) => {
 
 module.exports = {
     getImagesByPlaceId,
+    getImagesByIds,
     saveImage
 };
