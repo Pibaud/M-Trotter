@@ -13,6 +13,7 @@ const favoris = require('./routes/favorisRoutes');
 const lieux = require('./routes/lieuxRoutes');
 const tam = require('./routes/tamRoutes');
 const rapport = require('./script/envoieRapport');
+const uploadDir = '/var/www/m-trotter/uploads/';
 require('dotenv').config();
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/modification', modfication); //modification
 app.use('/favoris', favoris); //favoris
 app.use('/lieux', lieux); //lieux
 app.use('/tam', tam); //tam
+app.use('/photo', express.static(uploadDir));
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
