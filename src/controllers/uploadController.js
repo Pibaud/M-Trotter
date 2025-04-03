@@ -44,21 +44,5 @@ const getImagesByPlaceId = async (req, res) => {
     }
 };
 
-// Récupérer les images par id_photo
-const getImagesById = async (req, res) => {
-    try {
-        const { photoIds } = req.body;
-        if (!photoIds || photoIds.length === 0) {
-            return res.status(400).json({ error: 'Aucun identifiant d\'image fourni.' });
-        }
 
-        const photos = await uploadService.fetchImagesByIds(photoIds);
-        console.log('Photos récupérées :', photos);
-        res.status(200).json({ photos });
-    } catch (error) {
-        console.error('Erreur lors de la récupération des images :', error);
-        res.status(500).json({ error: 'Impossible de récupérer les images.' });
-    }
-};
-
-module.exports = { uploadImage, getImagesByPlaceId, getImagesById };
+module.exports = { uploadImage, getImagesByPlaceId };

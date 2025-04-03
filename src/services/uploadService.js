@@ -115,38 +115,12 @@ const fetchImagesByPlaceId = async (placeId) => {
 };
 
 
-// Renvoie une image d'après son ID
-const fetchImagesByIds = async (photoIds) => {
-    try {
-        // Validation des paramètres
-        if (!photoIds || !Array.isArray(photoIds)) {
-            throw new Error('Liste des IDs de photos manquante ou invalide');
-        }
 
-        // Récupération des photos
-        const photos = photoIds.map(id => {
-            const filePath = path.join(UPLOAD_DIR, `${id}.jpg`);
-            return fs.existsSync(filePath) ? { id, url: `${path.basename(filePath)}` } : null;
-        }).filter(photo => photo !== null);
-
-        // Vérification si des photos ont été trouvées
-        if (photos.length === 0) {
-            return []; // Retourne un tableau vide si aucune photo n'est trouvée
-        }
-
-        console.log('Photos trouvées:', photos);
-        return photos; // Retourne juste les photos
-    } catch (error) {
-        console.error('Erreur lors de la récupération des photos:', error);
-        throw error; // Propage l'erreur pour être gérée par le controller
-    }
-};
 
 
 // Exposer les fonctions pour une utilisation externe
 module.exports = {
     processAndUploadImage,
     fetchImagesByPlaceId,
-    fetchImagesByIds,
     upload
 };
