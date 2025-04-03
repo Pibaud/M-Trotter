@@ -100,7 +100,7 @@ const fetchImagesByPlaceId = async (placeId) => {
             return fs.existsSync(filePath)
                 ? {
                     id: image.id_photo,
-                    url: `${image.id_photo}.jpg`,
+                    url: `/photo/${image.id_photo}.jpg`,
                     id_lieu: image.id_lieu,
                     id_avis: image.id_avis
                 }
