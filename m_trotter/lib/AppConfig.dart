@@ -1,6 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConfig {
-  static const String serverUrl = String.fromEnvironment(
-    'SERVER_URL',
-    defaultValue: '',
-  );
+  static String get serverUrl => dotenv.env['SERVER_URL'] ?? '';
 }
