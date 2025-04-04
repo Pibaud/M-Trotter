@@ -115,7 +115,7 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
                 ST_MakeEnvelope($1, $2, $3, $4, 4326)
                 )
             GROUP BY id, name, amenity, way, "addr:housenumber"
-            LIMIT 50`,
+            LIMIT 25`,
             [minlon, minlat, maxlon, maxlat]
         );
 
