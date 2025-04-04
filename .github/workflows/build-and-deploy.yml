@@ -19,11 +19,11 @@ jobs:
           flutter-version: '3.27.0'
 
       - name: Install dependencies
-        working-directory: M-Trotter/m_trotter
+        working-directory: m_trotter
         run: flutter pub get
 
       - name: Build APK (release)
-        working-directory: M-Trotter/m_trotter
+        working-directory: m_trotter
         run: flutter build apk --dart-define=SERVER_URL=http://217.182.79.84:3000
 
       - name: Upload via SSH to VPS
@@ -33,5 +33,5 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           port: 22
-          source: M-Trotter/m_trotter/build/app/outputs/flutter-apk/app-release.apk
+          source: m_trotter/build/app/outputs/flutter-apk/app-release.apk
           target: /var/www/html/apk
