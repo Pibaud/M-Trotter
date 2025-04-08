@@ -30,11 +30,12 @@ const MAX_PIXELS = 2073600; // Limite de 2 073 600 pixels (Full HD)
 const processAndUploadImage = async (filePath, id_lieu, id_avis = null) => {
     try {
         console.log(`📸 Traitement de l'image ${filePath} pour le lieu ${id_lieu}...`);
-        const allowedMimeTypes = ['image/jpeg', 'image/jpg'];
-        if (!allowedMimeTypes.includes(req.file.mimetype)) {
-            throw new Error('Seuls les fichiers .jpg sont autorisés');
-        }
-
+        
+        // Remove the MIME type check as it's already handled by multer
+        // const allowedMimeTypes = ['image/jpeg', 'image/jpg'];
+        // if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        //     throw new Error('Seuls les fichiers .jpg sont autorisés');
+        // }
 
         // Lire les métadonnées de l'image
         const metadata = await sharp(filePath).metadata();
