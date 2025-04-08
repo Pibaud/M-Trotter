@@ -286,6 +286,7 @@ class ApiService {
     String url;
     Map<String, dynamic> body;
     String? token;
+    print("baseUrl : $baseUrl");
 
     final headers = {
       'Content-Type': 'application/json',
@@ -323,16 +324,12 @@ class ApiService {
             jsonResponse['profile_pic'] != null) {
           var profilePic = jsonResponse['profile_pic'];
 
-          Uint8List imageBytes;
-
           if (profilePic is Map &&
               profilePic.containsKey('data') &&
               profilePic['type'] == 'Buffer') {
+
             List<int> rawData = List<int>.from(profilePic['data']);
-
-            String base64String = String.fromCharCodes(rawData);
-
-            imageBytes = base64Decode(base64String);
+            Uint8List imageBytes = Uint8List.fromList(rawData);
 
             return {
               'success': true,
