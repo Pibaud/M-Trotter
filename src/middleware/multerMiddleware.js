@@ -2,7 +2,7 @@ const path = require('path');
 const multer = require('multer');
 
 // 📂 Définition du dossier de destination
-const UPLOADS_FOLDER = path.join(__dirname, '..', 'uploads');
+const UPLOADS_FOLDER = '/var/www/m-trotter/uploads/';
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
