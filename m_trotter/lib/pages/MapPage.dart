@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter/services.dart';
 import 'package:m_trotter/widgets/PlaceListSheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../services/LocationService.dart';
 import '../services/MapInteractions.dart';
@@ -59,6 +60,7 @@ class _MapPageState extends State<MapPage> {
   Place? _selectedPlace;
   String? _selectedAmenity;
   double _bottomSheetHeight = 80.0;
+  List<String> _searchHistory = [];
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
@@ -126,6 +128,7 @@ class _MapPageState extends State<MapPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPlacesBbox(_mapController.camera.visibleBounds);
     });
+    _loadSearchHistory();
   }
 
   Future<void> _loadAmenitiesData() async {
@@ -201,6 +204,8 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  
+
   void _onTextChanged(String value) {
     if (_debounce?.isActive ?? false) {
       _debounce?.cancel();
@@ -220,6 +225,21 @@ class _MapPageState extends State<MapPage> {
         }
       }
     });
+  }
+
+  void _loadSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? historyJson = prefs.getString('search_history');
+    if (historyJson != null){
+      setState(() {
+      _searchHistory = List<Place>.from(jsonDecode(historyJson));
+      });
+    }
+    else{
+      setState(() {
+      _searchHistory = [];
+      });
+    }
   }
 
   void _onSuggestionTap(Place place) async {
@@ -258,6 +278,13 @@ class _MapPageState extends State<MapPage> {
       });
     } catch (e) {
       print('Erreur lors de la récupération des images : $e');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    String? historyJson = prefs.getString('search_history');
+    historyJson.removeWhere((existingPlace) => existingPlace.id == place.id);
+    historyJson.insert(0, place);
+    if (historyJson.length > 5) {
+      historyJson.removeLast();
     }
   }
 
@@ -672,6 +699,30 @@ class _MapPageState extends State<MapPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Affichage des amenities
+                        if (_searchHistory.isNotEmpty)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 8.0),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _searchHistory.length,
+                              itemBuilder: (context, index) {
+                                final placeName = _searchHistory[index];
+                                return ListTile(
+                                  leading: const Icon(Icons.history),
+                                  title: Text(place.name),
+                                  subtitle: Text(place.amenity ?? ''),
+                                  onTap: () {
+                                    _onSuggestionTap(place)
+                                  },
+                                );
+                              },
+                            ),
+                          ),
                         if (suggestedAmenities.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
