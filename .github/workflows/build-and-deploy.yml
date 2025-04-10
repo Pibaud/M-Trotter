@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -26,6 +26,19 @@ jobs:
         working-directory: m_trotter
         run: |
           echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > android/app/keystore.jks
+
+      - name: Generate gradle.properties
+        working-directory: m_trotter/android
+        run: |
+          cat <<EOF > gradle.properties
+          org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
+          android.useAndroidX=true
+          android.enableJetifier=true
+          MYAPP_KEYSTORE=android/app/keystore.jks
+          MYAPP_KEY_ALIAS=mtrotter
+          MYAPP_KEY_PASSWORD=${{ secrets.MYAPP_KEY_PASSWORD }}
+          MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}
+          EOF
 
       - name: Build APK (release)
         working-directory: m_trotter
