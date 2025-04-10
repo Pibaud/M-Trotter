@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -21,6 +21,11 @@ jobs:
       - name: Install dependencies
         working-directory: m_trotter
         run: flutter pub get
+
+      - name: Decode keystore
+        working-directory: m_trotter
+        run: |
+          echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > android/app/keystore.jks
 
       - name: Build APK (release)
         working-directory: m_trotter
