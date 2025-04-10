@@ -22,6 +22,14 @@ jobs:
         working-directory: m_trotter
         run: flutter pub get
 
+      - name: Debug secrets (safe)
+        run: |
+          echo "KEYSTORE path: ${{ secrets.MYAPP_KEYSTORE_B64 != '' && 'OK' || 'MISSING' }}"
+          echo "KEY PASSWORD: ${{ secrets.MYAPP_KEY_PASSWORD != '' && 'OK' || 'MISSING' }}"
+          echo "STORE PASSWORD: ${{ secrets.MYAPP_STORE_PASSWORD != '' && 'OK' || 'MISSING' }}"
+          echo "KEY ALIAS: ${{ secrets.MYAPP_KEY_ALIAS != '' && 'OK' || 'MISSING' }}"
+          echo "SERVER_URL: ${{ secrets.SERVER_URL != '' && 'OK' || 'MISSING' }}"   
+
       - name: Decode keystore
         working-directory: m_trotter
         run: |
