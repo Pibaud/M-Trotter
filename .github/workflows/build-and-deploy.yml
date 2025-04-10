@@ -24,11 +24,11 @@ jobs:
 
       - name: Debug secrets (safe)
         run: |
-          echo "KEYSTORE path: ${{ secrets.MYAPP_KEYSTORE_B64 != '' && 'OK' || 'MISSING' }}"
-          echo "KEY PASSWORD: ${{ secrets.MYAPP_KEY_PASSWORD != '' && 'OK' || 'MISSING' }}"
-          echo "STORE PASSWORD: ${{ secrets.MYAPP_STORE_PASSWORD != '' && 'OK' || 'MISSING' }}"
-          echo "KEY ALIAS: ${{ secrets.MYAPP_KEY_ALIAS != '' && 'OK' || 'MISSING' }}"
-          echo "SERVER_URL: ${{ secrets.SERVER_URL != '' && 'OK' || 'MISSING' }}"   
+          echo "MYAPP_KEYSTORE_B64: ${{ secrets.MYAPP_KEYSTORE_B64 }}"
+          echo "MYAPP_KEY_PASSWORD: ${{ secrets.MYAPP_KEY_PASSWORD }}"
+          echo "MYAPP_STORE_PASSWORD: ${{ secrets.MYAPP_STORE_PASSWORD }}"
+          echo "MYAPP_KEY_ALIAS: ${{ secrets.MYAPP_KEY_ALIAS }}"
+          echo "SERVER_URL: ${{ secrets.SERVER_URL }}"
 
       - name: Decode keystore
         working-directory: m_trotter
