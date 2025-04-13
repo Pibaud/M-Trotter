@@ -23,7 +23,7 @@ jobs:
         run: flutter pub get
 
       - name: Append secrets to gradle.properties
-        working-directory: m_trotter
+        working-directory: m_trotter/android
         run: |
           {
             echo "";
