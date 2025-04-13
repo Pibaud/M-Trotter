@@ -8,20 +8,27 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.27.0'
-
+      
       - name: Install dependencies
         working-directory: m_trotter
         run: flutter pub get
-
+      
+      - name: Ensure AndroidX migration
+        working-directory: m_trotter/android
+        run: |
+          cat gradle.properties
+          grep -q "android.useAndroidX=true" gradle.properties || echo "android.useAndroidX=true" >> gradle.properties
+          grep -q "android.enableJetifier=true" gradle.properties || echo "android.enableJetifier=true" >> gradle.properties
+          cat gradle.properties
+      
       - name: Append secrets to gradle.properties
         working-directory: m_trotter/android
         run: |
@@ -33,20 +40,24 @@ jobs:
             echo "MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}";
           } >> gradle.properties
       
-
       - name: Decode keystore
-        run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > /tmp/keystore.jks
+        run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > tmp/keystore.jks
+      
+      - name: Display directory structure
+        run: |
+          ls -la m_trotter/
+          ls -la m_trotter/android/
+          cat m_trotter/android/gradle.properties
         
       - name: Build APK (release)
         working-directory: m_trotter
-        run: flutter build apk --dart-define=SERVER_URL=http://217.182.79.84:3000
+        run: flutter build apk --release --dart-define=SERVER_URL=http://217.182.79.84:3000
         env:
-          MYAPP_KEY_PATH: /tmp/keystore.jks
+          MYAPP_KEY_PATH: tmp/keystore.jks
           MYAPP_KEY_ALIAS: ${{ secrets.MYAPP_KEY_ALIAS }}
           MYAPP_KEY_PASSWORD: ${{ secrets.MYAPP_KEY_PASSWORD }}
           MYAPP_STORE_PASSWORD: ${{ secrets.MYAPP_STORE_PASSWORD }}
         
-
       - name: Upload via SSH to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
