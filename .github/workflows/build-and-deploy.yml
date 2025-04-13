@@ -30,27 +30,18 @@ jobs:
           echo "MYAPP_KEY_ALIAS: ${{ secrets.MYAPP_KEY_ALIAS }}"
           echo "SERVER_URL: ${{ secrets.SERVER_URL }}"
 
-      - name: Decode keystore
-        working-directory: m_trotter
-        run: |
-          echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > android/app/keystore.jks
-
-      - name: Generate gradle.properties
-        working-directory: m_trotter/android
-        run: |
-          cat <<EOF > gradle.properties
-          org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
-          android.useAndroidX=true
-          android.enableJetifier=true
-          MYAPP_KEYSTORE_B64=${{ secrets.MYAPP_KEYSTORE_B64 }}
-          MYAPP_KEY_ALIAS=${{ secrets.MYAPP_KEY_ALIAS }}
-          MYAPP_KEY_PASSWORD=${{ secrets.MYAPP_KEY_PASSWORD }}
-          MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}
-          EOF
-
+          - name: Decode keystore
+          run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > /tmp/keystore.jks
+        
       - name: Build APK (release)
         working-directory: m_trotter
         run: flutter build apk --dart-define=SERVER_URL=http://217.182.79.84:3000
+        env:
+          MYAPP_KEY_PATH: /tmp/keystore.jks
+          MYAPP_KEY_ALIAS: ${{ secrets.MYAPP_KEY_ALIAS }}
+          MYAPP_KEY_PASSWORD: ${{ secrets.MYAPP_KEY_PASSWORD }}
+          MYAPP_STORE_PASSWORD: ${{ secrets.MYAPP_STORE_PASSWORD }}
+        
 
       - name: Upload via SSH to VPS
         uses: appleboy/scp-action@v0.1.7
