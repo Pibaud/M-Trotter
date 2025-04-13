@@ -91,7 +91,6 @@ flutter:
           - asset: assets/fonts/Poppins-Thin.ttf
           - asset: assets/fonts/Poppins-ThinItalic.ttf
   assets:
-    - assets/.env
     - assets/tramLines.json
     - assets/tramStops.json
     - assets/amenities.json
