@@ -30,8 +30,8 @@ jobs:
           echo "MYAPP_KEY_ALIAS: ${{ secrets.MYAPP_KEY_ALIAS }}"
           echo "SERVER_URL: ${{ secrets.SERVER_URL }}"
 
-          - name: Decode keystore
-          run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > /tmp/keystore.jks
+      - name: Decode keystore
+        run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > /tmp/keystore.jks
         
       - name: Build APK (release)
         working-directory: m_trotter
