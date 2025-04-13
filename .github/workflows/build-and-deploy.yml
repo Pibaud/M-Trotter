@@ -22,16 +22,19 @@ jobs:
         working-directory: m_trotter
         run: flutter pub get
 
-      - name: Append secrets to gradle.properties
+      - name: Create and configure gradle.properties
         working-directory: m_trotter/android
         run: |
-          {
-            echo "";
-            echo "MYAPP_KEYSTORE_B64=${{ secrets.MYAPP_KEYSTORE_B64 }}";
-            echo "MYAPP_KEY_ALIAS=${{ secrets.MYAPP_KEY_ALIAS }}";
-            echo "MYAPP_KEY_PASSWORD=${{ secrets.MYAPP_KEY_PASSWORD }}";
-            echo "MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}";
-          } >> gradle.properties
+          cat > gradle.properties <<EOL
+          org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
+          android.useAndroidX=true
+          android.enableJetifier=true
+          
+          MYAPP_KEYSTORE_B64=${{ secrets.MYAPP_KEYSTORE_B64 }}
+          MYAPP_KEY_ALIAS=${{ secrets.MYAPP_KEY_ALIAS }}
+          MYAPP_KEY_PASSWORD=${{ secrets.MYAPP_KEY_PASSWORD }}
+          MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}
+          EOL
 
       - name: Decode keystore
         run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > /tmp/keystore.jks
