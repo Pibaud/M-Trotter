@@ -42,8 +42,8 @@ jobs:
           org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
           android.useAndroidX=true
           android.enableJetifier=true
-          MYAPP_KEYSTORE=android/app/keystore.jks
-          MYAPP_KEY_ALIAS=mtrotter
+          MYAPP_KEYSTORE_B64=${{ secrets.MYAPP_KEYSTORE_B64 }}
+          MYAPP_KEY_ALIAS=${{ secrets.MYAPP_KEY_ALIAS }}
           MYAPP_KEY_PASSWORD=${{ secrets.MYAPP_KEY_PASSWORD }}
           MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}
           EOF
