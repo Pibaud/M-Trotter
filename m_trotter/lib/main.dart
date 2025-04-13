@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/NotificationsService.dart';
 import 'pages/IntroSlides.dart';
 import 'pages/AuthPage.dart';
@@ -15,7 +13,6 @@ import 'myapp.dart';
 final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
 
 void main() async {
-  await dotenv.load(fileName: "assets/.env");
   await NotificationService.init();
   runApp(
     MultiProvider(
