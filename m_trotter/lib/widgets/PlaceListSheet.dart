@@ -81,7 +81,7 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
             ),
             boxShadow: const [
               BoxShadow(
-                color: Colors.black12, // Updated shadow color
+                color: Colors.black12, // Updated  color
                 blurRadius: 10.0,
                 spreadRadius: 2.0,
               ),
