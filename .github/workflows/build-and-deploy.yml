@@ -12,6 +12,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
+      - name: Verify project structure
+        run: |
+          ls -la m_trotter/
+          echo "Checking if android directory exists:"
+          if [ -d "m_trotter/android" ]; then
+            echo "Directory exists"
+            ls -la m_trotter/android/
+          else
+            echo "Directory does not exist"
+            echo "Project structure:"
+            find m_trotter -type d | sort
+          fi
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -21,39 +34,33 @@ jobs:
         working-directory: m_trotter
         run: flutter pub get
       
-      - name: Ensure AndroidX migration
+      - name: Create and configure gradle.properties
         working-directory: m_trotter/android
         run: |
+          # Créer le fichier avec les configurations AndroidX
+          cat > gradle.properties <<EOL
+          org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
+          android.useAndroidX=true
+          android.enableJetifier=true
+          
+          # Secrets pour la signature
+          MYAPP_KEYSTORE_B64=${{ secrets.MYAPP_KEYSTORE_B64 }}
+          MYAPP_KEY_ALIAS=${{ secrets.MYAPP_KEY_ALIAS }}
+          MYAPP_KEY_PASSWORD=${{ secrets.MYAPP_KEY_PASSWORD }}
+          MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}
+          EOL
+          
+          # Afficher le contenu pour vérification
           cat gradle.properties
-          grep -q "android.useAndroidX=true" gradle.properties || echo "android.useAndroidX=true" >> gradle.properties
-          grep -q "android.enableJetifier=true" gradle.properties || echo "android.enableJetifier=true" >> gradle.properties
-          cat gradle.properties
-      
-      - name: Append secrets to gradle.properties
-        working-directory: m_trotter/android
-        run: |
-          {
-            echo "";
-            echo "MYAPP_KEYSTORE_B64=${{ secrets.MYAPP_KEYSTORE_B64 }}";
-            echo "MYAPP_KEY_ALIAS=${{ secrets.MYAPP_KEY_ALIAS }}";
-            echo "MYAPP_KEY_PASSWORD=${{ secrets.MYAPP_KEY_PASSWORD }}";
-            echo "MYAPP_STORE_PASSWORD=${{ secrets.MYAPP_STORE_PASSWORD }}";
-          } >> gradle.properties
       
       - name: Decode keystore
-        run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > tmp/keystore.jks
+        run: echo "${{ secrets.MYAPP_KEYSTORE_B64 }}" | base64 --decode > /tmp/keystore.jks
       
-      - name: Display directory structure
-        run: |
-          ls -la m_trotter/
-          ls -la m_trotter/android/
-          cat m_trotter/android/gradle.properties
-        
       - name: Build APK (release)
         working-directory: m_trotter
         run: flutter build apk --release --dart-define=SERVER_URL=http://217.182.79.84:3000
         env:
-          MYAPP_KEY_PATH: tmp/keystore.jks
+          MYAPP_KEY_PATH: /tmp/keystore.jks
           MYAPP_KEY_ALIAS: ${{ secrets.MYAPP_KEY_ALIAS }}
           MYAPP_KEY_PASSWORD: ${{ secrets.MYAPP_KEY_PASSWORD }}
           MYAPP_STORE_PASSWORD: ${{ secrets.MYAPP_STORE_PASSWORD }}
