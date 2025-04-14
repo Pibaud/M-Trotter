@@ -58,3 +58,4 @@ jobs:
           port: 22
           source: m_trotter/build/app/outputs/flutter-apk/app-release.apk
           target: /var/www/html/apk
+          strip_components: 5
