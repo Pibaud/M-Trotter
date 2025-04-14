@@ -9,11 +9,17 @@ import 'providers/BottomNavBarVisibilityProvider.dart';
 import 'providers/ThemeNotifier.dart';
 import 'providers/LanguageNotifier.dart';
 import 'myapp.dart';
+import 'package:flutter/foundation.dart'; // pour debugPrint()
 
 final GlobalKey<MyAppState> myAppKey = GlobalKey<MyAppState>();
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  debugPrint("🔧 main() started");
+
   await NotificationService.init();
+  debugPrint("🔔 NotificationService initialized");
+
   runApp(
     MultiProvider(
       providers: [
@@ -26,6 +32,7 @@ void main() async {
     ),
   );
 }
+
 
 class MyAppWrapper extends StatelessWidget {
   const MyAppWrapper({super.key});
