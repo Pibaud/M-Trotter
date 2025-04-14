@@ -47,7 +47,20 @@ jobs:
           MYAPP_KEY_ALIAS: ${{ secrets.MYAPP_KEY_ALIAS }}
           MYAPP_KEY_PASSWORD: ${{ secrets.MYAPP_KEY_PASSWORD }}
           MYAPP_STORE_PASSWORD: ${{ secrets.MYAPP_STORE_PASSWORD }}
-        
+
+      - name: Verify APK signature
+        working-directory: m_trotter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apksigner
+          apksigner verify --verbose build/app/outputs/flutter-apk/app-release.apk
+
+          - name: Print APK info
+          working-directory: m_trotter
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y aapt
+            aapt dump badging build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload via SSH to VPS
         uses: appleboy/scp-action@v0.1.7
