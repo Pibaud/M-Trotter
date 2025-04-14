@@ -81,7 +81,7 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
           title: Center(
-        child: Text('M\'Trotter'),
+        child: Text('M\'Trotter (v)'),
       )),
       body: Column(
         children: [
