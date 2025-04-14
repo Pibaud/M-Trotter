@@ -17,7 +17,7 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdkVersion 34
     namespace = "fr.groupe_A.m_trotter"
     ndkVersion = flutter.ndkVersion
 
@@ -51,12 +51,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.release
-            minifyEnabled false
-            shrinkResources false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-
-            proguardFiles 'proguard-user-rules.pro'
+            signingConfig signingConfigs.debug
         }
     }
 }
