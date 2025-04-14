@@ -56,5 +56,5 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           port: 22
-          source: m_trotter/build/app/outputs/flutter-apk/app-release.apk
+          source: app-release.apk
           target: /var/www/html/apk
