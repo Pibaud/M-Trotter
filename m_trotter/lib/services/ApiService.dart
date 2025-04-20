@@ -242,6 +242,7 @@ class ApiService {
 
   // Connexion
   Future<Map<String, dynamic>> logIn(String email, String password) async {
+    print("Dans login de apiservice avec baseurl = $baseUrl");
     try {
       final url = Uri.parse('$baseUrl/comptes/connexion');
       final body = jsonEncode({

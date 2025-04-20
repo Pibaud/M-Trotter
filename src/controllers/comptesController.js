@@ -33,6 +33,7 @@ exports.inscription = async (req, res) => {
 
 exports.connexions = async (req, res) => {
     const { EorU, password } = req.body;
+    console.log("Attempting to log in with:", EorU, password);
     if (!EorU || !password) {
         return res.status(400).json({ message: "Email/Username et mot de passe sont requis." });
     }
