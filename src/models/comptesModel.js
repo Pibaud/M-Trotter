@@ -18,13 +18,16 @@ async function inscriptionUtilisateur(email, username, password) {
 }
 
 async function getUtilisateurconnect(emailOrUsername) {
+    console.log('dans le getutilisateur dans le model');
     try {
         const query = `
             SELECT id, email, username, password_hash
             FROM users
             WHERE email = $1 OR username = $1;
         `;
+        console.log('avant la query')
         const result = await pool.query(query, [emailOrUsername]);
+        console.log('après la query')
         return result.rows[0] || null;
     } catch (error) {
         throw new Error("Erreur lors de la récupération de l'utilisateur : " + error.message);
