@@ -39,7 +39,9 @@ exports.connexions = async (req, res) => {
     }
 
     try {
+        console.log('avant le getUtilisateurconnect')
         const utilisateur = await getUtilisateurconnect(EorU);
+        console.log('apres le getutilisateurconnect')
         if (!utilisateur) {
             return res.status(401).json({ message: "Utilisateur non trouvé." });
         }
@@ -48,7 +50,7 @@ exports.connexions = async (req, res) => {
         if (!valide) {
             return res.status(401).json({ message: "Mot de passe incorrect." });
         }
-
+        console.log('ta grand mère la pute c\'est bon ?')
         //modification de la date de derniere connexion
         try {
             await updatelastlogin(utilisateur.id);
