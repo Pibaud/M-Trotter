@@ -28,6 +28,11 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   List<Map<String, String>> modifications = [];
   String? selectedAmenity;
   late ApiService _apiService;
+  TextEditingController newTagKeyController = TextEditingController();
+  TextEditingController newTagValueController = TextEditingController();
+  bool showTagInputs = false;
+  Map<String, String>? _originalTags;
+  Map<String, String> _updatedTags = {};
 
   @override
   void initState() {
@@ -362,6 +367,49 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
                         // Afficher les autres tags (qui peuvent être en mode édition ou lecture)
                         ...buildOtherTags(),
+                        if (isEditing)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (!showTagInputs)
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.add),
+                                    label: const Text("Ajouter un nouveau tag"),
+                                    onPressed: () {
+                                      setState(() {
+                                        showTagInputs = true;
+                                      });
+                                    },
+                                  ),
+
+                                if (showTagInputs) ...[
+                                  const Text('Ajouter un nouveau tag', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextField(
+                                    controller: newTagKeyController,
+                                    decoration: const InputDecoration(labelText: 'Nom du tag'),
+                                  ),
+                                  TextField(
+                                    controller: newTagValueController,
+                                    decoration: const InputDecoration(labelText: 'Valeur du tag'),
+                                    onSubmitted: (_) {
+                                      final key = newTagKeyController.text.trim();
+                                      final value = newTagValueController.text.trim();
+                                      if (key.isNotEmpty && value.isNotEmpty) {
+                                        updateTag(key, value);
+                                        newTagKeyController.clear();
+                                        newTagValueController.clear();
+                                        setState(() {
+                                          showTagInputs = false;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -448,31 +496,79 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     }).toList();
   }
 
+  Map<String, String> _parseTagString(String tagString) {
+    final tagMap = <String, String>{};
+    final reg = RegExp(r'"(.*?)"=>"(.*?)"');
+    for (final match in reg.allMatches(tagString)) {
+      tagMap[match.group(1)!] = match.group(2)!;
+    }
+    return tagMap;
+  }
+
 // Fonction pour mettre à jour un tag lorsqu'on est en mode édition
   void updateTag(String key, String newValue) {
-    // Vérifier si la nouvelle valeur est différente de l'ancienne
-    if (widget.place.tags[key] != newValue) {
-      // Récupérer l'état des tags avant de modifier
-      String oldTags = widget.place.tags.entries
-          .map((entry) => '"${entry.key}"=>"${entry.value}"')
-          .join(', ');
+    final oldValue = widget.place.tags[key];
+    if (oldValue == newValue) return;
 
-      // Créer une copie des tags avec la nouvelle valeur
-      Map<String, String> updatedTags = Map.from(widget.place.tags);
-      updatedTags[key] = newValue;
+    // 1. Appliquer la modification
+    widget.place.tags[key] = newValue;
 
-      // Récupérer l'état des tags après la modification
-      String newTags = updatedTags.entries
-          .map((entry) => '"${entry.key}"=>"${entry.value}"')
-          .join(', ');
+    // 2. Préparer la nouvelle valeur complète
+    final newTagsStr = widget.place.tags.entries.map((e) => '"${e.key}"=>"${e.value}"').join(', ');
 
-      // Ajouter les modifications à la liste avec les anciennes et nouvelles valeurs
-      modifications.add({
-        'champ_modifie': "tags",
-        'ancienne_valeur': oldTags,
-        'nouvelle_valeur': newTags,
-      });
+    // 3. Chercher si ce tag a déjà été modifié précédemment
+    bool existingTagModification = false;
+    String? originalValue = oldValue;
+
+    for (int i = 0; i < modifications.length; i++) {
+      final modif = modifications[i];
+      if (modif['champ_modifie'] == 'tags') {
+        final oldModifTagsMap = _parseTagString(modif['ancienne_valeur']!);
+        final newModifTagsMap = _parseTagString(modif['nouvelle_valeur']!);
+
+        //! Vérifier si ce tag spécifique a été modifié dans cette entrée
+        Set<String> changedKeys = {};
+        for (String k in {...oldModifTagsMap.keys, ...newModifTagsMap.keys}) {
+          if (oldModifTagsMap[k] != newModifTagsMap[k]) {
+            changedKeys.add(k);
+          }
+        }
+
+        // Si cette modification précédente concerne seulement notre tag actuel
+        if (changedKeys.length == 1 && changedKeys.contains(key)) {
+          // Récupérer la valeur originale du tag
+          originalValue = oldModifTagsMap[key];
+
+          // Supprimer cette modification
+          modifications.removeAt(i);
+          existingTagModification = true;
+          break; // On a trouvé et traité la modification existante
+        }
+      }
     }
+
+    // 4. Créer un snapshot avec la valeur originale
+    final originalTagsMap = Map<String, String>.from(widget.place.tags);
+    // Restaurer la valeur originale dans ce snapshot
+    if (originalValue != null) {
+      originalTagsMap[key] = originalValue;
+    } else {
+      // Si le tag n'existait pas à l'origine
+      originalTagsMap.remove(key);
+    }
+
+    final originalTagsStr = originalTagsMap.entries.map((e) => '"${e.key}"=>"${e.value}"').join(', ');
+
+    // 5. Ajouter la nouvelle modification avec la valeur originale
+    modifications.add({
+      'champ_modifie': "tags",
+      'ancienne_valeur': originalTagsStr,
+      'nouvelle_valeur': newTagsStr,
+    });
+
+    print("✅ Modification proposée avec succès");
+
+    setState(() {});
   }
 
   Widget buildEditableAddress() {
