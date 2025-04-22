@@ -46,14 +46,17 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> fetchPlacesFittingAmenity(String amenity) async {
+  Future<List<dynamic>> fetchPlacesFittingAmenity(String amenity, {int? osmStartId}) async {
     final String url = '$baseUrl/api/amenityList/';
 
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'amenity': amenity}),
+        body: json.encode({
+          'amenity': amenity,
+          if (osmStartId != null) 'osm_start_id': osmStartId,
+        }),
       );
 
       if (response.statusCode == 200) {

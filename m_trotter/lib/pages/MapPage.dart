@@ -102,7 +102,7 @@ class _MapPageState extends State<MapPage> {
 
     if (widget.selectedPlace != null) {
       Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
-        .hideBottomNav();
+          .hideBottomNav();
       setState(() {
         _selectedPlace = widget.selectedPlace;
         _isPlacePresentationSheetVisible = true;
@@ -483,7 +483,7 @@ class _MapPageState extends State<MapPage> {
       final res = await _apiService.fetchPlacesFittingAmenity(
           _amenitiesService.getRealAmenityName(amenity));
       setState(() {
-        fittingPlaces = res.map<Place>((data) => Place.fromJson(data)).toList();
+        fittingPlaces.addAll(res.map<Place>((data) => Place.fromJson(data)));
       });
     } catch (e) {
       print('Erreur lors de la récupération des places pour une amenity : $e');

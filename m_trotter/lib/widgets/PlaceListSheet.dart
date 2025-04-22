@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:m_trotter/models/Place.dart';
-import 'package:tuple/tuple.dart';
+import 'package:m_trotter/utils/GlobalData.dart';
+import '../services/ApiService.dart';
+import 'package:logger/logger.dart';
 
 class PlaceListSheet extends StatefulWidget {
   final double initialHeight;
@@ -30,21 +32,44 @@ class PlaceListSheet extends StatefulWidget {
 
 class _PlaceListSheetState extends State<PlaceListSheet> {
   late double _currentHeight;
+  final logger = Logger();
   late String _title;
-  late List<Place> _places;
+  late ApiService _apiService;
+  List<Place> _places = [];
+  final ScrollController _controller = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _apiService = ApiService();
     _currentHeight = widget.initialHeight;
     _title = widget.title;
     _places = widget.places;
+
+    _controller.addListener(() {
+      if (_controller.position.atEdge) {
+        bool isTop = _controller.position.pixels == 0;
+        if (!isTop) {
+          getNextPlaces(_places.last.id);
+        }
+      }
+    });
   }
 
-  void _handleDragUpdate(DragUpdateDetails details) {
-    setState(() {
-      _currentHeight -= details.delta.dy;
-    });
+  Future<void> getNextPlaces(int osmStartId) async {
+    print("demande de nouveaux lieux avec startID = $osmStartId...");
+    try {
+      final res = await _apiService.fetchPlacesFittingAmenity(
+          GlobalData.amenities[_title]!,
+          osmStartId: osmStartId);
+      setState(() {
+        _places.addAll(res.map<Place>((data) => Place.fromJson(data)));
+      });
+      print("nouveaux lieu récupérés :");
+      logger.i(res);
+    } catch (e) {
+      print('Erreur lors de la récupération des places pour une amenity : $e');
+    }
   }
 
   void _handleDragEnd(DragEndDetails details) {
@@ -59,6 +84,12 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
 
     setState(() {
       _currentHeight = closestPosition;
+    });
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _currentHeight -= details.delta.dy;
     });
   }
 
@@ -129,6 +160,7 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   itemCount: _places.length,
+                  controller: _controller,
                   itemBuilder: (context, index) {
                     final place = _places[index];
                     return Card(

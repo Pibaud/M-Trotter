@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/AuthNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../services/ApiService.dart';
@@ -81,7 +79,7 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
           title: Center(
-        child: Text('M\'Trotter (v)'),
+        child: Text('M\'Trotter'),
       )),
       body: Column(
         children: [
