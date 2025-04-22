@@ -30,7 +30,7 @@ exports.bboxPlaces = async (req, res) => {
 exports.amenitylist = async(req, res) => {
     try {
         const {amenity, startid} = req.body;
-        console.log("Appel à amenitylist avec les paramètres :", amenity, startid);
+        console.log("Appel à amenitylist controller avec les paramètres :", amenity, startid);
         if (!amenity){
             return res.status(400).json({error : "pas d'amenity "});
         }

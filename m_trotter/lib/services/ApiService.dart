@@ -54,7 +54,7 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'amenity': amenity,
-          if (osmStartId != null) 'osm_start_id': osmStartId,
+          if (osmStartId != null) 'startid': osmStartId,
         }),
       );
 
