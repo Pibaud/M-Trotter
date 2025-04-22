@@ -74,6 +74,99 @@ class HomePageState extends State<HomePage> {
     }
   }
 
+  Widget _buildPlaceCard(Place place) {
+    return GestureDetector(
+      onTap: () => _navigateToMapWithPlace(place),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          decoration: BoxDecoration(
+            color: Colors.blue[200],
+            borderRadius: BorderRadius.circular(20.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(51), // Equivalent to 20% opacity
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(place.name, style: TextStyle(fontSize: 18)),
+                if (place.amenity != null)
+                  Text(place.amenity!,
+                      style: TextStyle(fontSize: 14, color: Colors.grey)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(place.avgStars.toStringAsFixed(1),
+                        style: TextStyle(fontSize: 14, color: Colors.black)),
+                    SizedBox(width: 4),
+                    Row(
+                      children: List.generate(5, (index) {
+                        if (index < place.avgStars.floor()) {
+                          return Icon(Icons.star_rounded,
+                              color: Colors.amber, size: 16);
+                        } else if (index < place.avgStars) {
+                          return Icon(Icons.star_half_rounded,
+                              color: Colors.amber, size: 16);
+                        } else {
+                          return Icon(Icons.star_border_rounded,
+                              color: Colors.grey, size: 16);
+                        }
+                      }),
+                    ),
+                    SizedBox(width: 4),
+                    Text('(${place.numReviews})',
+                        style: TextStyle(fontSize: 14, color: Colors.grey)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceSection(
+      String title, List<Place> places, String emptyMessage) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 10.0, top: 5.0, bottom: 5.0),
+          child: Text(
+            title,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        SizedBox(
+          height: 150, // Fixed height instead of Expanded
+          child: places.isEmpty
+              ? Center(
+                  child: emptyMessage == "loading"
+                      ? CircularProgressIndicator()
+                      : Text(
+                          emptyMessage,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                )
+              : ListView(
+                  scrollDirection: Axis.horizontal,
+                  children:
+                      places.map((place) => _buildPlaceCard(place)).toList(),
+                ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,106 +174,43 @@ class HomePageState extends State<HomePage> {
           title: Center(
         child: Text('M\'Trotter'),
       )),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Où voulez-vous aller ?',
-                hintStyle: TextStyle(
-                  color: Color.fromRGBO(0, 0, 0, 0.35),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Search bar - fixed height
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Où voulez-vous aller ?',
+                  hintStyle: TextStyle(
+                    color: Color.fromRGBO(0, 0, 0, 0.35),
+                  ),
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
                 ),
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
+                onTap: () {
+                  // ...existing code...
+                },
               ),
-              onTap: () {
-                print("Appui sur la barre de recherche");
-                if (myAppKey.currentState == null) {
-                  print("myAppKey.currentState est null");
-                } else {
-                  print("myAppKey.currentState est valide");
-                  myAppKey.currentState?.navigateToMapWithFocus();
-                }
-              },
             ),
-          ),
-          Text("Favoris"),
-          Expanded(
-            child: favorisPlaces.isEmpty
-                ? Center(
-                    child: Text(
-                      "Vous n'avez pas encore de favoris",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: favorisPlaces.map((place) {
-                      return GestureDetector(
-                        onTap: () => _navigateToMapWithPlace(place),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Container(
-                            width: 150,
-                            color: Colors.blue[200],
-                            child: Center(
-                              child: Text(place.name,
-                                  style: TextStyle(fontSize: 18)),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-          ),
-          Text("Populaires en ce moment"),
-          Expanded(
-            child: bestPlaces.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: bestPlaces.map((place) {
-                      return GestureDetector(
-                        onTap: () => _navigateToMapWithPlace(place),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Container(
-                            width: 150,
-                            color: Colors.blue[200],
-                            child: Center(
-                              child: Text(place.name,
-                                  style: TextStyle(fontSize: 18)),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    await resetIsFirstLaunch();
-                  },
-                  child: Text("Réinitialiser 'isFirstLaunch'"),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () async {
-                    await resetIsLoggedIn();
-                  },
-                  child: Text("Réinitialiser 'isLoggedIn'"),
-                ),
-              ],
+
+            // Use Flexible widgets to divide remaining space
+            Flexible(
+              flex: 1,
+              child: _buildPlaceSection("Favoris", favorisPlaces,
+                  "Vous n'avez pas encore de favoris"),
             ),
-          ),
-        ],
+            Flexible(
+              flex: 1,
+              child: _buildPlaceSection(
+                  "Populaires en ce moment", bestPlaces, "loading"),
+            ),
+          ],
+        ),
       ),
     );
   }

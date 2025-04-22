@@ -17,7 +17,7 @@ plugins {
 }
 
 android {
-    compileSdkVersion 34
+    compileSdkVersion 35
     namespace = "fr.groupe_A.m_trotter"
     ndkVersion = flutter.ndkVersion
 

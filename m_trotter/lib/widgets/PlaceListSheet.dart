@@ -139,7 +139,7 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
                     Text(
                       _title,
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

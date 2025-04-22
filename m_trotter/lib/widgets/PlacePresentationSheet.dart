@@ -111,6 +111,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   bool replySent = false;
   List<Photo> photos = [];
   final ApiService _apiService = ApiService();
+  bool showOpeningHours = false; // State to toggle opening hours visibility
 
   final TextEditingController _reviewController = TextEditingController();
 
@@ -537,7 +538,10 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                               child: Text(
                                 widget.place.name,
                                 style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                                    fontSize: 15, fontWeight: FontWeight.bold),
+                                maxLines: 2, // Limite à 2 lignes
+                                overflow: TextOverflow
+                                    .ellipsis, // Ajoute "..." si le texte dépasse
                               ),
                             ),
                             const SizedBox(height: 6.0),
@@ -574,145 +578,164 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                             if (widget.place.tags['opening_hours'] != null)
                               Align(
                                 alignment: Alignment.centerLeft,
-                                child: Builder(
-                                  builder: (context) {
-                                    final now = DateTime.now();
-                                    final openingHours = _parseOpeningHours(
-                                        widget.place.tags['opening_hours']!);
-                                    final today = _dayToFrench(
-                                        DateFormat('E', 'en_US')
-                                            .format(now)
-                                            .substring(0, 2));
-                                    final currentDayHours =
-                                        openingHours.firstWhere(
-                                      (entry) => entry['day'] == today,
-                                      orElse: () =>
-                                          {'day': today, 'hours': 'fermé'},
-                                    );
-
-                                    if (currentDayHours['hours'] == 'fermé') {
-                                      logger.d(
-                                          'Aujourd\'hui ($today) est fermé.');
-
-                                      // Check if it opens tomorrow
-                                      final tomorrow = _dayToFrench(DateFormat(
-                                              'E', 'en_US')
-                                          .format(now.add(Duration(days: 1)))
-                                          .substring(0, 2));
-                                      final tomorrowHours =
-                                          openingHours.firstWhere(
-                                        (entry) => entry['day'] == tomorrow,
-                                        orElse: () =>
-                                            {'day': tomorrow, 'hours': 'fermé'},
-                                      );
-
-                                      if (tomorrowHours['hours'] != 'fermé') {
-                                        final openingTime =
-                                            tomorrowHours['hours']!
-                                                .split('-')
-                                                .first
-                                                .trim();
-                                        logger.d(
-                                            'Demain ($tomorrow) ouvre à $openingTime.');
-                                        return Text(
-                                          'Fermé (ouvre demain à $openingTime)',
-                                          style: const TextStyle(
-                                              fontSize: 14, color: Colors.red),
-                                        );
-                                      }
-
-                                      // Find the next opening day
-                                      logger.d(
-                                          'Demain ($tomorrow) est fermé. Recherche du prochain jour d\'ouverture...');
-                                      for (int i = 2; i <= 7; i++) {
-                                        final nextDay = _dayToFrench(DateFormat(
-                                                'E', 'en_US')
-                                            .format(now.add(Duration(days: i)))
-                                            .substring(0, 2));
-                                        final nextDayHours =
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Builder(
+                                      builder: (context) {
+                                        final now = DateTime.now();
+                                        final openingHours = _parseOpeningHours(
+                                            widget
+                                                .place.tags['opening_hours']!);
+                                        final today = _dayToFrench(
+                                            DateFormat('E', 'en_US')
+                                                .format(now)
+                                                .substring(0, 2));
+                                        final currentDayHours =
                                             openingHours.firstWhere(
-                                          (entry) => entry['day'] == nextDay,
-                                          orElse: () => {
-                                            'day': nextDay,
-                                            'hours': 'fermé'
-                                          },
+                                          (entry) => entry['day'] == today,
+                                          orElse: () =>
+                                              {'day': today, 'hours': 'fermé'},
                                         );
 
-                                        logger.d(
-                                            'Vérification pour $nextDay : ${nextDayHours['hours']}');
-                                        if (nextDayHours['hours'] != 'fermé') {
-                                          final openingTime =
-                                              nextDayHours['hours']!
-                                                  .split('-')
-                                                  .first
-                                                  .trim();
-                                          logger.d(
-                                              'Prochain jour d\'ouverture trouvé : $nextDay à $openingTime.');
-                                          return Text(
-                                            'Fermé (ouvre $nextDay à $openingTime)',
-                                            style: const TextStyle(
+                                        if (currentDayHours['hours'] ==
+                                            'fermé') {
+                                          // Check if it opens tomorrow
+                                          final tomorrow = _dayToFrench(
+                                              DateFormat('E', 'en_US')
+                                                  .format(now
+                                                      .add(Duration(days: 1)))
+                                                  .substring(0, 2));
+                                          final tomorrowHours =
+                                              openingHours.firstWhere(
+                                            (entry) => entry['day'] == tomorrow,
+                                            orElse: () => {
+                                              'day': tomorrow,
+                                              'hours': 'fermé'
+                                            },
+                                          );
+
+                                          if (tomorrowHours['hours'] !=
+                                              'fermé') {
+                                            final openingTime =
+                                                tomorrowHours['hours']!
+                                                    .split('-')
+                                                    .first
+                                                    .trim();
+                                            return Text(
+                                              'Fermé (ouvre demain à $openingTime)',
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.red),
+                                            );
+                                          }
+
+                                          for (int i = 2; i <= 7; i++) {
+                                            final nextDay = _dayToFrench(
+                                                DateFormat('E', 'en_US')
+                                                    .format(now
+                                                        .add(Duration(days: i)))
+                                                    .substring(0, 2));
+                                            final nextDayHours =
+                                                openingHours.firstWhere(
+                                              (entry) =>
+                                                  entry['day'] == nextDay,
+                                              orElse: () => {
+                                                'day': nextDay,
+                                                'hours': 'fermé'
+                                              },
+                                            );
+                                            if (nextDayHours['hours'] !=
+                                                'fermé') {
+                                              final openingTime =
+                                                  nextDayHours['hours']!
+                                                      .split('-')
+                                                      .first
+                                                      .trim();
+                                              return Text(
+                                                'Fermé (ouvre $nextDay à $openingTime)',
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.red),
+                                              );
+                                            }
+                                          }
+                                          return const Text(
+                                            'Fermé',
+                                            style: TextStyle(
                                                 fontSize: 14,
                                                 color: Colors.red),
                                           );
+                                        } else {
+                                          final hours =
+                                              currentDayHours['hours']!
+                                                  .split('-');
+                                          final openingTime =
+                                              DateFormat('HH:mm')
+                                                  .parse(hours.first.trim());
+                                          final closingTime =
+                                              DateFormat('HH:mm')
+                                                  .parse(hours.last.trim());
+
+                                          final openingDateTime = DateTime(
+                                              now.year,
+                                              now.month,
+                                              now.day,
+                                              openingTime.hour,
+                                              openingTime.minute);
+                                          final closingDateTime = DateTime(
+                                              now.year,
+                                              now.month,
+                                              now.day,
+                                              closingTime.hour,
+                                              closingTime.minute);
+
+                                          if (now.isAfter(openingDateTime) &&
+                                              now.isBefore(closingDateTime)) {
+                                            return Text(
+                                              'Ouvert (ferme à ${hours.last.trim()})',
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.green),
+                                            );
+                                          } else if (now
+                                              .isBefore(openingDateTime)) {
+                                            return Text(
+                                              'Fermé (ouvre à ${hours.first.trim()})',
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.red),
+                                            );
+                                          }
                                         }
-                                      }
 
-                                      logger.d(
-                                          'Aucun jour d\'ouverture trouvé dans la semaine.');
-                                      return const Text(
-                                        'Fermé',
-                                        style: TextStyle(
-                                            fontSize: 14, color: Colors.red),
-                                      );
-                                    } else {
-                                      final hours =
-                                          currentDayHours['hours']!.split('-');
-                                      final openingTime = DateFormat('HH:mm')
-                                          .parse(hours.first.trim());
-                                      final closingTime = DateFormat('HH:mm')
-                                          .parse(hours.last.trim());
-
-                                      final openingDateTime = DateTime(
-                                          now.year,
-                                          now.month,
-                                          now.day,
-                                          openingTime.hour,
-                                          openingTime.minute);
-                                      final closingDateTime = DateTime(
-                                          now.year,
-                                          now.month,
-                                          now.day,
-                                          closingTime.hour,
-                                          closingTime.minute);
-
-                                      if (now.isAfter(openingDateTime) &&
-                                          now.isBefore(closingDateTime)) {
-                                        return Text(
-                                          'Ouvert (ferme à ${hours.last.trim()})',
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.green),
-                                        );
-                                      } else if (now
-                                          .isBefore(openingDateTime)) {
-                                        return Text(
-                                          'Fermé (ouvre à ${hours.first.trim()})',
-                                          style: const TextStyle(
+                                        return const Text(
+                                          'Fermé',
+                                          style: TextStyle(
                                               fontSize: 14, color: Colors.red),
                                         );
-                                      }
-                                    }
-
-                                    return const Text(
-                                      'Fermé',
-                                      style: TextStyle(
-                                          fontSize: 14, color: Colors.red),
-                                    );
-                                  },
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        showOpeningHours
+                                            ? Icons.expand_more_rounded
+                                            : Icons.chevron_right_rounded,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          showOpeningHours = !showOpeningHours;
+                                        });
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             // New code to display opening hours
-                            if (widget.place.tags['opening_hours'] != null)
+                            if (widget.place.tags['opening_hours'] != null &&
+                                showOpeningHours)
                               Align(
                                 alignment: Alignment.centerLeft,
                                 child: Column(

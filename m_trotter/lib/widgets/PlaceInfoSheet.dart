@@ -40,232 +40,6 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     _apiService = ApiService();
   }
 
-/*
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: GestureDetector(
-        onVerticalDragUpdate: (details) =>
-            widget.onDragUpdate?.call(details.delta.dy),
-        onVerticalDragEnd: (_) => widget.onDragEnd?.call(),
-        child: Stack(
-          children: [
-            Container(
-              height: widget.height,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20.0),
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10.0,
-                    spreadRadius: 2.0,
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Barre de drag
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    width: 50,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-
-                  // En-tête avec titre et bouton fermer
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          widget.place.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => widget.onClose(),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Séparateur
-                  const Divider(),
-
-                  // Informations sur le lieu
-                  
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      children: [
-                        ListTile(
-                          title: const Text('Type du lieu'),
-                          subtitle:
-                              Text(isEditing ? '' : widget.place.amenity!), // s
-                        ),
-                        if (isEditing)
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 1.0),
-                            child: DropdownButton<String>(
-                              value: selectedAmenity,
-                              hint: Text('Sélectionner un type de lieu'),
-                              items: GlobalData.amenities.keys
-                                  .map<DropdownMenuItem<String>>(
-                                      (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  selectedAmenity = newValue;
-                                  modifications.add({
-                                    'champ_modifie': 'amenity',
-                                    'ancienne_valeur': widget.place.amenity!,
-                                    'nouvelle_valeur': selectedAmenity!,
-                                  });
-                                });
-                              },
-                            ),
-                          ),
-                        if (widget.place.tags['addr:city'] != null ||
-                            widget.place.tags['addr:street'] != null ||
-                            widget.place.tags['addr:postcode'] != null)
-                          ListTile(
-                            title: const Text('Adresse'),
-                            subtitle: Text(
-                                '${widget.place.houseNumber} ${widget.place.tags['addr:street']}, ${widget.place.tags['addr:postcode']}, ${widget.place.tags['addr:city']}'),
-                          ),
-                        if (isEditing) ...[
-                          TextField(
-                            controller: TextEditingController(
-                                text: widget.place.houseNumber.toString()),
-                            onChanged: (newValue) {
-                              setState(() {
-                                modifications.add({
-                                  'champ_modifie': 'houseNumber',
-                                  'ancienne_valeur':
-                                      '"addr:housenumber"=>"${widget.place.houseNumber}"',
-                                  'nouvelle_valeur':
-                                      '"addr:housenumber"=>"$newValue"',
-                                });
-                              });
-                            },
-                          ),
-                          TextField(
-                            controller: TextEditingController(
-                                text: widget.place.tags['addr:street']),
-                            onChanged: (newValue) {
-                              setState(() {
-                                modifications.add({
-                                  'champ_modifie': 'tags',
-                                  'ancienne_valeur':
-                                      '"addr:street"=>"${widget.place.tags['addr:street']}"',
-                                  'nouvelle_valeur':
-                                      '"addr:street"=>"$newValue"',
-                                });
-                              });
-                            },
-                          ),
-                          TextField(
-                            controller: TextEditingController(
-                                text: widget.place.tags['addr:postcode']),
-                            onChanged: (newValue) {
-                              setState(() {
-                                modifications.add({
-                                  'champ_modifie': 'tags',
-                                  'ancienne_valeur':
-                                      '"addr:postcode"=>"${widget.place.tags['addr:postcode']}"',
-                                  'nouvelle_valeur':
-                                      '"addr:postcode"=>"$newValue"',
-                                });
-                              });
-                            },
-                          ),
-                          TextField(
-                            controller: TextEditingController(
-                                text: widget.place.tags['addr:city']),
-                            onChanged: (newValue) {
-                              setState(() {
-                                modifications.add({
-                                  'champ_modifie': 'tags',
-                                  'ancienne_valeur':
-                                      '"addr:city"=>"${widget.place.tags['addr:city']}"',
-                                  'nouvelle_valeur': '"addr:city"=>"$newValue"',
-                                });
-                              });
-                            },
-                          ),
-                        ],
-                        if (widget.place.tags['phone'] != null)
-                          ListTile(
-                            title: const Text('Téléphone'),
-                            subtitle: isEditing
-                                ? TextField(
-                                    controller: TextEditingController(
-                                        text: widget.place.tags['phone']),
-                                    onChanged: (newValue) {
-                                      setState(() {
-                                        modifications.add({
-                                          'champ_modifie': 'tags',
-                                          'ancienne_valeur':
-                                          //chercher dans tags l'occurrence de phone
-                                              '"phone"=>"${widget.place.tags['phone']}"',
-                                          'nouvelle_valeur':
-                                              '"phone"=>"$newValue"',
-                                        });
-                                      });
-                                    },
-                                  )
-                                : Text(widget.place.tags['phone']!),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: FloatingActionButton(
-                onPressed: () async {
-                  if (isEditing) {
-                    // Call proposeModifications method
-                    await ApiService().proposeModifications(
-                      osmId: widget.place.id,
-                      modifications: modifications,
-                    );
-                  }
-                  setState(() {
-                    isEditing = !isEditing;
-                  });
-                },
-                child: Icon(isEditing ? Icons.check : Icons.edit),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}*/
-
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -283,7 +57,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20.0)),
+                    const BorderRadius.vertical(top: Radius.circular(20.0)),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black12,
@@ -313,7 +87,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         Text(
                           widget.place.name,
                           style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
+                              fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),
@@ -333,33 +107,39 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         ListTile(
                           title: const Text('Type du lieu'),
                           subtitle:
-                          Text(isEditing ? '' : widget.place.amenity!), // s
+                              Text(isEditing ? '' : widget.place.amenity!), // s
                         ),
                         if (isEditing)
                           Padding(
                             padding:
-                            const EdgeInsets.symmetric(horizontal: 1.0),
-                            child: DropdownButton<String>(
-                              value: selectedAmenity,
-                              hint: Text('Sélectionner un type de lieu'),
-                              items: GlobalData.amenities.keys
-                                  .map<DropdownMenuItem<String>>(
-                                      (String value) {
+                                const EdgeInsets.symmetric(horizontal: 1.0),
+                            child: Column(
+                              children: [
+                                DropdownButton<String>(
+                                  value: selectedAmenity,
+                                  hint: Text('Choisir un type de lieu'),
+                                  items: GlobalData.amenities.keys
+                                      .map<DropdownMenuItem<String>>(
+                                          (String value) {
                                     return DropdownMenuItem<String>(
                                       value: value,
                                       child: Text(value),
                                     );
                                   }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  selectedAmenity = newValue;
-                                  modifications.add({
-                                    'champ_modifie': 'amenity',
-                                    'ancienne_valeur': widget.place.amenity!,
-                                    'nouvelle_valeur': selectedAmenity!,
-                                  });
-                                });
-                              },
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      selectedAmenity = newValue;
+                                      modifications.add({
+                                        'champ_modifie': 'amenity',
+                                        'ancienne_valeur':
+                                            widget.place.amenity!,
+                                        'nouvelle_valeur': selectedAmenity!,
+                                      });
+                                    });
+                                  },
+                                ),
+                                const Divider(height: 1, color: Colors.black12),
+                              ],
                             ),
                           ),
                         // Afficher les tags importants en tout temps (même s'ils sont vides)
@@ -369,10 +149,12 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         ...buildOtherTags(),
                         if (isEditing)
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                const Divider(height: 1, color: Colors.black12),
                                 if (!showTagInputs)
                                   ElevatedButton.icon(
                                     icon: const Icon(Icons.add),
@@ -383,19 +165,39 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                       });
                                     },
                                   ),
-
                                 if (showTagInputs) ...[
-                                  const Text('Ajouter un nouveau tag', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const Text('Ajouter un nouveau tag',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
                                   TextField(
                                     controller: newTagKeyController,
-                                    decoration: const InputDecoration(labelText: 'Nom du tag'),
+                                    decoration: InputDecoration(
+                                      labelText: 'Nom du tag',
+                                      border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 10),
+                                    ),
                                   ),
+                                  const SizedBox(height: 8),
                                   TextField(
                                     controller: newTagValueController,
-                                    decoration: const InputDecoration(labelText: 'Valeur du tag'),
+                                    decoration: InputDecoration(
+                                      labelText: 'Valeur du tag',
+                                      border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 10),
+                                    ),
                                     onSubmitted: (_) {
-                                      final key = newTagKeyController.text.trim();
-                                      final value = newTagValueController.text.trim();
+                                      final key =
+                                          newTagKeyController.text.trim();
+                                      final value =
+                                          newTagValueController.text.trim();
                                       if (key.isNotEmpty && value.isNotEmpty) {
                                         updateTag(key, value);
                                         newTagKeyController.clear();
@@ -453,9 +255,19 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         title: const Text('Adresse'),
         subtitle: isEditing
             ? buildEditableAddress() // Afficher un champ pour éditer en mode édition
-            : Text(
-          '${widget.place.houseNumber ?? 'Non spécifié'} ${widget.place.tags['addr:street'] ?? 'Non spécifié'}, ${widget.place.tags['addr:postcode'] ?? 'Non spécifié'}, ${widget.place.tags['addr:city'] ?? 'Non spécifié'}',
-        ),
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                      'N° : ${widget.place.houseNumber == -1 ? 'Non spécifié' : widget.place.houseNumber}'),
+                  Text(
+                      'Rue : ${widget.place.tags['addr:street'] ?? 'Non spécifiée'}'),
+                  Text(
+                      'Code Postal : ${widget.place.tags['addr:postcode'] ?? 'Non spécifié'}'),
+                  Text(
+                      'Ville : ${widget.place.tags['addr:city'] ?? 'Non spécifiée'}'),
+                ],
+              ),
       ),
       // Téléphone (affiché en tout temps)
       if (widget.place.tags['phone'] != null)
@@ -470,30 +282,43 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
 // Fonction pour afficher tous les autres tags
   List<Widget> buildOtherTags() {
-    return widget.place.tags.entries
-        .where((entry) => ![
-      'addr:street',
-      'addr:postcode',
-      'addr:city',
-      'phone'
-    ].contains(entry.key)) // Exclure les tags importants
-        .map((entry) {
-      TextEditingController controller = TextEditingController(text: entry.value);
+    final List<Widget> widgets = [];
 
-      return ListTile(
+    for (var entry in widget.place.tags.entries.where((entry) => ![
+          'addr:street',
+          'addr:postcode',
+          'addr:city',
+          'phone'
+        ].contains(entry.key))) {
+      TextEditingController controller =
+          TextEditingController(text: entry.value);
+
+      widgets.add(ListTile(
         title: Text(entry.key),
         subtitle: isEditing
             ? TextField(
-            controller: controller,
-            onSubmitted: (newValue) {
-              if (newValue.isNotEmpty) {
-                updateTag(entry.key, newValue);
-              }
-            }
-        )
-            : Text(entry.value ?? 'Non spécifié'), // En mode lecture
-      );
-    }).toList();
+                controller: controller,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                ),
+                onSubmitted: (newValue) {
+                  if (newValue.isNotEmpty) {
+                    updateTag(entry.key, newValue);
+                  }
+                })
+            : Text(entry.value ?? 'Non spécifié'),
+      ));
+
+      if (isEditing) {
+        widgets.add(const Divider(height: 1, color: Colors.black12));
+      }
+    }
+
+    return widgets;
   }
 
   Map<String, String> _parseTagString(String tagString) {
@@ -514,7 +339,9 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     widget.place.tags[key] = newValue;
 
     // 2. Préparer la nouvelle valeur complète
-    final newTagsStr = widget.place.tags.entries.map((e) => '"${e.key}"=>"${e.value}"').join(', ');
+    final newTagsStr = widget.place.tags.entries
+        .map((e) => '"${e.key}"=>"${e.value}"')
+        .join(', ');
 
     // 3. Chercher si ce tag a déjà été modifié précédemment
     bool existingTagModification = false;
@@ -557,7 +384,9 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       originalTagsMap.remove(key);
     }
 
-    final originalTagsStr = originalTagsMap.entries.map((e) => '"${e.key}"=>"${e.value}"').join(', ');
+    final originalTagsStr = originalTagsMap.entries
+        .map((e) => '"${e.key}"=>"${e.value}"')
+        .join(', ');
 
     // 5. Ajouter la nouvelle modification avec la valeur originale
     modifications.add({
@@ -572,10 +401,16 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
   }
 
   Widget buildEditableAddress() {
-    TextEditingController houseNumberController = TextEditingController(text: widget.place.houseNumber?.toString() ?? '');
-    TextEditingController streetController = TextEditingController(text: widget.place.tags['addr:street'] ?? '');
-    TextEditingController postcodeController = TextEditingController(text: widget.place.tags['addr:postcode'] ?? '');
-    TextEditingController cityController = TextEditingController(text: widget.place.tags['addr:city'] ?? '');
+    TextEditingController houseNumberController = TextEditingController(
+        text: widget.place.houseNumber == -1
+            ? ''
+            : widget.place.houseNumber.toString());
+    TextEditingController streetController =
+        TextEditingController(text: widget.place.tags['addr:street'] ?? '');
+    TextEditingController postcodeController =
+        TextEditingController(text: widget.place.tags['addr:postcode'] ?? '');
+    TextEditingController cityController =
+        TextEditingController(text: widget.place.tags['addr:city'] ?? '');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,8 +422,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               updateTag('addr:housenumber', newValue);
             }
           },
-          decoration: const InputDecoration(labelText: 'Numéro de maison'),
+          decoration: InputDecoration(
+            labelText: 'N°',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          ),
         ),
+        const SizedBox(height: 8),
         TextField(
           controller: streetController,
           onSubmitted: (newValue) {
@@ -596,8 +438,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               updateTag('addr:street', newValue);
             }
           },
-          decoration: const InputDecoration(labelText: 'Rue'),
+          decoration: InputDecoration(
+            labelText: 'Rue',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          ),
         ),
+        const SizedBox(height: 8),
         TextField(
           controller: postcodeController,
           onSubmitted: (newValue) {
@@ -605,8 +454,15 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               updateTag('addr:postcode', newValue);
             }
           },
-          decoration: const InputDecoration(labelText: 'Code Postal'),
+          decoration: InputDecoration(
+            labelText: 'Code Postal',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          ),
         ),
+        const SizedBox(height: 8),
         TextField(
           controller: cityController,
           onSubmitted: (newValue) {
@@ -614,7 +470,13 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               updateTag('addr:city', newValue);
             }
           },
-          decoration: const InputDecoration(labelText: 'Ville'),
+          decoration: InputDecoration(
+            labelText: 'Ville',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          ),
         ),
       ],
     );
@@ -622,7 +484,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
 
 // Fonction pour afficher le téléphone modifiable en mode édition
   Widget buildEditablePhone() {
-    TextEditingController controller = TextEditingController(text: widget.place.tags['phone'] ?? '');
+    TextEditingController controller =
+        TextEditingController(text: widget.place.tags['phone'] ?? '');
 
     return TextField(
       controller: controller,
@@ -631,7 +494,13 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
           updateTag('phone', newValue);
         }
       },
-      decoration: const InputDecoration(labelText: 'Téléphone'),
+      decoration: InputDecoration(
+        labelText: 'Téléphone',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      ),
     );
   }
 }

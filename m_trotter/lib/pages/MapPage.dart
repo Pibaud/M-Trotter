@@ -26,6 +26,8 @@ import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import '../utils/AmenityIcons.dart';
+import '../utils/GlobalData.dart'; // Added import for GlobalData
+import 'package:url_launcher/url_launcher.dart'; // Add this import
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
@@ -78,6 +80,7 @@ class _MapPageState extends State<MapPage> {
   late List<TramLine> tramLines = [];
   late List<Place> _loadedPlaces = [];
   late List<Photo> photos = [];
+  bool _showingAllAmenities = false; // Add this state variable
 
   @override
   void initState() {
@@ -90,10 +93,11 @@ class _MapPageState extends State<MapPage> {
     loadTramData();
     _apiService = ApiService(); // requêtes
     _routes = {};
+    _showingAllAmenities = false; // Add this state variable
+    GlobalData.loadAmenities(); // Load amenities from GlobalData
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
-        print("le focus est sur le TextField");
         setState(() {
           _isLayerVisible = true;
         });
@@ -112,7 +116,6 @@ class _MapPageState extends State<MapPage> {
     getUserLocation();
     _positionSubscription = _locationService.listenToPositionChanges(
       onPositionUpdate: (Position position) {
-        debugPrint('Nouvelle position reçue dans MapPage : $position');
         setState(() {
           _currentLocation = LatLng(position.latitude, position.longitude);
         });
@@ -158,9 +161,6 @@ class _MapPageState extends State<MapPage> {
 
     var position = await locationService.getCurrentPosition();
     if (position != null) {
-      print(
-          "nouvelle position : ${position.latitude}, ${position.longitude} nouvelle requete à l'api");
-
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
@@ -168,7 +168,7 @@ class _MapPageState extends State<MapPage> {
       try {
         if (_currentLocation != null) {
           String value = await _apiService.getNameFromLatLng(_currentLocation!);
-          print("value : $value");
+          print("Localisation : $value");
           setState(() {
             _currentLocationName = value;
           });
@@ -454,8 +454,6 @@ class _MapPageState extends State<MapPage> {
         bounds.northEast, // max (lat, lon)
       );
 
-      print('Nombre de places récupérées: ${res.length}');
-
       List<Place> places =
           res.map<Place>((data) => Place.fromJson(data)).toList();
 
@@ -643,11 +641,24 @@ class _MapPageState extends State<MapPage> {
                     _buildAmenityChip('Bar'),
                     _buildAmenityChip('Station-service'),
                     _buildAmenityChip('Hôtel'),
-                    _buildAmenityChip('Plus'),
+                    ActionChip(
+                      avatar: const Icon(Icons.more_horiz, color: Colors.black),
+                      label: Text('Plus'),
+                      onPressed: () {
+                        Provider.of<BottomNavBarVisibilityProvider>(context,
+                                listen: false)
+                            .hideBottomNav();
+                        setState(() {
+                          _isLayerVisible = true;
+                          _showingAllAmenities = true;
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
+          if (_isLayerVisible && _showingAllAmenities) _buildAllAmenitiesView(),
           if ((_isLayerVisible && suggestedPlaces.isNotEmpty) ||
               _isLayerVisible && suggestedAmenities.isNotEmpty)
             Positioned(
@@ -662,7 +673,6 @@ class _MapPageState extends State<MapPage> {
                     if (notification is ScrollStartNotification) {
                       if (_focusNode.hasFocus) {
                         _focusNode.unfocus();
-                        print("scroll détecté avec focus actif");
                       }
                     }
                     return false;
@@ -839,7 +849,7 @@ class _MapPageState extends State<MapPage> {
           if (_selectedPlace != null &&
               _routes.isEmpty &&
               _tramPolyLinesPoints.isEmpty)
-            if (_isPlacePresentationSheetVisible)
+            if (_isPlacePresentationSheetVisible && !_isLayerVisible)
               PlacePresentationSheet(
                 height: _bottomSheetHeight,
                 onDragUpdate: (dy) {
@@ -870,11 +880,58 @@ class _MapPageState extends State<MapPage> {
                     _loadedPlaces = [];
                   });
                 },
-                onCallTap: () {
-                  print("Appeler le lieu sélectionné");
+                onCallTap: () async {
+                  final phoneNumber = _selectedPlace!.tags["phone"];
+                  if (phoneNumber != null && phoneNumber.isNotEmpty) {
+                    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+                    if (await canLaunchUrl(phoneUri)) {
+                      await launchUrl(phoneUri);
+                    } else {
+                      // Show a snackbar or dialog if the call can't be made
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Impossible de passer l\'appel')),
+                        );
+                      }
+                    }
+                  } else {
+                    // Show a snackbar if no phone number is available
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content:
+                                Text('Aucun numéro de téléphone disponible')),
+                      );
+                    }
+                  }
                 },
-                onWebsiteTap: () {
-                  print("Ouvrir le site web du lieu sélectionné");
+                onWebsiteTap: () async {
+                  final website = _selectedPlace!.tags["website"];
+                  if (website != null && website.isNotEmpty) {
+                    final Uri websiteUri = Uri.parse(website);
+                    if (await canLaunchUrl(websiteUri)) {
+                      await launchUrl(websiteUri,
+                          mode: LaunchMode.externalApplication);
+                    } else {
+                      // Show a snackbar or dialog if the website can't be opened
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text('Impossible d\'ouvrir le site web')),
+                        );
+                      }
+                    }
+                  } else {
+                    // Show a snackbar if no website is available
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Aucun site web disponible')),
+                      );
+                    }
+                  }
                 },
                 onInfosTap: () {
                   print(_selectedPlace!);
@@ -1008,7 +1065,7 @@ class _MapPageState extends State<MapPage> {
                 });
               },
             ),
-          if (_isPlaceInfoSheetVisible)
+          if (_isPlaceInfoSheetVisible && !_isPlacePresentationSheetVisible)
             PlaceInfoSheet(
               height: _bottomSheetHeight,
               onDragUpdate: (dy) {
@@ -1061,6 +1118,89 @@ class _MapPageState extends State<MapPage> {
       child: ActionChip(
         label: Text(amenity),
         onPressed: () => _onAmenityTap(amenity),
+      ),
+    );
+  }
+
+  // Method to build the all amenities view
+  Widget _buildAllAmenitiesView() {
+    // Get the keys from GlobalData.amenities map and sort them alphabetically
+    List<String> amenityKeys = GlobalData.amenities.keys.toList()
+      ..sort((a, b) => a.compareTo(b));
+
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 20.0, left: 16.0, right: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Toutes les catégories',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    setState(() {
+                      _isLayerVisible = false;
+                      _showingAllAmenities = false;
+                    });
+                    Provider.of<BottomNavBarVisibilityProvider>(context,
+                            listen: false)
+                        .showBottomNav();
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 3.0,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: amenityKeys.length,
+                itemBuilder: (context, index) {
+                  String amenityKey = amenityKeys[index];
+                  String amenityValue =
+                      GlobalData.amenities[amenityKey] ?? amenityKey;
+
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isLayerVisible = false;
+                        _showingAllAmenities = false;
+                      });
+                      _onAmenityTap(amenityKey);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: Center(
+                        child: Text(
+                          amenityKey,
+                          style: const TextStyle(fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

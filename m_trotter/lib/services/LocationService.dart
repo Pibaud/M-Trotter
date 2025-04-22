@@ -45,17 +45,12 @@ class LocationService {
       return null;
     }
     print("Permission acceptée");
-    // Configure les paramètres de localisation
-    LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.low,
-      distanceFilter: 0,
-    );
 
     // Récupère la position actuelle
     try {
       print("Récupération du Geolocator...");
       Position position = await Geolocator.getCurrentPosition(
-        locationSettings: locationSettings,
+        desiredAccuracy: LocationAccuracy.low, // Remplace locationSettings
       );
       print("position retournée : $position");
       return position;
