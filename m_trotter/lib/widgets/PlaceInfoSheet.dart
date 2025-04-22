@@ -283,7 +283,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20.0)),
+                const BorderRadius.vertical(top: Radius.circular(20.0)),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black12,
@@ -333,23 +333,23 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                         ListTile(
                           title: const Text('Type du lieu'),
                           subtitle:
-                              Text(isEditing ? '' : widget.place.amenity!), // s
+                          Text(isEditing ? '' : widget.place.amenity!), // s
                         ),
                         if (isEditing)
                           Padding(
                             padding:
-                                const EdgeInsets.symmetric(horizontal: 1.0),
+                            const EdgeInsets.symmetric(horizontal: 1.0),
                             child: DropdownButton<String>(
                               value: selectedAmenity,
                               hint: Text('Sélectionner un type de lieu'),
                               items: GlobalData.amenities.keys
                                   .map<DropdownMenuItem<String>>(
                                       (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(value),
+                                    );
+                                  }).toList(),
                               onChanged: (String? newValue) {
                                 setState(() {
                                   selectedAmenity = newValue;
@@ -454,8 +454,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         subtitle: isEditing
             ? buildEditableAddress() // Afficher un champ pour éditer en mode édition
             : Text(
-                '${widget.place.houseNumber ?? 'Non spécifié'} ${widget.place.tags['addr:street'] ?? 'Non spécifié'}, ${widget.place.tags['addr:postcode'] ?? 'Non spécifié'}, ${widget.place.tags['addr:city'] ?? 'Non spécifié'}',
-              ),
+          '${widget.place.houseNumber ?? 'Non spécifié'} ${widget.place.tags['addr:street'] ?? 'Non spécifié'}, ${widget.place.tags['addr:postcode'] ?? 'Non spécifié'}, ${widget.place.tags['addr:city'] ?? 'Non spécifié'}',
+        ),
       ),
       // Téléphone (affiché en tout temps)
       if (widget.place.tags['phone'] != null)
