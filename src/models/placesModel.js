@@ -150,7 +150,7 @@ exports.AmenityPlaces = async (amenity, startid) => {
             [amenity, startid]
         );
 
-        console.log("Places pour l'AMENITY ", amenity, " :")
+        console.log("Places pour l'AMENITY ", amenity, " et le startid ", startid, " :")
         console.dir(result.rows)
         return result.rows;
     } catch (error) {
