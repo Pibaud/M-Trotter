@@ -66,7 +66,6 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
         _places.addAll(res.map<Place>((data) => Place.fromJson(data)));
       });
       print("nouveaux lieu récupérés :");
-      logger.i(res);
     } catch (e) {
       print('Erreur lors de la récupération des places pour une amenity : $e');
     }

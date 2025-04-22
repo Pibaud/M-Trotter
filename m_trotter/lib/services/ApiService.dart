@@ -33,7 +33,6 @@ class ApiService {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> pointsData = responseData['points'];
         print("je reçois les points suivants :");
-        logger.i(pointsData);
         for (var point in pointsData) {
           point['place_table'] = "planet_osm_point";
         }
@@ -48,7 +47,7 @@ class ApiService {
 
   Future<List<dynamic>> fetchPlacesFittingAmenity(String amenity, {int? osmStartId}) async {
     final String url = '$baseUrl/api/amenityList/';
-
+    print("Dans apiservice avec les paramètres : $amenity, osmStartId: $osmStartId ");
     try {
       final response = await http.post(
         Uri.parse(url),
