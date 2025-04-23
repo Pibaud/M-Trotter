@@ -43,9 +43,9 @@ exports.bestPlaces = async () => {
     }
 }
 
-exports.addRecPhoto = async (id_photo, id_lieu, id_avis) => {
+exports.addRecPhoto = async (id_photo, id_user, vote) => {
     try {
-        const result = await addRecPhoto(id_photo, id_lieu, id_avis);
+        const result = await addRecPhoto(id_photo, id_user, vote);
         return result;
     } catch (error) {
         console.error(error);

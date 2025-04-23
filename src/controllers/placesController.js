@@ -91,11 +91,11 @@ exports.bestPlaces = async(req, res) => {
 
 exports.addRecPhoto = async (req, res) => {
     try {
-        const { id_photo, accessToken} = req.body;
+        const { id_photo, accessToken, vote} = req.body;
         console.log("Appel à addRecPhoto avec les paramètres :", id_photo, accessToken);
         
-        if (!id_photo || !accessToken) {
-            return res.status(400).json({ error: "id_photo et accessToken requis." });
+        if (!id_photo || !accessToken || !vote) {
+            return res.status(400).json({ error: "id_photo et accessToken et vote requis." });
         }
 
         let user_id;
@@ -106,7 +106,7 @@ exports.addRecPhoto = async (req, res) => {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
         }
         
-        const result = await addRecPhoto(id_photo, user_id); // Appel au service
+        const result = await addRecPhoto(id_photo, user_id, vote); // Appel au service
         return res.status(200).json(result);
     } catch (error) {
         console.error("Erreur dans addRecPhoto :", error);
