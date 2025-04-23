@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +23,7 @@ class Review {
   int rating;
   final String placeTable;
   final String userId;
+  final bool user_has_liked;
 
   Review({
     required this.id,
@@ -35,6 +37,7 @@ class Review {
     this.rating = 0,
     required this.placeTable,
     this.userId = '',
+    required this.user_has_liked,
   });
 
   void updateProfileInfo(String newUsername, Uint8List? newProfilePic) {
@@ -53,10 +56,12 @@ class Review {
           : null, // Convertir en Uint8List si non null
       comment: json['lavis'],
       likes: int.tryParse(json['like_count'].toString()) ?? 0,
+      isLiked: json['user_has_liked'] == true,
       date: DateTime.parse(json['created_at']),
       rating: json['nb_etoiles'] ?? 0,
       placeTable: json['place_table'],
       userId: json['user_id']?.toString() ?? '',
+      user_has_liked: json['user_has_liked'],
     );
   }
 
@@ -226,8 +231,10 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   void toggleLike(Review review) {
     setState(() {
       if (review.isLiked) {
+        _apiService.unlikeAvis(review.id);
         review.likes--;
       } else {
+        _apiService.likeAvis(review.id);
         review.likes++;
       }
       review.isLiked = !review.isLiked;
