@@ -1,4 +1,4 @@
-const { ListePlaces, BoxPlaces, AmenityPlaces, BestPlaces } = require('../models/placesModel');
+const { ListePlaces, BoxPlaces, AmenityPlaces, BestPlaces, addRecPhoto, delRecPhoto } = require('../models/placesModel');
 
 // GET pour récupérer des lieux
 exports.LPlaces = async (req, res) => {
@@ -40,5 +40,25 @@ exports.bestPlaces = async () => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}
+
+exports.addRecPhoto = async (id_photo, id_lieu, id_avis) => {
+    try {
+        const result = await addRecPhoto(id_photo, id_lieu, id_avis);
+        return result;
+    } catch (error) {
+        console.error(error);
+        throw error; // Propager l'erreur pour la gestion ultérieure
+    }
+}
+
+exports.delRecPhoto = async (id_photo) => {
+    try {
+        const result = await delRecPhoto(id_photo);
+        return result;
+    } catch (error) {
+        console.error(error);
+        throw error; // Propager l'erreur pour la gestion ultérieure
     }
 }

@@ -197,3 +197,30 @@ exports.BestPlaces = async () => {
         throw { error: "Erreur interne du serveur." };
     }
 }
+
+exports.addRecPhoto = async (id_photo, id_user) => {
+    try {
+        const result = await pool.query(
+            `INSERT INTO goodimage (id_photo, id_user) VALUES ($1, $2) RETURNING *`,
+            [id_photo, id_user]
+        );
+        return result.rows[0];
+    } catch (error) {
+        console.error("Erreur lors de l'ajout de la photo :", error);
+        throw { error: "Erreur interne du serveur." };
+    }
+}
+
+exports.delRecPhoto = async (id_photo, id_user) => {
+    try {
+        const result = await pool.query(
+            `DELETE FROM goodimage WHERE id_photo = $1 AND id_user = $2 RETURNING *`,
+            [id_photo, id_user]
+        );
+        return result.rows[0];
+    } catch (error) {
+        console.error("Erreur lors de la suppression de la photo :", error);
+        throw { error: "Erreur interne du serveur." };
+    }
+}
+
