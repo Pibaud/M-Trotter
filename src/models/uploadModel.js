@@ -8,7 +8,7 @@ const getImagesByPlaceId = async (id_lieu) => {
                 p.id_photo, 
                 p.id_lieu, 
                 p.id_avis,
-                COALESCE(SUM(g.vote_type * LOG(COALESCE(u.fiablilite, 0) + 1)), 0) AS weighted_vote_score
+                COALESCE(SUM(g.vote_type * LOG(COALESCE(u.fiabilite, 0) + 1)), 0) AS weighted_vote_score
              FROM photos p
              LEFT JOIN goodimage g ON p.id_photo = g.id_image
              LEFT JOIN users u ON g.id_user = u.id
