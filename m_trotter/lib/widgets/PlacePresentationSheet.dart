@@ -186,6 +186,15 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
     ApiService apiService = ApiService();
     List<Photo> response =
         await apiService.fetchImagesByPlaceId(widget.place.id.toString());
+    for (var photo in response) {
+      try {
+        final voteInfo = await apiService.getPhotoVote(photo.id);
+        logger.d('Vote info for photo ${photo.id}: $voteInfo');
+      } catch (e) {
+        logger.e('Error getting vote for photo ${photo.id}: $e');
+      }
+    }
+
     setState(() {
       photos = response;
     });
@@ -1347,17 +1356,146 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                         final photo = filteredPhotos[index];
                         return GestureDetector(
                           onTap: () {
+                            int voteCount = 0; // Initialize vote counter
+                            int initialVote = 0; // Track initial state
+                            bool hasUpvoted = false;
+                            bool hasDownvoted = false;
+
                             showDialog(
                               context: context,
-                              builder: (_) => Dialog(
-                                backgroundColor: Colors.transparent,
-                                child: GestureDetector(
-                                  onTap: () => Navigator.pop(context),
-                                  child: InteractiveViewer(
-                                    child: Image.memory(photo.imageData,
-                                        fit: BoxFit.contain),
-                                  ),
-                                ),
+                              builder: (dialogContext) => StatefulBuilder(
+                                builder: (context, setDialogState) {
+                                  // Initialize vote state based on photo.vote
+                                  if (voteCount == 0 && photo.vote != null) {
+                                    voteCount = photo.vote!;
+                                    initialVote = voteCount;
+                                    hasUpvoted = photo.vote == 1;
+                                    hasDownvoted = photo.vote == -1;
+                                  }
+
+                                  return Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        // Image with InteractiveViewer
+                                        GestureDetector(
+                                          onTap: () {
+                                            // Send the vote before closing
+                                            if (initialVote != voteCount) {
+                                              // Only call if vote changed
+                                              upOrDownvote(voteCount, photo.id);
+                                            }
+                                            Navigator.pop(dialogContext);
+                                          },
+                                          child: InteractiveViewer(
+                                            child: Image.memory(photo.imageData,
+                                                fit: BoxFit.contain),
+                                          ),
+                                        ),
+
+                                        // Vote UI in top right
+                                        Positioned(
+                                          top: 20,
+                                          right: 20,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.black.withOpacity(0.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                IconButton(
+                                                  icon: Icon(
+                                                    Icons.arrow_upward_rounded,
+                                                    color: hasUpvoted
+                                                        ? Colors.blue
+                                                        : Colors.white,
+                                                  ),
+                                                  onPressed: () {
+                                                    setDialogState(() {
+                                                      if (hasUpvoted) {
+                                                        // Cancel upvote
+                                                        voteCount--;
+                                                        hasUpvoted = false;
+                                                      } else {
+                                                        // Add upvote
+                                                        voteCount++;
+                                                        // If was downvoted before, remove that too
+                                                        if (hasDownvoted) {
+                                                          voteCount++;
+                                                          hasDownvoted = false;
+                                                        }
+                                                        hasUpvoted = true;
+                                                      }
+                                                    });
+                                                  },
+                                                ),
+                                                Text(
+                                                  '$voteCount',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  icon: Icon(
+                                                    Icons
+                                                        .arrow_downward_rounded,
+                                                    color: hasDownvoted
+                                                        ? Colors.red
+                                                        : Colors.white,
+                                                  ),
+                                                  onPressed: () {
+                                                    setDialogState(() {
+                                                      if (hasDownvoted) {
+                                                        // Cancel downvote
+                                                        voteCount++;
+                                                        hasDownvoted = false;
+                                                      } else {
+                                                        // Add downvote
+                                                        voteCount--;
+                                                        // If was upvoted before, remove that too
+                                                        if (hasUpvoted) {
+                                                          voteCount--;
+                                                          hasUpvoted = false;
+                                                        }
+                                                        hasDownvoted = true;
+                                                      }
+                                                    });
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Close button
+                                        Positioned(
+                                          top: 20,
+                                          left: 20,
+                                          child: IconButton(
+                                            icon: const Icon(Icons.close,
+                                                color: Colors.white),
+                                            onPressed: () {
+                                              // Send the vote before closing
+                                              if (initialVote != voteCount) {
+                                                // Only call if vote changed
+                                                upOrDownvote(
+                                                    voteCount, photo.id);
+                                              }
+                                              Navigator.pop(dialogContext);
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                             );
                           },
@@ -1413,6 +1551,16 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   void dispose() {
     _reviewController.dispose();
     super.dispose();
+  }
+
+  void upOrDownvote(int voteType, int idImage) async {
+    try {
+      // Log the vote action for debugging
+      logger.d('Submitting vote: $voteType for image ID: $idImage');
+      await _apiService.voteForImage(idImage, voteType);
+    } catch (e) {
+      logger.e('Exception when submitting vote: $e');
+    }
   }
 }
 
