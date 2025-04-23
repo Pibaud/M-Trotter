@@ -27,6 +27,7 @@ const genererRapport = async () => {
         }
         
         const result = await db.query(requete);
+        console.log("Résultats de la requête pour", table, ":", result.rows);
         if (result.rows.length > 0) {
             rapport += `<h2>${type.charAt(0).toUpperCase() + type.slice(1)}s</h2><ul>`;
             result.rows.forEach(({ id_lieu, etat, score }) => {
@@ -48,6 +49,7 @@ const envoyerRapport = async () => {
         const rapportHTML = await genererRapport();
         const subject = "Rapport de vérification M'trotter";
         const text = "Veuillez consulter le rapport en HTML.";
+        console.log("📄 Rapport généré :", rapportHTML);
         await sendEmail("Thibaud.Paulin@gmail.com", subject, text, rapportHTML);
         console.log("✅ Rapport envoyé avec succès.");
     } catch (error) {
