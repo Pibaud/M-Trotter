@@ -38,6 +38,10 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
   List<Place> _places = [];
   final ScrollController _controller = ScrollController();
 
+  // Add state variables for filters
+  bool _isOpenFilterSelected = false;
+  bool _isRatingFilterSelected = false;
+
   @override
   void initState() {
     super.initState();
@@ -148,6 +152,118 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
                       onPressed: () => widget.onClose(),
                     ),
                   ],
+                ),
+              ),
+
+              // Filtres
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      // Filtre "Ouvert actuellement"
+                      Container(
+                        margin: const EdgeInsets.only(right: 10.0),
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _isOpenFilterSelected = !_isOpenFilterSelected;
+                            });
+                            // Action pour le filtre "Ouvert actuellement"
+                          },
+                          icon: Icon(
+                            Icons.access_time_rounded,
+                            size: 18.0,
+                            color: _isOpenFilterSelected ? Colors.white : null,
+                          ),
+                          label: Text(
+                            "Ouvert actuellement",
+                            style: TextStyle(
+                              color:
+                                  _isOpenFilterSelected ? Colors.white : null,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12.0, vertical: 8.0),
+                            backgroundColor: _isOpenFilterSelected
+                                ? Theme.of(context).primaryColor
+                                : null,
+                            side: BorderSide(
+                              color: _isOpenFilterSelected
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Filtre "Note"
+                      Container(
+                        margin: const EdgeInsets.only(right: 10.0),
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _isRatingFilterSelected =
+                                  !_isRatingFilterSelected;
+                            });
+                            // Action pour le filtre "Note"
+                          },
+                          icon: Icon(
+                            Icons.star_rounded,
+                            size: 18.0,
+                            color:
+                                _isRatingFilterSelected ? Colors.white : null,
+                          ),
+                          label: Text(
+                            "Note",
+                            style: TextStyle(
+                              color:
+                                  _isRatingFilterSelected ? Colors.white : null,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12.0, vertical: 8.0),
+                            backgroundColor: _isRatingFilterSelected
+                                ? Theme.of(context).primaryColor
+                                : null,
+                            side: BorderSide(
+                              color: _isRatingFilterSelected
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Bouton "Plus de filtres"
+                      Container(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            // Afficher plus de filtres
+                          },
+                          icon: const Icon(Icons.tune, size: 18.0),
+                          label: const Text("Plus de filtres"),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12.0, vertical: 8.0),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 

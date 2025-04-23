@@ -45,9 +45,11 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> fetchPlacesFittingAmenity(String amenity, {int? osmStartId}) async {
+  Future<List<dynamic>> fetchPlacesFittingAmenity(String amenity,
+      {int? osmStartId}) async {
     final String url = '$baseUrl/api/amenityList/';
-    print("Dans apiservice avec les paramètres : $amenity, osmStartId: $osmStartId ");
+    print(
+        "Dans apiservice avec les paramètres : $amenity, osmStartId: $osmStartId ");
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -329,7 +331,6 @@ class ApiService {
           if (profilePic is Map &&
               profilePic.containsKey('data') &&
               profilePic['type'] == 'Buffer') {
-
             List<int> rawData = List<int>.from(profilePic['data']);
             Uint8List imageBytes = Uint8List.fromList(rawData);
 
@@ -728,7 +729,7 @@ class ApiService {
 
   //récupération bestplace
 
-  Future<List<Place>> trouveBestPlaces() async {
+  Future<List<Map<String, dynamic>>> trouveBestPlaces() async {
     final String url = '$baseUrl/api/bestplaces';
 
     try {
@@ -739,7 +740,18 @@ class ApiService {
         for (var place in placesJson) {
           place['place_table'] = "planet_osm_point";
         }
-        return placesJson.map((place) => Place.fromJson(place)).toList();
+
+        return placesJson.map((place) {
+          final placeWithoutPhotos = Map<String, dynamic>.from(place);
+          placeWithoutPhotos.remove('photos');
+
+          return {
+            "place": Place.fromJson(placeWithoutPhotos),
+            "photo": place['photos'] != null && place['photos'].isNotEmpty
+                ? place['photos'][0]
+                : null,
+          };
+        }).toList();
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
       }
@@ -824,7 +836,7 @@ class ApiService {
 
 //recuperer les favoris
 
-  Future<List<Place>> getFavoris() async {
+  Future<List<Map<String, dynamic>>> getFavoris() async {
     String? accessToken = await AuthService.getToken();
     final String url = '$baseUrl/favoris/get';
 
@@ -847,9 +859,18 @@ class ApiService {
         for (var place in placesJson) {
           place['place_table'] = "planet_osm_point";
         }
-        return placesJson
-            .map((place) => Place.fromJson(place))
-            .toList();
+
+        return placesJson.map((place) {
+          final placeWithoutPhotos = Map<String, dynamic>.from(place);
+          placeWithoutPhotos.remove('photos');
+
+          return {
+            "place": Place.fromJson(placeWithoutPhotos),
+            "photo": place['photos'] != null && place['photos'].isNotEmpty
+                ? place['photos'][0]
+                : null,
+          };
+        }).toList();
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
       }

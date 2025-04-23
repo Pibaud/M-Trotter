@@ -30,8 +30,8 @@ void showPlaceSheet(BuildContext context, Place place) {
 }
 
 class HomePageState extends State<HomePage> {
-  List<Place> bestPlaces = [];
-  List<Place> favorisPlaces = [];
+  List<Map<String, dynamic>> bestPlaces = [];
+  List<Map<String, dynamic>> favorisPlaces = [];
   late ApiService _apiService;
 
   @override
@@ -43,14 +43,14 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> loadBestPlaces() async {
-    List<Place> places = await _apiService.trouveBestPlaces();
+    List<Map<String, dynamic>> places = await _apiService.trouveBestPlaces();
     setState(() {
       bestPlaces = places;
     });
   }
 
   Future<void> loadFavoris() async {
-    List<Place> favoris = await _apiService.getFavoris();
+    List<Map<String, dynamic>> favoris = await _apiService.getFavoris();
     setState(() {
       favorisPlaces = favoris;
     });
@@ -74,15 +74,19 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  Widget _buildPlaceCard(Place place) {
+  Widget _buildPlaceCard(Map<String, dynamic> placeAndPhoto) {
+    Place place = placeAndPhoto['place'];
+    var photo = placeAndPhoto['photo'];
+
     return GestureDetector(
       onTap: () => _navigateToMapWithPlace(place),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
+          height: 120, // Fixed height for the card
           decoration: BoxDecoration(
-            color: Colors.blue[200],
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20.0),
             boxShadow: [
               BoxShadow(
@@ -93,41 +97,121 @@ class HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(place.name, style: TextStyle(fontSize: 18)),
-                if (place.amenity != null)
-                  Text(place.amenity!,
-                      style: TextStyle(fontSize: 14, color: Colors.grey)),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(place.avgStars.toStringAsFixed(1),
-                        style: TextStyle(fontSize: 14, color: Colors.black)),
-                    SizedBox(width: 4),
-                    Row(
-                      children: List.generate(5, (index) {
-                        if (index < place.avgStars.floor()) {
-                          return Icon(Icons.star_rounded,
-                              color: Colors.amber, size: 16);
-                        } else if (index < place.avgStars) {
-                          return Icon(Icons.star_half_rounded,
-                              color: Colors.amber, size: 16);
-                        } else {
-                          return Icon(Icons.star_border_rounded,
-                              color: Colors.grey, size: 16);
-                        }
-                      }),
-                    ),
-                    SizedBox(width: 4),
-                    Text('(${place.numReviews})',
-                        style: TextStyle(fontSize: 14, color: Colors.grey)),
-                  ],
+          child: Row(
+            children: [
+              // Left side - Photo
+              Container(
+                width: 120, // Width for the image container
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20.0),
+                    bottomLeft: Radius.circular(20.0),
+                  ),
+                  color: Colors.grey[200], // Placeholder color
                 ),
-              ],
-            ),
+                child: photo != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20.0),
+                          bottomLeft: Radius.circular(20.0),
+                        ),
+                        child: Image.network(
+                          'http://217.182.79.84:3000${photo['url']}',
+                          fit: BoxFit.cover,
+                          height: double.infinity,
+                          width: double.infinity,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                                child: Icon(Icons.image_not_supported));
+                          },
+                        ),
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.photo_outlined,
+                          size: 40,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+              ),
+
+              // Right side - Information
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        place.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (place.amenity != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            place.amenity!,
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          children: [
+                            Text(
+                              place.avgStars.toStringAsFixed(1),
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.black),
+                            ),
+                            SizedBox(width: 4),
+                            Row(
+                              children: List.generate(5, (index) {
+                                if (index < place.avgStars.floor()) {
+                                  return Icon(Icons.star_rounded,
+                                      color: Colors.amber, size: 12);
+                                } else if (index < place.avgStars) {
+                                  return Icon(Icons.star_half_rounded,
+                                      color: Colors.amber, size: 12);
+                                } else {
+                                  return Icon(Icons.star_border_rounded,
+                                      color: Colors.grey, size: 12);
+                                }
+                              }),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '(${place.numReviews})',
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -135,7 +219,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget _buildPlaceSection(
-      String title, List<Place> places, String emptyMessage) {
+      String title, List<Map<String, dynamic>> places, String emptyMessage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
