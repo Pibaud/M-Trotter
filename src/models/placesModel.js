@@ -201,8 +201,8 @@ exports.BestPlaces = async () => {
 exports.addRecPhoto = async (id_photo, id_user) => {
     try {
         const result = await pool.query(
-            `INSERT INTO goodimage (id_photo, id_user) VALUES ($1, $2) RETURNING *`,
-            [id_photo, id_user]
+            `INSERT INTO goodimage (id_image, id_user, vote_type) VALUES ($1, $2, $3) RETURNING *`,
+            [id_photo, id_user, 1]
         );
         return result.rows[0];
     } catch (error) {
