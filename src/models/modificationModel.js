@@ -11,7 +11,7 @@ exports.ajouterModification = async ({ osm_id, champ_modifie, ancienne_valeur, n
 
 exports.getLieuxProches = async (latitude, longitude, rayon = 100) => {
     const query = `
-        SELECT DISTINCT p.osm_id, p.name, ST_AsGeoJSON(p.way) AS geojson
+        SELECT DISTINCT p.osm_id, p.name, ST_AsGeoJSON(p.way) AS geojson, m.*
         FROM planet_osm_point p
         JOIN modifications m ON p.osm_id = m.osm_id
         WHERE m.etat = 'pending'

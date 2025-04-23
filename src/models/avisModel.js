@@ -40,6 +40,10 @@ exports.fetchAvisById = async (place_id, startid, user_id) => {
                     WHEN al.user_id IS NOT NULL THEN true 
                     ELSE false 
                 END AS user_has_liked
+                CASE 
+                    WHEN a.user_id = $3 THEN true 
+                    ELSE false
+                END AS user_is_author
          FROM avis a
          LEFT JOIN (
              SELECT avis_id, COUNT(*) AS like_count
