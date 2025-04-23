@@ -160,7 +160,7 @@ exports.likeAvis = async (req, res) => {
 
         let user_id;
         try {
-            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
             user_id = decodedToken.id;
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
@@ -190,7 +190,7 @@ exports.unlikeAvis = async (req, res) => {
 
         let user_id;
         try {
-            const decodedToken = jwt.verify(accesstoken, process.env.ACCESS_TOKEN_SECRET);
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
             user_id = decodedToken.id;
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
