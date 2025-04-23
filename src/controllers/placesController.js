@@ -131,7 +131,7 @@ exports.delRecPhoto = async (req, res) => {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
         }
         
-        const result = await delRecPhoto(id_photo); // Appel au service
+        const result = await delRecPhoto(id_photo, user_id); // Appel au service
         return res.status(200).json(result);
     } catch (error) {
         console.error("Erreur dans delRecPhoto :", error);
