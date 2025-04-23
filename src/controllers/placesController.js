@@ -105,6 +105,10 @@ exports.addRecPhoto = async (req, res) => {
         } catch (err) {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
         }
+
+        if (vote !== 1 && vote !== -1) {
+            return res.status(400).json({ error: "Vote doit être 1 ou -1." });
+        }
         
         const result = await addRecPhoto(id_photo, user_id, vote); // Appel au service
         return res.status(200).json(result);
