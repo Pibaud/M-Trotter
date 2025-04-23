@@ -1,4 +1,5 @@
 const favorisModel = require('../models/favorisModel');
+const { fetchImagesByPlaceId } = require('../services/uploadService');  // Ajout de cette importation
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -72,9 +73,26 @@ exports.getFavorites = async (req, res) => {
 
         const { rows } = await favorisModel.getFavorites(user_id);
 
-        console.log("rows", rows);
-
-        res.status(200).json(rows);
+        const placesWithPhotos = await Promise.all(rows.map(async (place) => {
+            try {
+                // Pour chaque lieu, récupérer ses photos
+                const photosResult = await fetchImagesByPlaceId(place.id.toString());
+                
+                // Ajouter les photos au lieu
+                return {
+                    ...place,
+                    photos: photosResult.photos || []
+                };
+            } catch (error) {
+                console.error(`Erreur lors de la récupération des photos pour le lieu ${place.id}:`, error);
+                // En cas d'erreur, retourner le lieu sans photos
+                return {
+                    ...place,
+                    photos: []
+                };
+            }
+        }));
+        res.status(200).json(placesWithPhotos);
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la récupération des favoris', message: error.message });
     }
