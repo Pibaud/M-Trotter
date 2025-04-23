@@ -39,7 +39,7 @@ exports.fetchAvisById = async (place_id, startid, user_id) => {
                 CASE 
                     WHEN al.user_id IS NOT NULL THEN true 
                     ELSE false 
-                END AS user_has_liked
+                END AS user_has_liked,
                 CASE 
                     WHEN a.user_id = $3 THEN true 
                     ELSE false
