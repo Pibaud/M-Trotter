@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:m_trotter/models/Place.dart';
 import '../services/ApiService.dart';
 import '../utils/GlobalData.dart';
@@ -277,6 +278,28 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
               ? buildEditablePhone() // Afficher un champ pour éditer en mode édition
               : Text(widget.place.tags['phone'] ?? 'Non spécifié'),
         ),
+      ListTile(
+        title: const Text('Horaires d\'ouverture'),
+        subtitle: isEditing
+            ? OpeningHoursEditor(
+          initialValue: widget.place.tags['opening_hours'],
+          onSaved: (newValue) {
+            updateTag('opening_hours', newValue);
+          },
+        )
+            : (widget.place.tags['opening_hours'] != null
+            ? Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: _parseOpeningHours(
+              widget.place.tags['opening_hours']!)
+              .map((entry) => Text(
+            '${entry['day']} : ${entry['hours']}',
+            style: const TextStyle(fontSize: 14),
+          ))
+              .toList(),
+        )
+            : const Text('Non spécifié')),
+      ),
     ];
   }
 
@@ -288,7 +311,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
           'addr:street',
           'addr:postcode',
           'addr:city',
-          'phone'
+          'phone',
+          'opening_hours',
         ].contains(entry.key))) {
       TextEditingController controller =
           TextEditingController(text: entry.value);
@@ -503,4 +527,419 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       ),
     );
   }
+  List<Map<String, String>> _parseOpeningHours(String openingHours) {
+    const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    final result = <Map<String, String>>[];
+
+    // Split the opening_hours string into individual segments
+    final segments = openingHours.split(';');
+    final dayHoursMap = <String, String>{};
+
+    for (final segment in segments) {
+      final regex = RegExp(r'([A-Za-z]{2})(?:-([A-Za-z]{2}))?\s([\d:, -]+|off)');
+      final match = regex.firstMatch(segment.trim());
+
+      if (match != null) {
+        final startDay = match.group(1);
+        final endDay = match.group(2);
+        final hours = match.group(3);
+
+        if (hours == 'off') {
+          if (endDay != null) {
+            final startIndex = days.indexOf(startDay!);
+            final endIndex = days.indexOf(endDay);
+
+            for (int i = startIndex; i <= endIndex; i++) {
+              dayHoursMap[days[i]] = 'fermé';
+            }
+          } else {
+            dayHoursMap[startDay!] = 'fermé';
+          }
+        } else {
+          if (endDay != null) {
+            final startIndex = days.indexOf(startDay!);
+            final endIndex = days.indexOf(endDay);
+
+            for (int i = startIndex; i <= endIndex; i++) {
+              dayHoursMap[days[i]] = hours!;
+            }
+          } else {
+            dayHoursMap[startDay!] = hours!;
+          }
+        }
+      } else {
+        print('No match for segment: $segment');
+      }
+    }
+
+    // Populate result for all days
+    for (final day in days) {
+      result.add({
+        'day': _dayToFrench(day),
+        'hours': dayHoursMap[day] ?? 'fermé',
+      });
+    }
+    return result;
+  }
+
+// Add this helper function to translate days to French
+  String _dayToFrench(String day) {
+    switch (day) {
+      case 'Mo':
+        return 'Lundi';
+      case 'Tu':
+        return 'Mardi';
+      case 'We':
+        return 'Mercredi';
+      case 'Th':
+        return 'Jeudi';
+      case 'Fr':
+        return 'Vendredi';
+      case 'Sa':
+        return 'Samedi';
+      case 'Su':
+        return 'Dimanche';
+      default:
+        return day;
+    }
+  }
+
+
+
+}
+class OpeningHoursEditor extends StatefulWidget {
+  final String? initialValue;
+  final Function(String) onSaved;
+
+  const OpeningHoursEditor({
+    Key? key,
+    this.initialValue,
+    required this.onSaved,
+  }) : super(key: key);
+
+  @override
+  _OpeningHoursEditorState createState() => _OpeningHoursEditorState();
+}
+
+class _OpeningHoursEditorState extends State<OpeningHoursEditor> {
+  final List<String> days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  final Map<String, List<TimeRange>> dayRanges = {};
+
+  final List<String> availableTimes = List.generate(48, (i) {
+    final hour = (i ~/ 2).toString().padLeft(2, '0');
+    final minute = (i % 2) * 30;
+    return '$hour:${minute.toString().padLeft(2, '0')}';
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    for (var day in days) {
+      dayRanges[day] = [];
+    }
+    if (widget.initialValue != null && widget.initialValue!.isNotEmpty) {
+      _parseExisting(widget.initialValue!);
+    }
+  }
+
+  void _parseExisting(String str) {
+    final segments = str.split(';');
+    final regex = RegExp(r'([A-Za-z]{2})(?:-([A-Za-z]{2}))?\s(.+)');
+
+    for (final segment in segments) {
+      if (segment.trim().isEmpty) continue;
+
+      final match = regex.firstMatch(segment.trim());
+      if (match != null) {
+        final startDay = match.group(1)!;
+        final endDay = match.group(2);
+        final hours = match.group(3)!;
+
+        final startIndex = days.indexOf(startDay);
+        final endIndex = endDay != null ? days.indexOf(endDay) : startIndex;
+
+        if (startIndex == -1 || endIndex == -1) continue;
+
+        final targetDays = days.sublist(startIndex, endIndex + 1);
+
+        for (final d in targetDays) {
+          if (hours == 'off') {
+            dayRanges[d] = [];
+          } else {
+            final ranges = hours.split(',');
+            dayRanges[d] = ranges.map((r) {
+              final times = r.split('-');
+              if (times.length != 2) return TimeRange('09:00', '18:00');
+              return TimeRange(times[0], times[1]);
+            }).toList();
+          }
+        }
+      }
+    }
+  }
+
+  void _addRange(String day) {
+    setState(() {
+      dayRanges[day]!.add(TimeRange('09:00', '18:00'));
+    });
+  }
+
+  void _removeRange(String day, int index) {
+    setState(() {
+      dayRanges[day]!.removeAt(index);
+    });
+  }
+
+  void _updateTime(String day, int index, String from, String to) {
+    setState(() {
+      dayRanges[day]![index] = TimeRange(from, to);
+    });
+  }
+
+  void _setDayClosed(String day) {
+    setState(() {
+      dayRanges[day]!.clear();
+    });
+  }
+
+  String _formatOpeningHours() {
+    final result = StringBuffer();
+
+    // Groupe les jours par horaires identiques
+    final Map<String, List<String>> scheduleGroups = {};
+
+    for (final day in days) {
+      final ranges = dayRanges[day]!;
+      String schedule = '';
+
+      if (ranges.isEmpty) {
+        schedule = 'off';
+      } else {
+        schedule = ranges
+            .where((r) => r.start.isNotEmpty && r.end.isNotEmpty)
+            .map((r) => '${r.start}-${r.end}')
+            .join(',');
+      }
+
+      if (!scheduleGroups.containsKey(schedule)) {
+        scheduleGroups[schedule] = [];
+      }
+      scheduleGroups[schedule]!.add(day);
+    }
+
+    // Format les horaires par groupe
+    final entries = scheduleGroups.entries.toList();
+    for (int i = 0; i < entries.length; i++) {
+      final schedule = entries[i].key;
+      final dayGroup = entries[i].value;
+
+      // Trouve les séquences de jours consécutifs
+      List<List<String>> sequences = [];
+      List<String>? currentSequence;
+
+      for (final day in days) {
+        if (dayGroup.contains(day)) {
+          if (currentSequence == null) {
+            currentSequence = [day];
+          } else {
+            currentSequence.add(day);
+          }
+        } else if (currentSequence != null) {
+          sequences.add(currentSequence);
+          currentSequence = null;
+        }
+      }
+
+      if (currentSequence != null) {
+        sequences.add(currentSequence);
+      }
+
+      // Format chaque séquence
+      for (int j = 0; j < sequences.length; j++) {
+        final seq = sequences[j];
+        if (seq.length > 1) {
+          result.write('${seq.first}-${seq.last} $schedule');
+        } else {
+          result.write('${seq.first} $schedule');
+        }
+
+        if (j < sequences.length - 1 || i < entries.length - 1) {
+          result.write('; ');
+        }
+      }
+    }
+
+    return result.toString();
+  }
+
+  void _save() {
+    final formattedHours = _formatOpeningHours();
+    widget.onSaved(formattedHours);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            ...days.map((day) {
+              final ranges = dayRanges[day]!;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _dayToFrench(day),
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (ranges.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.not_interested),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Fermé ce jour',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ...List.generate(ranges.length, (index) {
+                        return Card(
+                          margin: const EdgeInsets.only(top: 8, bottom: 8),
+                          color: Colors.grey.shade50,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    value: ranges[index].start,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Début',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        _updateTime(day, index, val, ranges[index].end);
+                                      }
+                                    },
+                                    items: availableTimes
+                                        .map((time) => DropdownMenuItem<String>(
+                                      value: time,
+                                      child: Text(time),
+                                    ))
+                                        .toList(),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    value: ranges[index].end,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Fin',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        _updateTime(day, index, ranges[index].start, val);
+                                      }
+                                    },
+                                    items: availableTimes
+                                        .map((time) => DropdownMenuItem<String>(
+                                      value: time,
+                                      child: Text(time),
+                                    ))
+                                        .toList(),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () => _removeRange(day, index),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _addRange(day),
+                              icon: const Icon(Icons.access_time),
+                              label: const Text('Ajouter une plage horaire'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _setDayClosed(day),
+                              icon: const Icon(Icons.do_not_disturb_on),
+                              label: const Text('Définir comme fermé'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.check),
+              label: const Text('Sauvegarder les horaires'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                textStyle: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _dayToFrench(String day) {
+    const map = {
+      'Mo': 'Lundi',
+      'Tu': 'Mardi',
+      'We': 'Mercredi',
+      'Th': 'Jeudi',
+      'Fr': 'Vendredi',
+      'Sa': 'Samedi',
+      'Su': 'Dimanche',
+    };
+    return map[day]!;
+  }
+}
+
+class TimeRange {
+  final String start;
+  final String end;
+
+  TimeRange(this.start, this.end);
 }
