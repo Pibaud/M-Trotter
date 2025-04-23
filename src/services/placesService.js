@@ -53,9 +53,9 @@ exports.addRecPhoto = async (id_photo, id_lieu, id_avis) => {
     }
 }
 
-exports.delRecPhoto = async (id_photo) => {
+exports.delRecPhoto = async (id_photo, id_user) => {
     try {
-        const result = await delRecPhoto(id_photo);
+        const result = await delRecPhoto(id_photo, id_user);
         return result;
     } catch (error) {
         console.error(error);
