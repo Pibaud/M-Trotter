@@ -634,7 +634,12 @@ class ApiService {
 
   Future<List<dynamic>> fetchReviewsByPlaceId(
       String placeId, int startId) async {
+    String? accessToken = await AuthService.getToken();
     final String url = '$baseUrl/api/getavis';
+
+    if (accessToken == null) {
+      throw Exception('Token non trouvé');
+    }
 
     try {
       final response = await http.post(
@@ -643,6 +648,7 @@ class ApiService {
         body: json.encode({
           'place_id': placeId,
           'startid': startId,
+          'accessToken': accessToken,
         }),
       );
 
@@ -910,4 +916,64 @@ class ApiService {
       throw Exception('Erreur lors de la requête : $e');
     }
   }
+
+  Future<void> likeAvis(String idAvis) async {
+    String? accessToken = await AuthService.getToken();
+    final String url = '$baseUrl/api/likeavis';
+    print(idAvis);
+
+    if (accessToken == null) {
+      throw Exception('Token non trouvé');
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'accessToken': accessToken,
+          'avis_id': idAvis,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print(' Avis liké avec succès');
+      } else {
+        print(' Erreur serveur : ${response.statusCode}');
+        throw Exception('Erreur lors du like de l\'avis');
+      }
+    } catch (e) {
+      print(' Erreur lors du like : $e');
+    }
+  }
+
+  Future<void> unlikeAvis(String idAvis) async {
+    String? accessToken = await AuthService.getToken();
+    final String url = '$baseUrl/api/unlikeavis';
+
+    if (accessToken == null) {
+      throw Exception('Token non trouvé');
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'accessToken': accessToken,
+          'avis_id': idAvis,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Like retiré avec succès');
+      } else {
+        print(' Erreur serveur : ${response.statusCode}');
+        throw Exception('Erreur lors du unlike de l\'avis');
+      }
+    } catch (e) {
+      print(' Erreur lors du unlike : $e');
+    }
+  }
+
 }

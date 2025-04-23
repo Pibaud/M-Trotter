@@ -264,18 +264,6 @@ class ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 5),
-
-              // Champ Âge (optionnel)
-              TextFormField(
-                controller: _ageController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Âge (optionnel)",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              const SizedBox(height: 20),
-
               ElevatedButton(
                 onPressed: _saveProfile,
                 child: const Text("Sauvegarder"),
