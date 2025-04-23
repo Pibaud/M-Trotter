@@ -90,10 +90,10 @@ exports.bestPlaces = async(req, res) => {
 exports.addRecPhoto = async (req, res) => {
     try {
         const { id_photo, accessToken} = req.body;
-        console.log("Appel à addRecPhoto avec les paramètres :", id_photo, id_lieu, id_avis);
+        console.log("Appel à addRecPhoto avec les paramètres :", id_photo, accessToken);
         
-        if (!id_photo) {
-            return res.status(400).json({ error: "id_photo et id_lieu requis." });
+        if (!id_photo || !accessToken) {
+            return res.status(400).json({ error: "id_photo et accessToken requis." });
         }
 
         let user_id;
@@ -117,8 +117,8 @@ exports.delRecPhoto = async (req, res) => {
         const { id_photo, accessToken } = req.body;
         console.log("Appel à delRecPhoto avec les paramètres :", id_photo);
         
-        if (!id_photo) {
-            return res.status(400).json({ error: "id_photo requis." });
+        if (!id_photo || !accessToken) {
+            return res.status(400).json({ error: "id_photo et accessToken requis." });
         }
 
         let user_id;
