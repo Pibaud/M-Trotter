@@ -104,7 +104,7 @@ const fetchImagesByPlaceId = async (placeId) => {
                     url: `/photo/${image.id_photo}.jpg`,
                     id_lieu: image.id_lieu,
                     id_avis: image.id_avis,
-                    vote_score: image.vote_score,
+                    vote_score: image.weighted_vote_score,
                 }
                 : null;
         }).filter(photo => photo !== null);
