@@ -214,7 +214,7 @@ exports.addRecPhoto = async (id_photo, id_user) => {
 exports.delRecPhoto = async (id_photo, id_user) => {
     try {
         const result = await pool.query(
-            `DELETE FROM goodimage WHERE id_photo = $1 AND id_user = $2 RETURNING *`,
+            `DELETE FROM goodimage WHERE id_image = $1 AND id_user = $2 RETURNING *`,
             [id_photo, id_user]
         );
         return result.rows[0];
