@@ -19,7 +19,8 @@ exports.getFavorites = async (userId) => {
                         ST_Y(ST_Centroid(ST_Collect(ST_Transform(p.way, 4326)))) AS latitude, 
                         STRING_AGG(p.tags::TEXT, '; ') AS tags, 
                         'point' AS type,
-                        AVG(a.nb_etoiles) AS avg_stars
+                        AVG(a.nb_etoiles) AS avg_stars,
+                        COUNT(a.nb_etoiles) AS nb_avis_stars
                     FROM favoris f
                     JOIN planet_osm_point p ON f.osm_id = p.osm_id
                     LEFT JOIN avis a ON p.osm_id = a.place_id

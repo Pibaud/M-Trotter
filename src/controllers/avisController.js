@@ -6,13 +6,21 @@ require('dotenv').config();
 
 exports.getAvisByPlaceId = async (req, res) => {
     try {
-        const { place_id, startid } = req.body; // On récupère place_id dans le corps de la requête
+        const { place_id, startid, accessToken} = req.body; // On récupère place_id dans le corps de la requête
 
-        if (!place_id) {
+        if (!place_id || !accessToken) {
             return res.status(400).json({ error: 'place_id est requis.' });
         }
 
-        const avis = await fetchAvisById(place_id, startid || 0);
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
+
+        const avis = await fetchAvisById(place_id, startid || 0, user_id);
 
         if (!avis || avis.length === 0) {
             return res.status(200).json({avis: []});

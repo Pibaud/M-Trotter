@@ -31,11 +31,15 @@ exports.fetchAvisbyUser = async (user_id) => {
     return avisList.length > 0 ? avisList : null;
 };
 
-exports.fetchAvisById = async (place_id, startid) => {
+exports.fetchAvisById = async (place_id, startid, user_id) => {
     const result = await pool.query(
         `SELECT a.*, 
                 COALESCE(l.like_count, 0) AS like_count,
-                json_agg(p.id_photo) AS photos
+                json_agg(p.id_photo) AS photos,
+                CASE 
+                    WHEN al.user_id IS NOT NULL THEN true 
+                    ELSE false 
+                END AS user_has_liked
          FROM avis a
          LEFT JOIN (
              SELECT avis_id, COUNT(*) AS like_count
@@ -43,16 +47,16 @@ exports.fetchAvisById = async (place_id, startid) => {
              GROUP BY avis_id
          ) l ON a.avis_id = l.avis_id
          LEFT JOIN photos p ON a.avis_id = p.id_avis
+         LEFT JOIN avis_likes al ON a.avis_id = al.avis_id AND al.user_id = $3
          WHERE a.place_id = $1
          AND a.avis_id > $2
-         GROUP BY a.avis_id, l.like_count
+         GROUP BY a.avis_id, l.like_count, al.user_id
          LIMIT 10`,
-        [place_id, startid]
+        [place_id, startid, user_id]
     );
 
     return result.rows.length > 0 ? result.rows : null;
 };
-
 
 exports.deleteAvisById = async (avis_id, user_id) => {
     const result = await pool.query(
