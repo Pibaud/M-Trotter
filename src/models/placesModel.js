@@ -162,18 +162,30 @@ exports.AmenityPlaces = async (amenity, startid) => {
 exports.BestPlaces = async () => {
     try {
         const result = await pool.query(
-            `SELECT p.osm_id as id, p.name, p.amenity, p."addr:housenumber", 
-                    ST_X(ST_Transform(p.way, 4326)) AS lon, 
-                    ST_Y(ST_Transform(p.way, 4326)) AS lat,
-                    STRING_AGG(p.tags::TEXT, '; ') AS tags,
-                    AVG(a.nb_etoiles) AS avg_stars,
-                    COUNT(a.nb_etoiles) AS nb_avis_stars
-            FROM planet_osm_point p
-            LEFT JOIN avis a ON p.osm_id = a.place_id
-            WHERE p.name IS NOT NULL
-            GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
-            HAVING COUNT(a.nb_etoiles) > 0
-            ORDER BY nb_avis_stars DESC, avg_stars DESC
+            `SELECT 
+                p.osm_id AS id, 
+                p.name, 
+                p.amenity, 
+                p."addr:housenumber", 
+                ST_X(ST_Transform(p.way, 4326)) AS lon, 
+                ST_Y(ST_Transform(p.way, 4326)) AS lat,
+                STRING_AGG(p.tags::TEXT, '; ') AS tags,
+                AVG(a.nb_etoiles) AS avg_stars,
+                COUNT(a.nb_etoiles) AS nb_avis_stars,
+                -- Calcul du score pondéré
+                (AVG(a.nb_etoiles) * 0.7 + COUNT(a.nb_etoiles) * 0.3) AS score
+            FROM 
+                planet_osm_point p
+            LEFT JOIN 
+                avis a ON p.osm_id = a.place_id
+            WHERE 
+                p.name IS NOT NULL
+            GROUP BY 
+                p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
+            HAVING 
+                COUNT(a.nb_etoiles) > 0
+            ORDER BY 
+                score DESC
             LIMIT 10`
         );
 
