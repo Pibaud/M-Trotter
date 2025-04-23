@@ -86,9 +86,9 @@ class MyAppWrapper extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    if (prefs.getString('search_history') == null) {
+    /*if (prefs.getString('search_history') == null) {
       await prefs.setString('search_history', jsonEncode([]));
-    }
+    }*/
     return {'isFirstLaunch': isFirstLaunch, 'isLoggedIn': isLoggedIn};
   }
 }

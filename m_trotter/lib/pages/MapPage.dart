@@ -131,7 +131,7 @@ class _MapPageState extends State<MapPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPlacesBbox(_mapController.camera.visibleBounds);
     });
-    _loadSearchHistory();
+    //_loadSearchHistory();
   }
 
   Future<void> _loadAmenitiesData() async {
@@ -226,7 +226,7 @@ class _MapPageState extends State<MapPage> {
       }
     });
   }
-
+/*
   void _loadSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     String? historyJson = prefs.getString('search_history');
@@ -241,7 +241,7 @@ class _MapPageState extends State<MapPage> {
       });
     }
   }
-
+*/
   void _onSuggestionTap(Place place) async {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
     _controller.text =
@@ -281,11 +281,11 @@ class _MapPageState extends State<MapPage> {
     }
     final prefs = await SharedPreferences.getInstance();
     String? historyJson = prefs.getString('search_history');
-    historyJson.removeWhere((existingPlace) => existingPlace.id == place.id);
+    /*historyJson.removeWhere((existingPlace) => existingPlace.id == place.id);
     historyJson.insert(0, place);
     if (historyJson.length > 5) {
       historyJson.removeLast();
-    }
+    }*/
   }
 
   void _onMarkerTap(Place place) {
@@ -709,7 +709,7 @@ class _MapPageState extends State<MapPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Affichage des amenities
-                        if (_searchHistory.isNotEmpty)
+                        /*if (_searchHistory.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
@@ -732,7 +732,7 @@ class _MapPageState extends State<MapPage> {
                                 );
                               },
                             ),
-                          ),
+                          ),*/
                         if (suggestedAmenities.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
