@@ -1,6 +1,8 @@
 const e = require('express');
 const { LPlaces, bboxPlaces, amenitylist, bestPlaces, addRecPhoto, delRecPhoto } = require('../services/placesService');
 const { fetchImagesByPlaceId } = require('../services/uploadService');  // Ajout de cette importation
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 const { user } = require('pg/lib/defaults');
 
 exports.postPlaces = async (req, res) => {
