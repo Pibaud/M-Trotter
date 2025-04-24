@@ -105,7 +105,7 @@ exports.likeAvisById = async (avis_id, user_id) => {
 exports.updateAvis = async (avis_id, user_id, lavis, nb_etoile) => {
     const result = await pool.query(
         `UPDATE avis
-            SET lavis = $3, nb_etoile = $4, created_at = NOW()
+            SET lavis = $3, nb_etoiles = $4, created_at = NOW()
             WHERE avis_id = $1 AND user_id = $2
             RETURNING *`,
         [avis_id, user_id, lavis, nb_etoile]
