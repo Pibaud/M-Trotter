@@ -89,7 +89,7 @@ exports.postAvis = async (req, res) => {
             return res.status(400).json({ error: 'Les avis principaux doivent contenir une note entre 1 et 5 étoiles.' });
         }
 
-        if ((avis_parent && !nb_etoile)) {
+        if ((avis_parent && nb_etoile)) {
             return res.status(400).json({ error: 'Une réponse à un avis ne doit pas contenir de note.' });
         }
 
