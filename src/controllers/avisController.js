@@ -146,7 +146,7 @@ exports.deleteAvis = async (req, res) => {
 
         // Appel du modèle pour supprimer l'avis
         try {
-        const deletedAvis = await deleteAvisById(avis_id, user_id);
+            const deletedAvis = await deleteAvisById(avis_id, user_id);
         } catch (error) {
             console.error('Erreur lors de la suppression de l\'avis:', error);
             return res.status(406).json({ error });
