@@ -9,7 +9,7 @@ const calculerValeurUtilisateur = (fiabilite) => {
 };
 
 const getLieuxProposes = async (type) => {
-    const table = type === 'ajout' ? 'lieux_propose' : 'demande_suppressions';
+    const table = type === 'ajout' ? 'lieux_proposes' : 'demandes_suppression';
     const result = await db.query(`
         SELECT id_lieu, propose_par 
         FROM ${table} 
@@ -30,12 +30,12 @@ const getVotes = async (id_lieu, type) => {
 };
 
 const updateEtat = async (type, id_lieu, etat) => {
-    const table = type === 'ajout' ? 'lieux_propose' : 'demande_suppressions';
+    const table = type === 'ajout' ? 'lieux_proposes' : 'demandes_suppression';
     await db.query(`UPDATE ${table} SET etat = $1 WHERE id_lieu = $2`, [etat, id_lieu]);
 };
 
 const getUserAndLieu = async (id_lieu, type) => {
-    const table = type === 'ajout' ? 'lieux_propose' : 'demande_suppressions';
+    const table = type === 'ajout' ? 'lieux_proposes' : 'demandes_suppression';
     const result = await db.query(`
         SELECT u.email, l.nom AS nomlieu 
         FROM users u 
