@@ -678,8 +678,44 @@ class ApiService {
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
+          'accessToken': token,
+          'avis_id': reviewId,
+        }),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return {'success': true, 'data': responseData};
+      } else {
+        return {
+          'success': false,
+          'error': responseData['error'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      print('Erreur lors de la requête : $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> modifReview(String reviewId, String comment, int etoiles) async {
+    final String url = '$baseUrl/api/modifavis';
+    final String? token = await AuthService.getToken();
+
+    if (token == null) {
+      return {'success': false, 'error': 'Token non trouvé'};
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
           'accesstoken': token,
           'avis_id': reviewId,
+          'avis': comment,
+          'nb_etoile': etoiles,
+
         }),
       );
 
