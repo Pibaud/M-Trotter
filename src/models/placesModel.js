@@ -237,3 +237,20 @@ exports.alreadyRecPhoto = async (id_photo, user_id) => {
     }
 }
 
+exports.addOrUpdateRecPhoto = async (id_photo, id_user, vote) => {
+    try {
+        const result = await pool.query(
+            `INSERT INTO goodimage (id_image, id_user, vote_type)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (id_image, id_user)
+             DO UPDATE SET vote_type = $3
+             RETURNING *`,
+            [id_photo, id_user, vote]
+        );
+        return result.rows[0];
+    } catch (error) {
+        console.error("Erreur lors de l'ajout ou de la mise à jour de la photo :", error);
+        throw { error: "Erreur interne du serveur." };
+    }
+};
+
