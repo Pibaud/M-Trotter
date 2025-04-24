@@ -61,7 +61,7 @@ exports.fetchAvisById = async (place_id, startid, user_id) => {
          AND a.avis_id > $2
          GROUP BY a.avis_id, l.like_count, al.user_id
          ORDER BY user_is_author DESC, like_count DESC, a.created_at ASC
-         LIMIT 10`,
+         LIMIT 50`,
         [place_id, startid, user_id]
     );
 
