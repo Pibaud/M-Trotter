@@ -96,7 +96,6 @@ class _MapPageState extends State<MapPage> {
     _apiService = ApiService(); // requêtes
     _routes = {};
     _showingAllAmenities = false; // Add this state variable
-    GlobalData.loadAmenities(); // Load amenities from GlobalData
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();

@@ -170,17 +170,52 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                   const Text('Ajouter un nouveau tag',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold)),
-                                  TextField(
-                                    controller: newTagKeyController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Nom du tag',
-                                      border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 10),
-                                    ),
+                                  Autocomplete<String>(
+                                    optionsBuilder:
+                                        (TextEditingValue textEditingValue) {
+                                      if (textEditingValue.text.isEmpty) {
+                                        return const Iterable<String>.empty();
+                                      }
+                                      return GlobalData.tags.keys
+                                          .where((String option) {
+                                        return option.toLowerCase().contains(
+                                            textEditingValue.text
+                                                .toLowerCase());
+                                      }).take(5); // Limite à 5 suggestions
+                                    },
+                                    onSelected: (String selection) {
+                                      // Quand une suggestion est sélectionnée, on remplit les champs
+                                      newTagKeyController.text = selection;
+                                      // On prérempli avec la valeur suggérée par défaut si disponible
+                                      newTagValueController.text = '';
+                                    },
+                                    fieldViewBuilder: (context,
+                                        textEditingController,
+                                        focusNode,
+                                        onFieldSubmitted) {
+                                      // On met à jour notre controller externe pour l'accès en dehors du widget
+                                      newTagKeyController =
+                                          textEditingController;
+
+                                      return TextField(
+                                        controller: textEditingController,
+                                        focusNode: focusNode,
+                                        decoration: InputDecoration(
+                                          labelText: 'Rechercher un tag',
+                                          hintText:
+                                              'Commencez à taper pour voir les suggestions',
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 10, vertical: 10),
+                                          suffixIcon: const Icon(Icons.search),
+                                        ),
+                                        onSubmitted: (_) => onFieldSubmitted(),
+                                      );
+                                    },
                                   ),
                                   const SizedBox(height: 8),
                                   TextField(
@@ -195,11 +230,11 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                           horizontal: 10, vertical: 10),
                                     ),
                                     onSubmitted: (_) {
-                                      final key =
-                                          newTagKeyController.text.trim();
+                                      final key = GlobalData.tags[
+                                          newTagKeyController.text.trim()];
                                       final value =
                                           newTagValueController.text.trim();
-                                      if (key.isNotEmpty && value.isNotEmpty) {
+                                      if (key!.isNotEmpty && value.isNotEmpty) {
                                         updateTag(key, value);
                                         newTagKeyController.clear();
                                         newTagValueController.clear();
@@ -282,23 +317,23 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         title: const Text('Horaires d\'ouverture'),
         subtitle: isEditing
             ? OpeningHoursEditor(
-          initialValue: widget.place.tags['opening_hours'],
-          onSaved: (newValue) {
-            updateTag('opening_hours', newValue);
-          },
-        )
+                initialValue: widget.place.tags['opening_hours'],
+                onSaved: (newValue) {
+                  updateTag('opening_hours', newValue);
+                },
+              )
             : (widget.place.tags['opening_hours'] != null
-            ? Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _parseOpeningHours(
-              widget.place.tags['opening_hours']!)
-              .map((entry) => Text(
-            '${entry['day']} : ${entry['hours']}',
-            style: const TextStyle(fontSize: 14),
-          ))
-              .toList(),
-        )
-            : const Text('Non spécifié')),
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children:
+                        _parseOpeningHours(widget.place.tags['opening_hours']!)
+                            .map((entry) => Text(
+                                  '${entry['day']} : ${entry['hours']}',
+                                  style: const TextStyle(fontSize: 14),
+                                ))
+                            .toList(),
+                  )
+                : const Text('Non spécifié')),
       ),
     ];
   }
@@ -314,11 +349,13 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
           'phone',
           'opening_hours',
         ].contains(entry.key))) {
+      // Fix the null check issue by providing a default value
+      String title = GlobalData.getTagKey(entry.key);
       TextEditingController controller =
           TextEditingController(text: entry.value);
 
       widgets.add(ListTile(
-        title: Text(entry.key),
+        title: Text(title),
         subtitle: isEditing
             ? TextField(
                 controller: controller,
@@ -527,6 +564,7 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
       ),
     );
   }
+
   List<Map<String, String>> _parseOpeningHours(String openingHours) {
     const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
     final result = <Map<String, String>>[];
@@ -536,7 +574,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
     final dayHoursMap = <String, String>{};
 
     for (final segment in segments) {
-      final regex = RegExp(r'([A-Za-z]{2})(?:-([A-Za-z]{2}))?\s([\d:, -]+|off)');
+      final regex =
+          RegExp(r'([A-Za-z]{2})(?:-([A-Za-z]{2}))?\s([\d:, -]+|off)');
       final match = regex.firstMatch(segment.trim());
 
       if (match != null) {
@@ -603,10 +642,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
         return day;
     }
   }
-
-
-
 }
+
 class OpeningHoursEditor extends StatefulWidget {
   final String? initialValue;
   final Function(String) onSaved;
@@ -798,9 +835,7 @@ class _OpeningHoursEditorState extends State<OpeningHoursEditor> {
                       Text(
                         _dayToFrench(day),
                         style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold
-                        ),
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       if (ranges.isEmpty)
@@ -837,14 +872,15 @@ class _OpeningHoursEditorState extends State<OpeningHoursEditor> {
                                     ),
                                     onChanged: (val) {
                                       if (val != null) {
-                                        _updateTime(day, index, val, ranges[index].end);
+                                        _updateTime(
+                                            day, index, val, ranges[index].end);
                                       }
                                     },
                                     items: availableTimes
                                         .map((time) => DropdownMenuItem<String>(
-                                      value: time,
-                                      child: Text(time),
-                                    ))
+                                              value: time,
+                                              child: Text(time),
+                                            ))
                                         .toList(),
                                   ),
                                 ),
@@ -858,14 +894,15 @@ class _OpeningHoursEditorState extends State<OpeningHoursEditor> {
                                     ),
                                     onChanged: (val) {
                                       if (val != null) {
-                                        _updateTime(day, index, ranges[index].start, val);
+                                        _updateTime(day, index,
+                                            ranges[index].start, val);
                                       }
                                     },
                                     items: availableTimes
                                         .map((time) => DropdownMenuItem<String>(
-                                      value: time,
-                                      child: Text(time),
-                                    ))
+                                              value: time,
+                                              child: Text(time),
+                                            ))
                                         .toList(),
                                   ),
                                 ),
@@ -913,7 +950,8 @@ class _OpeningHoursEditorState extends State<OpeningHoursEditor> {
               icon: const Icon(Icons.check),
               label: const Text('Sauvegarder les horaires'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 textStyle: const TextStyle(fontSize: 16),
               ),
             ),

@@ -54,6 +54,7 @@ class MyAppState extends State<MyApp> {
   Future<void> _initializeApp() async {
     // Charger les amenities globalement
     await GlobalData.loadAmenities();
+    await GlobalData.loadTags();
 
     _pages = [
       HomePage(onTabChange: _onItemTapped),

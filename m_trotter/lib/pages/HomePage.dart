@@ -291,7 +291,7 @@ class HomePageState extends State<HomePage> {
             Flexible(
               flex: 1,
               child: _buildPlaceSection(
-                  "Populaires en ce moment", bestPlaces, "loading"),
+                  "Populaires", bestPlaces, "loading"),
             ),
           ],
         ),

@@ -534,8 +534,10 @@ class ApiService {
           return Future.wait(responseData.map<Future<Photo>>((data) async {
             final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
             return Photo(
+              id: int.parse(data['id']),
               imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
               tag: data['tag'] != null ? data['tag'] as String : null,
+              idAvis: data['id_avis'] != null ? data['id_avis'] as int : null,
             );
           }).toList());
         } else {
@@ -976,4 +978,51 @@ class ApiService {
     }
   }
 
+  Future<void> voteForImage(int imageId, int voteType) async {
+    try {
+      final String? token = await AuthService.getToken();
+      final String url = '$baseUrl/api/addRecPhoto';
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'accessToken': token,
+          'id_photo': imageId,
+          'vote': voteType,
+        }),
+      );
+      if (response.statusCode == 200) {
+        print('Vote enregistré avec succès');
+      } else {
+        throw Exception('Erreur serveur : ${response.statusCode}');
+      }
+    } catch (e) {
+      logger.e('Error voting for image: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getPhotoVote(int photoId) async {
+    try {
+      final token = await AuthService.getToken();
+      print("paramètres du body : accessToken = $token, id_photo = $photoId");
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/delRecPhoto'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'accessToken': token,
+          'id_photo': photoId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Failed to get photo vote: ${response.statusCode}');
+        return {'success': false, 'error': 'Failed to get photo vote'};
+      }
+    } catch (e) {
+      print('Exception when getting photo vote: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
 }
