@@ -44,7 +44,7 @@ app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
-cron.schedule('0 2 * * *', () => {
+cron.schedule('0 15 * * *', () => {
     console.log('⏳ Exécution de la vérification des modifications...');
     verifierModifications();
     console.log('✅ Vérification des modifications terminée.');
@@ -53,7 +53,7 @@ cron.schedule('0 2 * * *', () => {
     console.log('✅ Vérification des ajouts et suppressions terminée.');
 });
 
-cron.schedule('0 7 * * *', () => {
+cron.schedule('0 16 * * *', () => {
     console.log('⏳ Envoi du rapport quotidien...');
     rapport.envoieRapport();
     console.log('✅ Rapport quotidien envoyé.');

@@ -1,7 +1,8 @@
 const { user } = require('pg/lib/defaults');
-const { newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike, fetchAvisbyUser } = require('../models/avisModel');
+const { newavis, fetchAvisById, deleteAvisById, likeAvisById, deletelike, fetchAvisbyUser, updateAvis, updatereponses } = require('../models/avisModel');
 const uploadService = require('../services/uploadService');
 const jwt = require('jsonwebtoken');
+const e = require('express');
 require('dotenv').config();
 
 exports.getAvisByPlaceId = async (req, res) => {
@@ -219,6 +220,49 @@ exports.unlikeAvis = async (req, res) => {
         res.status(200).json({ message: 'Like supprimé avec succès.' });
     } catch (error) {
         console.error('Erreur lors de la suppression d\'un like:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+}
+
+exports.updateAvis = async (req, res) => {
+    try {
+        const { avis_id, accessToken, lavis, nb_etoile, avis_parent } = req.body; // Récupère l'ID de l'avis et l'ID de l'utilisateur dans le corps de la requête
+
+        if (!avis_id || !accessToken || !lavis) {
+            return res.status(400).json({ error: 'avis_id et accessToken et lavis sont requis.' });
+        }
+
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
+
+        // Vérification de la valeur de nb_etoile
+        if (nb_etoile && (nb_etoile < 1 || nb_etoile > 5)) {
+            return res.status(400).json({ error: 'La note doit être comprise entre 1 et 5 étoiles.' });
+        }
+
+        if (avis_parent && nb_etoile) {
+            return res.status(400).json({ error: 'Une réponse à un avis ne doit pas contenir de note.' });
+        }
+        
+        if (avis_parent) {
+            updatedAvis = await updatereponses(avis_id, user_id, lavis, avis_parent);
+        }
+        else {
+            updatedAvis = await updateAvis(avis_id, user_id, lavis, nb_etoile);
+        }
+
+        if (!updatedAvis) {
+            return res.status(404).json({ error: 'Avis non trouvé.' });
+        }
+
+        res.status(200).json({ message: 'Avis mis à jour avec succès.', avis: updatedAvis });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'avis:', error);
         res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 }
