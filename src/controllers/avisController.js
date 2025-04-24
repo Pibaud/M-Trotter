@@ -148,7 +148,7 @@ exports.deleteAvis = async (req, res) => {
         try {
             const deletedAvis = await deleteAvisById(avis_id, user_id);
         } catch (error) {
-            console.error('Erreur lors de la suppression de l\'avis:', error);
+            console.error('Erreur lors de la suppression de l\'avis erreur 406:', error);
             return res.status(406).json({ error });
         }
 
