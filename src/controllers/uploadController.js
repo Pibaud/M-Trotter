@@ -1,5 +1,7 @@
 const { user } = require('pg/lib/defaults');
 const uploadService = require('../services/uploadService');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const uploadImage = async (req, res) => {
     console.log("Requête reçue :", req.body);  // 🔍 Vérifier ce qui arrive
