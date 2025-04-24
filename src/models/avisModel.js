@@ -1,12 +1,17 @@
 const pool = require('../config/db');
 
 exports.newavis =  async ({ user_id, place_id, place_table, lavis, avis_parent, nb_etoile}) => {
-    const result = await pool.query(
-        `INSERT INTO avis (user_id, place_id, place_table, lavis, created_at, avis_parent, nb_etoiles) 
-         VALUES ($1, $2, $3, $4, NOW(), $5, $6) RETURNING *`,
-        [user_id, place_id, place_table, lavis, avis_parent, nb_etoile]
-    );
-    return result.rows[0];
+    try {
+        const result = await pool.query(
+            `INSERT INTO avis (user_id, place_id, place_table, lavis, created_at, avis_parent, nb_etoiles) 
+            VALUES ($1, $2, $3, $4, NOW(), $5, $6) RETURNING *`,
+            [user_id, place_id, place_table, lavis, avis_parent, nb_etoile]
+        );
+        return result.rows[0];
+    }catch (error) {
+        console.error('❌ Erreur lors de l\'ajout d\'un avis :', error);
+        throw new Error('Impossible d\'ajouter l\'avis dans la base de données, sans doute un erreur d\'utilisateur qui a déjà posté un avis sur ce lieu.');
+    }
 };
 
 exports.fetchAvisbyUser = async (user_id) => {

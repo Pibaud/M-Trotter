@@ -123,7 +123,7 @@ exports.postAvis = async (req, res) => {
         res.status(201).json({ success: true, message: 'Avis ajouté avec succès', avis: nouvelAvis, Image: resphoto });
     } catch (error) {
         console.error('Erreur lors de l\'ajout d\'un avis:', error);
-        res.status(500).json({ success: false, error: 'Erreur interne du serveur' });
+        res.status(500).json({ success: false, error: 'Erreur interne du serveur : ' + error });
     }
 };
 
