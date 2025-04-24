@@ -120,6 +120,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   List<Photo> photos = [];
   final ApiService _apiService = ApiService();
   bool showOpeningHours = false; // State to toggle opening hours visibility
+  bool hasAlreadyPostedReview = false;
 
   final TextEditingController _reviewController = TextEditingController();
 
@@ -213,8 +214,12 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
           response.map((e) => Review.fromJson(e)).toList();
 
       // Pour chaque avis, récupérez les informations de profil
+      bool alreadyPosted = false;
       for (var review in newReviews) {
         var userId = review.userId;
+        if (review.user_is_author == true && review.parentId == null) {
+          alreadyPosted = true;
+        }
         if (userId.isNotEmpty) {
           var profileData = await apiService.getProfile(userId: userId);
 
@@ -227,6 +232,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
 
       setState(() {
         reviews = newReviews;
+        hasAlreadyPostedReview = alreadyPosted;
       });
     } catch (e) {
       print('Erreur lors de la récupération des avis : $e');
@@ -1054,7 +1060,11 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                         onPressed: newReviewText.isEmpty
                             ? null
                             : () {
-                                if (newReviewRating == 0) {
+                                if(hasAlreadyPostedReview == true){
+                                  setState(() => ratingError =
+                                  "Vous ne pouvez pas poster plusieurs avis.");
+                                }
+                                else if (newReviewRating == 0) {
                                   setState(() => ratingError =
                                       "Veuillez attribuer au moins une étoile.");
                                 } else {
