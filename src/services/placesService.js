@@ -1,4 +1,4 @@
-const { ListePlaces, BoxPlaces, AmenityPlaces, BestPlaces, addRecPhoto, delRecPhoto } = require('../models/placesModel');
+const { ListePlaces, BoxPlaces, AmenityPlaces, BestPlaces, addRecPhoto, delRecPhoto, alreadyRecPhoto } = require('../models/placesModel');
 
 // GET pour récupérer des lieux
 exports.LPlaces = async (req, res) => {
@@ -56,6 +56,16 @@ exports.addRecPhoto = async (id_photo, id_user, vote) => {
 exports.delRecPhoto = async (id_photo, id_user) => {
     try {
         const result = await delRecPhoto(id_photo, id_user);
+        return result;
+    } catch (error) {
+        console.error(error);
+        throw error; // Propager l'erreur pour la gestion ultérieure
+    }
+}
+
+exports.alreadyRecPhoto = async (id_photo, user_id) => {
+    try {
+        const result = await alreadyRecPhoto(id_photo, user_id);
         return result;
     } catch (error) {
         console.error(error);

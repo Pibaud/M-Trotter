@@ -224,3 +224,16 @@ exports.delRecPhoto = async (id_photo, id_user) => {
     }
 }
 
+exports.alreadyRecPhoto = async (id_photo, user_id) => {
+    try {
+        const result = await pool.query(
+            `SELECT * FROM goodimage WHERE id_image = $1 AND id_user = $2`,
+            [id_photo, user_id]
+        );
+        return result.rows.length > 0;
+    } catch (error) {
+        console.error("Erreur lors de la vérification de la photo :", error);
+        throw { error: "Erreur interne du serveur." };
+    }
+}
+

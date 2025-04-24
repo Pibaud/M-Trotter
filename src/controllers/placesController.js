@@ -1,5 +1,5 @@
 const e = require('express');
-const { LPlaces, bboxPlaces, amenitylist, bestPlaces, addRecPhoto, delRecPhoto } = require('../services/placesService');
+const { LPlaces, bboxPlaces, amenitylist, bestPlaces, addRecPhoto, delRecPhoto, alreadyRecPhoto } = require('../services/placesService');
 const { fetchImagesByPlaceId } = require('../services/uploadService');  // Ajout de cette importation
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
@@ -139,6 +139,31 @@ exports.delRecPhoto = async (req, res) => {
         return res.status(200).json(result);
     } catch (error) {
         console.error("Erreur dans delRecPhoto :", error);
+        return res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}
+
+exports.alreadyRecPhoto = async (req, res) => {
+    try {
+        const { id_photo, accessToken } = req.body;
+        console.log("Appel à alreadyRecPhoto avec les paramètres :", id_photo);
+        
+        if (!id_photo || !accessToken) {
+            return res.status(400).json({ error: "id_photo et accessToken requis." });
+        }
+
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
+        
+        const result = await alreadyRecPhoto(id_photo, user_id); // Appel au service
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("Erreur dans alreadyRecPhoto :", error);
         return res.status(500).json({ message: "Erreur interne du serveur." });
     }
 }

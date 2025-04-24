@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { postPlaces, bboxPlaces, amenitylist, bestPlaces, addRecPhoto, delRecPhoto} = require('../controllers/placesController');
+const { postPlaces, bboxPlaces, amenitylist, bestPlaces, addRecPhoto, delRecPhoto, alreadyRecPhoto} = require('../controllers/placesController');
 
 // POST pour envoyer des données
 router.post('/places/', postPlaces);
@@ -14,5 +14,7 @@ router.post('/bestplaces/',bestPlaces);
 router.post('/addRecPhoto', addRecPhoto);
 
 router.post('/delRecPhoto', delRecPhoto);
+
+router.post('/alreadyRecPhoto', alreadyRecPhoto);
 
 module.exports = router;

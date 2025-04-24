@@ -29,7 +29,7 @@ exports.getAvisByPlaceId = async (req, res) => {
         res.status(200).json({ avis });
     } catch (error) {
         console.error('Erreur lors de la récupération des avis:', error);
-        res.status(500).json({ error: 'Erreur interne du serveur' });
+        res.status(500).json({ error: 'Erreur interne du serveur : '+ error  });
     }
 };
 
