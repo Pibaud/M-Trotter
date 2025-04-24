@@ -60,6 +60,12 @@ const verifierModifications = async () => {
                     <p>Nous vous remercions pour tous les efforts que vous faites pour continuer à rendre l'application toujours plus optimale. Vous pouvez être fier.</p>`;
 
                 await sendEmail(email, subject, text, html);
+
+                await db.query(`
+                    UPDATE planet_osm_point
+                    SET column_name = new_value
+                    WHERE id = (SELECT id_lieu FROM modifications WHERE id_modification = $1)
+                `, [id_modification]);
             } else {
                 const subject = "Demande de modification lieux M'trotter";
 

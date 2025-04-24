@@ -11,7 +11,7 @@ const calculerValeurUtilisateur = (fiabilite) => {
 const getLieuxProposes = async (type) => {
     const table = type === 'ajout' ? 'lieux_proposes' : 'demandes_suppression';
     const result = await db.query(`
-        SELECT id_lieu, propose_par 
+        SELECT osm_id, propose_par 
         FROM ${table} 
         WHERE etat = 'pending' 
         AND date_ajout <= NOW() - INTERVAL '7 days'
@@ -24,14 +24,14 @@ const getVotes = async (id_lieu, type) => {
         SELECT v.vote, u.fiabilite 
         FROM validation_${type} v
         JOIN users u ON v.id_utilisateur = u.id
-        WHERE v.id_lieu = $1
+        WHERE v.osm_id = $1
     `, [id_lieu]);
     return result.rows;
 };
 
 const updateEtat = async (type, id_lieu, etat) => {
     const table = type === 'ajout' ? 'lieux_proposes' : 'demandes_suppression';
-    await db.query(`UPDATE ${table} SET etat = $1 WHERE id_lieu = $2`, [etat, id_lieu]);
+    await db.query(`UPDATE ${table} SET etat = $1 WHERE osm_id = $2`, [etat, id_lieu]);
 };
 
 const getUserAndLieu = async (id_lieu, type) => {
@@ -40,7 +40,7 @@ const getUserAndLieu = async (id_lieu, type) => {
         SELECT u.email, l.nom AS nomlieu 
         FROM users u 
         JOIN ${table} l ON u.id = l.propose_par 
-        WHERE l.id_lieu = $1
+        WHERE l.osm_id = $1
     `, [id_lieu]);
     return result.rows[0];
 };
