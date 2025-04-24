@@ -82,12 +82,12 @@ const processAndUploadImage = async (filePath, id_lieu, id_avis = null) => {
 };
 
 // Récupérer toutes les images associées à un lieu depuis la BDD
-const fetchImagesByPlaceId = async (placeId) => {
+const fetchImagesByPlaceId = async (placeId, user_id) => {
     try {
         console.log(`📸 Récupération des images pour le lieu ${placeId}...`);
 
         // Utiliser le modèle pour récupérer les images
-        const images = await uploadModel.getImagesByPlaceId(placeId);
+        const images = await uploadModel.getImagesByPlaceId(placeId, user_id);
         console.log('Images récupérées de la BDD :', images);
 
         if (!images || images.length === 0) {
@@ -105,6 +105,7 @@ const fetchImagesByPlaceId = async (placeId) => {
                     id_lieu: image.id_lieu,
                     id_avis: image.id_avis,
                     vote_score: image.weighted_vote_score,
+                    already_voted: image.user_has_voted,
                 }
                 : null;
         }).filter(photo => photo !== null);

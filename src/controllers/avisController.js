@@ -89,7 +89,7 @@ exports.postAvis = async (req, res) => {
             return res.status(400).json({ error: 'Les avis principaux doivent contenir une note entre 1 et 5 étoiles.' });
         }
 
-        if (avis_parent && nb_etoile !== null) {
+        if ((avis_parent && !nb_etoile)) {
             return res.status(400).json({ error: 'Une réponse à un avis ne doit pas contenir de note.' });
         }
 
@@ -132,7 +132,7 @@ exports.deleteAvis = async (req, res) => {
     try {
         const { avis_id, accessToken} = req.body; // Récupère l'ID de l'avis dans le corps de la requête
 
-        if (!avis_id, !accessToken) {
+        if (!avis_id || !accessToken) {
             return res.status(400).json({ error: 'avis_id est requis.' });
         }
 
