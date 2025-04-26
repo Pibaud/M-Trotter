@@ -190,14 +190,6 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
     ApiService apiService = ApiService();
     List<Photo> response =
         await apiService.fetchImagesByPlaceId(widget.place.id.toString());
-    for (var photo in response) {
-      try {
-        final voteInfo = await apiService.getPhotoVote(photo.id);
-        logger.d('Vote info for photo ${photo.id}: $voteInfo');
-      } catch (e) {
-        logger.e('Error getting vote for photo ${photo.id}: $e');
-      }
-    }
 
     setState(() {
       photos = response;
@@ -1492,11 +1484,21 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                               builder: (dialogContext) => StatefulBuilder(
                                 builder: (context, setDialogState) {
                                   // Initialize vote state based on photo.vote
-                                  if (voteCount == 0 && photo.vote != null) {
-                                    voteCount = photo.vote!;
-                                    initialVote = voteCount;
-                                    hasUpvoted = photo.vote == 1;
-                                    hasDownvoted = photo.vote == -1;
+                                  if (voteCount == 0) {
+                                    if (photo.vote != null) {
+                                      voteCount = photo.vote!;
+                                      initialVote = voteCount;
+                                      // Correctly set up/down vote state based on the vote value
+                                      hasUpvoted = photo.vote == 1;
+                                      hasDownvoted = photo.vote == -1;
+                                      // photo.vote == 0 means no vote (neither up nor down)
+                                    } else {
+                                      // If photo.vote is null, assume no vote (set to 0)
+                                      voteCount = 0;
+                                      initialVote = 0;
+                                      hasUpvoted = false;
+                                      hasDownvoted = false;
+                                    }
                                   }
 
                                   return Dialog(
@@ -1543,12 +1545,17 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                                                   ),
                                                   onPressed: () {
                                                     setDialogState(() {
+                                                      print(
+                                                          "hasUpvoted : $hasUpvoted, hasDownvoted : $hasDownvoted");
                                                       if (hasUpvoted) {
                                                         // Cancel upvote
                                                         voteCount--;
                                                         hasUpvoted = false;
+                                                        print(
+                                                            "vote cancelled, vote count : $voteCount, hasUpvoted : $hasUpvoted");
                                                       } else {
                                                         // Add upvote
+                                                        print("Upvote");
                                                         voteCount++;
                                                         // If was downvoted before, remove that too
                                                         if (hasDownvoted) {
@@ -1608,9 +1615,14 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                                             icon: const Icon(Icons.close,
                                                 color: Colors.white),
                                             onPressed: () {
-                                              // Send the vote before closing
-                                              if (initialVote != voteCount) {
-                                                // Only call if vote changed
+                                              // Check if we need to delete the vote
+                                              if (photo.vote != 0 &&
+                                                  voteCount == 0) {
+                                                // User had a vote that was canceled
+                                                deleteVote(photo.id);
+                                              } else if (initialVote !=
+                                                  voteCount) {
+                                                // User changed their vote
                                                 upOrDownvote(
                                                     voteCount, photo.id);
                                               }
@@ -1686,6 +1698,21 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
       await _apiService.voteForImage(idImage, voteType);
     } catch (e) {
       logger.e('Exception when submitting vote: $e');
+    }
+  }
+
+  // New function to delete a vote for an image
+  Future<void> deleteVote(int idImage) async {
+    try {
+      logger.d('Deleting vote for image ID: $idImage');
+      final result = await _apiService.deletePhotoVote(idImage);
+      if (result['success']) {
+        logger.d('Vote deleted successfully');
+      } else {
+        logger.e('Failed to delete vote: ${result['error']}');
+      }
+    } catch (e) {
+      logger.e('Exception when deleting vote: $e');
     }
   }
 }

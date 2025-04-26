@@ -277,7 +277,13 @@ class HomePageState extends State<HomePage> {
                   ),
                 ),
                 onTap: () {
-                  // ...existing code...
+                  print("Appui sur la barre de recherche");
+                  if (myAppKey.currentState == null) {
+                    print("myAppKey.currentState est null");
+                  } else {
+                    print("myAppKey.currentState est valide");
+                    myAppKey.currentState?.navigateToMapWithFocus();
+                  }
                 },
               ),
             ),
@@ -290,8 +296,7 @@ class HomePageState extends State<HomePage> {
             ),
             Flexible(
               flex: 1,
-              child: _buildPlaceSection(
-                  "Populaires", bestPlaces, "loading"),
+              child: _buildPlaceSection("Populaires", bestPlaces, "loading"),
             ),
           ],
         ),
