@@ -255,3 +255,4 @@ exports.addOrUpdateRecPhoto = async (id_photo, id_user, vote) => {
     }
 };
 
+//ca sert à rien c'est pour pouvoir push pour les icones d'appli

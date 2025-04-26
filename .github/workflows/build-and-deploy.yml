@@ -22,6 +22,10 @@ jobs:
         working-directory: m_trotter
         run: flutter pub get
 
+      - name: Generate launcher icons
+        working-directory: m_trotter
+        run: flutter pub run flutter_launcher_icons
+
       - name: Create and configure gradle.properties
         working-directory: m_trotter/android
         run: |
