@@ -1,5 +1,5 @@
 const e = require('express');
-const { LPlaces, bboxPlaces, amenitylist, bestPlaces, addRecPhoto, delRecPhoto, alreadyRecPhoto } = require('../services/placesService');
+const { LPlaces, bboxPlaces, amenitylist, bestPlaces, addRecPhoto, delRecPhoto, alreadyRecPhoto, getPlaceById } = require('../services/placesService');
 const { fetchImagesByPlaceId } = require('../services/uploadService');  // Ajout de cette importation
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
@@ -164,6 +164,27 @@ exports.alreadyRecPhoto = async (req, res) => {
         return res.status(200).json(result);
     } catch (error) {
         console.error("Erreur dans alreadyRecPhoto :", error);
+        return res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}
+
+exports.getPlaceById = async (req, res) => {
+    try {
+        const { id_place } = req.params;
+        console.log("Appel à getPlaceById avec l'ID :", id);
+        
+        if (!id_place) {
+            return res.status(400).json({ error: "id_place requis pour getplace." });
+        }
+
+        const place = await getPlaceById(id_place); // Appel au service
+        if (!place) {
+            return res.status(404).json({ error: "Lieu non trouvé." });
+        }
+        
+        return res.status(200).json(place);
+    } catch (error) {
+        console.error("Erreur dans getPlaceById :", error);
         return res.status(500).json({ message: "Erreur interne du serveur." });
     }
 }

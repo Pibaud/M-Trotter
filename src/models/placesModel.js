@@ -116,7 +116,7 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
                 ST_MakeEnvelope($1, $2, $3, $4, 4326)
                 )
             GROUP BY id, name, amenity, way, "addr:housenumber"
-            LIMIT 25`,
+            LIMIT 50`,
             [minlon, minlat, maxlon, maxlat]
         );
 
@@ -255,4 +255,28 @@ exports.addOrUpdateRecPhoto = async (id_photo, id_user, vote) => {
     }
 };
 
-//ca sert à rien c'est pour pouvoir push pour les icones d'appli
+exports.getPlaceById = async (id) => {
+    try {
+        const result = await pool.query(
+            `SELECT p.osm_id as id, p.name, p.amenity, p."addr:housenumber",
+                    ST_X(ST_Transform(p.way, 4326)) AS lon, 
+                    ST_Y(ST_Transform(p.way, 4326)) AS lat,
+                    STRING_AGG(p.tags::TEXT, '; ') AS tags,
+                    AVG(a.nb_etoiles) AS avg_stars,
+                    count(a.nb_etoiles) AS nb_avis_stars
+            FROM planet_osm_point p
+            LEFT JOIN avis a ON p.osm_id = a.place_id
+            WHERE p.name IS NOT NULL 
+              AND p.osm_id = $1
+            GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"`,
+            [id]
+        );
+
+        console.log("Place pour l'ID ", id, " :")
+        console.dir(result.rows)
+        return result.rows;
+    } catch (error) {
+        console.error("Erreur lors de la récupération de la place :", error);
+        throw { error: "Erreur interne du serveur." };
+    }
+}
