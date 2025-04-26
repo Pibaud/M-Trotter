@@ -997,9 +997,11 @@ class _MapPageState extends State<MapPage> {
                     _controller.text = "";
                   });
 
-                  Provider.of<BottomNavBarVisibilityProvider>(context,
-                          listen: false)
-                      .showBottomNav();
+                  if (fittingPlaces.isEmpty) {
+                    Provider.of<BottomNavBarVisibilityProvider>(context,
+                            listen: false)
+                        .showBottomNav();
+                  }
                 },
               ),
           if (_routes.isNotEmpty)
