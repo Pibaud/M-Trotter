@@ -17,6 +17,7 @@ exports.ListePlaces = async (search, startid) => {
                     MAX(similarity(p.name, $1)) AS sim, 
                     'point' AS type,
                     AVG(a.nb_etoiles) AS avg_stars
+                    count(a.nb_etoiles) AS nb_avis_stars
                 FROM planet_osm_point p
                 LEFT JOIN avis a ON p.osm_id = a.place_id
                 WHERE p.name IS NOT NULL 
