@@ -518,12 +518,13 @@ class ApiService {
 
   Future<List<Photo>> fetchImagesByPlaceId(String placeId) async {
     final String url = '$baseUrl/api/image';
-
+    String? token = await AuthService.getToken();
+    print("placeId : $placeId");
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'place_id': placeId}),
+        body: json.encode({'place_id': placeId, 'accessToken': token}),
       );
 
       if (response.statusCode == 200) {
@@ -532,12 +533,18 @@ class ApiService {
               json.decode(response.body)['photos']['photos'];
 
           return Future.wait(responseData.map<Future<Photo>>((data) async {
+            print("data : $data");
+            //faire un boucle qui affiche le type de toutes les valeurs du dictionnaire data
+
+            data.forEach((key, value) {
+              print('$key: ${value.runtimeType}');
+            });
             final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
             return Photo(
               id: int.parse(data['id']),
               imageData: (await http.get(Uri.parse(imageUrl))).bodyBytes,
-              tag: data['tag'] != null ? data['tag'] as String : null,
               idAvis: data['id_avis'] != null ? data['id_avis'] as int : null,
+              vote: data['already_voted'],
             );
           }).toList());
         } else {
@@ -1001,7 +1008,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getPhotoVote(int photoId) async {
+  Future<Map<String, dynamic>> deletePhotoVote(int photoId) async {
     try {
       final token = await AuthService.getToken();
       print("paramètres du body : accessToken = $token, id_photo = $photoId");
@@ -1017,11 +1024,11 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        print('Failed to get photo vote: ${response.statusCode}');
-        return {'success': false, 'error': 'Failed to get photo vote'};
+        print('Failed to delete photo vote: ${response.statusCode}');
+        return {'success': false, 'error': 'Failed to delete photo vote'};
       }
     } catch (e) {
-      print('Exception when getting photo vote: $e');
+      print('Exception when deleting photo vote: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
