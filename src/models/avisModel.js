@@ -1,12 +1,17 @@
 const pool = require('../config/db');
 
-exports.newavis =  async ({ user_id, place_id, place_table, lavis, avis_parent, nb_etoile}) => {
-    const result = await pool.query(
-        `INSERT INTO avis (user_id, place_id, place_table, lavis, created_at, avis_parent, nb_etoiles) 
-         VALUES ($1, $2, $3, $4, NOW(), $5, $6) RETURNING *`,
-        [user_id, place_id, place_table, lavis, avis_parent, nb_etoile]
-    );
-    return result.rows[0];
+exports.newavis = async ({ user_id, place_id, place_table, lavis, avis_parent, nb_etoile }) => {
+    try {
+        const result = await pool.query(
+            `INSERT INTO avis (user_id, place_id, place_table, lavis, created_at, avis_parent, nb_etoiles) 
+            VALUES ($1, $2, $3, $4, NOW(), $5, $6) RETURNING *`,
+            [user_id, place_id, place_table, lavis, avis_parent, nb_etoile]
+        );
+        return result.rows[0];
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'ajout d\'un avis :', error);
+        throw new Error('Impossible d\'ajouter l\'avis dans la base de données, sans doute un erreur d\'utilisateur qui a déjà posté un avis sur ce lieu.');
+    }
 };
 
 exports.fetchAvisbyUser = async (user_id) => {
@@ -55,7 +60,8 @@ exports.fetchAvisById = async (place_id, startid, user_id) => {
          WHERE a.place_id = $1
          AND a.avis_id > $2
          GROUP BY a.avis_id, l.like_count, al.user_id
-         LIMIT 10`,
+         ORDER BY user_is_author DESC, like_count DESC, a.created_at ASC
+         LIMIT 50`,
         [place_id, startid, user_id]
     );
 
@@ -86,7 +92,7 @@ exports.deletelike = async (avis_id, user_id) => {
     return result.rows.length > 0 ? result.rows[0] : null;
 }
 
-exports.likeAvisById = async (avis_id, user_id) => { 
+exports.likeAvisById = async (avis_id, user_id) => {
     const result = await pool.query(
         `INSERT INTO avis_likes 
         VALUES ($1, $2) RETURNING *`,
@@ -95,3 +101,25 @@ exports.likeAvisById = async (avis_id, user_id) => {
 
     return result.rows.length > 0 ? result.rows[0] : null;
 };
+
+exports.updateAvis = async (avis_id, user_id, lavis, nb_etoile) => {
+    const result = await pool.query(
+        `UPDATE avis
+            SET lavis = $3, nb_etoiles = $4, created_at = NOW()
+            WHERE avis_id = $1 AND user_id = $2
+            RETURNING *`,
+        [avis_id, user_id, lavis, nb_etoile]
+    );
+    return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+exports.updatereponses = async (avis_id, user_id, lavis, avis_parent) => {
+    const result = await pool.query(
+        `UPDATE avis
+            SET lavis = $3, avis_parent = $4, created_at = NOW()
+            WHERE avis_id = $1 AND user_id = $2
+            RETURNING *`,
+        [avis_id, user_id, lavis, avis_parent]
+    );
+    return result.rows.length > 0 ? result.rows[0] : null;
+}

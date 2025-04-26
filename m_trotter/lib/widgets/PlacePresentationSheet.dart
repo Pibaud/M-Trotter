@@ -24,6 +24,7 @@ class Review {
   final String placeTable;
   final String userId;
   final bool user_has_liked;
+  final bool user_is_author;
 
   Review({
     required this.id,
@@ -38,6 +39,7 @@ class Review {
     required this.placeTable,
     this.userId = '',
     required this.user_has_liked,
+    required this.user_is_author,
   });
 
   void updateProfileInfo(String newUsername, Uint8List? newProfilePic) {
@@ -62,6 +64,7 @@ class Review {
       placeTable: json['place_table'],
       userId: json['user_id']?.toString() ?? '',
       user_has_liked: json['user_has_liked'],
+      user_is_author: json['user_is_author'] ?? false,
     );
   }
 
@@ -117,6 +120,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   List<Photo> photos = [];
   final ApiService _apiService = ApiService();
   bool showOpeningHours = false; // State to toggle opening hours visibility
+  bool hasAlreadyPostedReview = false;
 
   final TextEditingController _reviewController = TextEditingController();
 
@@ -202,8 +206,12 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
           response.map((e) => Review.fromJson(e)).toList();
 
       // Pour chaque avis, récupérez les informations de profil
+      bool alreadyPosted = false;
       for (var review in newReviews) {
         var userId = review.userId;
+        if (review.user_is_author == true && review.parentId == null) {
+          alreadyPosted = true;
+        }
         if (userId.isNotEmpty) {
           var profileData = await apiService.getProfile(userId: userId);
 
@@ -216,6 +224,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
 
       setState(() {
         reviews = newReviews;
+        hasAlreadyPostedReview = alreadyPosted;
       });
     } catch (e) {
       print('Erreur lors de la récupération des avis : $e');
@@ -476,6 +485,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   void deleteReview(String reviewId) async {
     try {
       ApiService apiService = ApiService();
+      print(reviewId);
       final response = await apiService.deleteReview(reviewId);
 
       if (response['success']) {
@@ -487,6 +497,23 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
       }
     } catch (e) {
       print('Erreur lors de la suppression de l\'avis : $e');
+    }
+  }
+
+  void modifReview(String reviewId, String comment, int etoiles) async {
+    try {
+      ApiService apiService = ApiService();
+      final response = await apiService.modifReview(reviewId, comment, etoiles);
+
+      if (response['success']) {
+        print('Avis modifié avec succès');
+        await fetchReviews();
+      } else {
+        print(
+            'Erreur lors de la modification de l\'avis : ${response['error']}');
+      }
+    } catch (e) {
+      print('Erreur lors de la modification de l\'avis : $e');
     }
   }
 
@@ -1025,7 +1052,11 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                         onPressed: newReviewText.isEmpty
                             ? null
                             : () {
-                                if (newReviewRating == 0) {
+                                if(hasAlreadyPostedReview == true){
+                                  setState(() => ratingError =
+                                  "Vous ne pouvez pas poster plusieurs avis.");
+                                }
+                                else if (newReviewRating == 0) {
                                   setState(() => ratingError =
                                       "Veuillez attribuer au moins une étoile.");
                                 } else {
@@ -1037,6 +1068,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                                     ratingError = "";
                                     reviewPhotos.clear();
                                     _reviewController.clear();
+
                                   });
                                 }
                               },
@@ -1214,57 +1246,151 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
   }
 
   Widget _buildReviewItem(Review review) {
-    return ListTile(
-      leading: CircleAvatar(
-        radius: 30,
-        backgroundColor: Colors.grey[300], // Fond gris si pas d'image
-        child: review.profilePicBytes == null
-            ? const Icon(
-                Icons.person_rounded,
-                color: Colors.white,
-                size: 30,
-              ) // Icône grisée
-            : null,
-        backgroundImage: review.profilePicBytes != null
-            ? MemoryImage(review.profilePicBytes!) // Affichage de l'image
-            : null, // Si pas d'image, on ne met pas de backgroundImage
-      ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            review.username,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+    bool isEditing = false;
+    int editingRating = review.rating;
+    final TextEditingController controller =
+    TextEditingController(text: review.comment);
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return ListTile(
+          leading: CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.grey[300],
+            child: review.profilePicBytes == null
+                ? const Icon(Icons.person_rounded, color: Colors.white, size: 30)
+                : null,
+            backgroundImage: review.profilePicBytes != null
+                ? MemoryImage(review.profilePicBytes!)
+                : null,
           ),
-          if (review.parentId == null) _buildStars(review.rating.toDouble()),
-          // Afficher étoiles si avis principal
-        ],
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(review.comment),
-          Row(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.thumb_up_rounded,
-                  color: review.isLiked ? Colors.blue : Colors.grey,
-                ),
-                onPressed: () => toggleLike(review),
-              ),
-              Text('${review.likes}'),
-              const SizedBox(width: 10), // Espacement
               Text(
-                DateFormat('dd/MM/yyyy').format(review.date),
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                review.username,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
+              if (review.parentId == null && !isEditing)
+                _buildStars(review.rating.toDouble()),
+
+              if (isEditing)
+                Row(
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      icon: Icon(
+                        index < editingRating
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: index < editingRating ? Colors.amber : Colors.grey,
+                      ),
+                      onPressed: () => setState(() => editingRating = index + 1),
+                    );
+                  }),
+                ),
             ],
           ),
-        ],
-      ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              isEditing
+                  ? TextField(
+                controller: controller,
+                maxLines: null,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.all(8),
+                ),
+              )
+                  : Text(review.comment),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.thumb_up_rounded,
+                      color: review.isLiked ? Colors.blue : Colors.grey,
+                    ),
+                    onPressed: () => toggleLike(review),
+                  ),
+                  Text('${review.likes}'),
+                  const SizedBox(width: 10),
+                  Text(
+                    DateFormat('dd/MM/yyyy').format(review.date),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+              if (review.user_is_author)
+                isEditing
+                    ? Row(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          modifReview(review.id, controller.text, editingRating);
+                          isEditing = false;
+                        });
+                      },
+                      child: const Text("Enregistrer"),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          controller.text = review.comment;
+                          editingRating = review.rating;
+                          isEditing = false;
+                        });
+                      },
+                      child: const Text("Annuler"),
+                    ),
+                  ],
+                )
+                    : Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => setState(() => isEditing = true),
+                      child: const Text("Modifier"),
+                    ),
+                    TextButton(
+                      onPressed: () => _confirmDelete(context, review),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text("Supprimer"),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
+
+  void _confirmDelete(BuildContext context, Review review) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Supprimer l'avis"),
+          content: const Text("Êtes-vous sûr de vouloir supprimer cet avis ?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Annuler"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                deleteReview(review.id);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text("Supprimer"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   Widget buildPhotosSection() {
     List<Photo> filteredPhotos = selectedTag == null
