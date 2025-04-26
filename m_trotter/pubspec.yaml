@@ -124,8 +124,9 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo.png" # Chemin vers votre logo
-  min_sdk_android: 21 # Optionnel, pour Android
+  image_path: "assets/logo.png"
+  remove_alpha_ios: true # Supprime la transparence pour iOS
+  min_sdk_android: 21
