@@ -99,6 +99,8 @@ class _MapPageState extends State<MapPage> {
     _apiService = ApiService(); // requêtes
     _routes = {};
     _showingAllAmenities = false; // Add this state variable
+    _lastQueryLocation = null;
+    _fetchNearbyModificationsToValidate();
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
@@ -134,6 +136,46 @@ class _MapPageState extends State<MapPage> {
       _fetchPlacesBbox(_mapController.camera.visibleBounds);
     });
     //_loadSearchHistory();
+  }
+
+  void _checkAndFetchNearbyModifications() {
+    if (_currentLocation != null) {
+      if (_lastQueryLocation == null) {
+        _lastQueryLocation = _currentLocation;
+        _fetchNearbyModificationsToValidate();
+      } else {
+        // Calcul de la distance entre la dernière position de requête et la position actuelle
+        double distance = Geolocator.distanceBetween(
+            _lastQueryLocation!.latitude,
+            _lastQueryLocation!.longitude,
+            _currentLocation!.latitude,
+            _currentLocation!.longitude);
+
+        // Si la distance dépasse le seuil, faire une nouvelle requête
+        if (distance > _queryDistanceThreshold) {
+          _lastQueryLocation = _currentLocation;
+          _fetchNearbyModificationsToValidate();
+        }
+      }
+    }
+  }
+
+  Future<void> _fetchNearbyModificationsToValidate() async {
+    if (_currentLocation == null) return;
+
+    try {
+      final response = await _apiService.fetchModificationsToValidate(
+          _currentLocation!.latitude, _currentLocation!.longitude, 250);
+
+      setState(() {
+        _nearbyModificationsToValidate = response['lieux'];
+
+        print('Nombre de modifications reçues : ${_nearbyModificationsToValidate.length}');
+      });
+  
+    } catch (e) {
+      print('Erreur lors de la récupération des modifications à valider: $e');
+    }
   }
 
   Future<void> _loadAmenitiesData() async {
@@ -206,8 +248,6 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  
-
   void _onTextChanged(String value) {
     if (_debounce?.isActive ?? false) {
       _debounce?.cancel();
@@ -228,6 +268,7 @@ class _MapPageState extends State<MapPage> {
       }
     });
   }
+
 /*
   void _loadSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
