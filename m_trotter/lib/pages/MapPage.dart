@@ -82,7 +82,10 @@ class _MapPageState extends State<MapPage> {
   late List<TramLine> tramLines = [];
   late List<Place> _loadedPlaces = [];
   late List<Photo> photos = [];
-  bool _showingAllAmenities = false; // Add this state variable
+  bool _showingAllAmenities = false;
+  LatLng? _lastQueryLocation;
+  List<dynamic> _nearbyModificationsToValidate = [];
+  final double _queryDistanceThreshold = 100.0;
 
   @override
   void initState() {

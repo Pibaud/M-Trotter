@@ -17,7 +17,7 @@ exports.getLieuxProches = async (latitude, longitude, rayon = 100) => {
         WHERE m.etat = 'pending'
         AND ST_DWithin(
             p.way,
-            ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+            ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), ST_SRID(p.way)),
             $3
         )
         LIMIT 10;
