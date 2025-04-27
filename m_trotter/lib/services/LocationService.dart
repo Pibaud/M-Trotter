@@ -1,6 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:permission_handler/permission_handler.dart' as ph;
 
 class LocationService {
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -13,7 +14,14 @@ class LocationService {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       debugPrint('Les services de localisation sont désactivés.');
-      return false;
+      // Try to request service activation using permission_handler
+      final status = await ph.Permission.locationWhenInUse.request();
+      if (status != ph.PermissionStatus.granted) {
+        return false;
+      }
+      // Recheck if services are now enabled
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return false;
     }
 
     // Vérifie et demande la permission d'accès à la localisation
@@ -28,7 +36,7 @@ class LocationService {
 
     if (permission == LocationPermission.deniedForever) {
       debugPrint(
-          'Permission de localisation refusée de façon permanente. Accédez aux paramètres pour l’autoriser.');
+          'Permission de localisation refusée de façon permanente. Accédez aux paramètres pour l\'autoriser.');
       return false;
     }
 
@@ -50,7 +58,9 @@ class LocationService {
     try {
       print("Récupération du Geolocator...");
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low, // Remplace locationSettings
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+        ),
       );
       print("position retournée : $position");
       return position;

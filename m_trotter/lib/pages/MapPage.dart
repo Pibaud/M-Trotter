@@ -100,7 +100,15 @@ class _MapPageState extends State<MapPage> {
     _routes = {};
     _showingAllAmenities = false; // Add this state variable
     _lastQueryLocation = null;
-    _fetchNearbyModificationsToValidate();
+    
+    // Appeler getUserLocation d'abord, puis _fetchNearbyModificationsToValidate après
+    getUserLocation().then((_) {
+      // Ajoute un délai pour s'assurer que _currentLocation est défini
+      Future.delayed(const Duration(seconds: 1), () {
+        _fetchNearbyModificationsToValidate();
+      });
+    });
+    
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
@@ -161,16 +169,39 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _fetchNearbyModificationsToValidate() async {
-    if (_currentLocation == null) return;
-
+    print('Fetching nearby modifications...');
+    
+    // Si _currentLocation est null, attendre qu'il soit disponible
+    if (_currentLocation == null) {
+      print('Waiting for location data...');
+      // Attendre que la localisation soit disponible (max 5 secondes)
+      for (int i = 0; i < 10; i++) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (_currentLocation != null) break;
+      }
+      
+      // Si toujours null après l'attente, tenter d'obtenir la position
+      if (_currentLocation == null) {
+        print('Location still null, trying to get it directly...');
+        await getUserLocation();
+      }
+      
+      // Si toujours null, abandonner
+      if (_currentLocation == null) {
+        print('Could not get location, abandoning fetch of nearby modifications');
+        return;
+      }
+    }
+    
+    print('Current location: $_currentLocation');
     try {
       final response = await _apiService.fetchModificationsToValidate(
-          _currentLocation!.latitude, _currentLocation!.longitude, 250);
+          _currentLocation!.latitude, _currentLocation!.longitude, 400);
 
       setState(() {
         _nearbyModificationsToValidate = response['lieux'];
 
-        print('Nombre de modifications reçues : ${_nearbyModificationsToValidate.length}');
+        print('Nombre de modifications reçues : ${response['lieux']}');
       });
   
     } catch (e) {
@@ -203,7 +234,8 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  Future<void> getUserLocation() async {
+  Future<LatLng?> getUserLocation() async {
+    print('Getting user location...');
     LocationService locationService = LocationService();
 
     var position = await locationService.getCurrentPosition();
@@ -211,6 +243,7 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
+      print('Location updated: $_currentLocation');
 
       try {
         if (_currentLocation != null) {
@@ -231,8 +264,11 @@ class _MapPageState extends State<MapPage> {
         _mapController.move(
             LatLng(position.latitude, position.longitude), 13.0);
       }
+      
+      return _currentLocation;
     } else {
       debugPrint('Impossible d\'obtenir la position de l\'utilisateur.');
+      return null;
     }
   }
 
@@ -1002,7 +1038,7 @@ class _MapPageState extends State<MapPage> {
                 },
                 onWebsiteTap: () async {
                   final website = _selectedPlace!.tags["website"];
-                  if (website != null && website.isNotEmpty) {
+                  if (website != null && website is String && website.isNotEmpty) {
                     final Uri websiteUri = Uri.parse(website);
                     if (await canLaunchUrl(websiteUri)) {
                       await launchUrl(websiteUri,
