@@ -23,7 +23,7 @@ exports.getAvisByPlaceId = async (req, res) => {
 
         console.log("valeur de likeOrDate : ", likeOrDate)
 
-        if (!likeOrDate) {
+        if (likeOrDate == undefined) {
             likeOrDate = true;
         }
 
