@@ -519,7 +519,6 @@ class ApiService {
   Future<List<Photo>> fetchImagesByPlaceId(String placeId) async {
     final String url = '$baseUrl/api/image';
     String? token = await AuthService.getToken();
-    print("placeId : $placeId");
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -533,12 +532,6 @@ class ApiService {
               json.decode(response.body)['photos']['photos'];
 
           return Future.wait(responseData.map<Future<Photo>>((data) async {
-            print("data : $data");
-            //faire un boucle qui affiche le type de toutes les valeurs du dictionnaire data
-
-            data.forEach((key, value) {
-              print('$key: ${value.runtimeType}');
-            });
             final String imageUrl = 'http://217.182.79.84:3000${data['url']}';
             return Photo(
               id: int.parse(data['id']),

@@ -33,7 +33,6 @@ void main() async {
   );
 }
 
-
 class MyAppWrapper extends StatelessWidget {
   const MyAppWrapper({super.key});
 
@@ -86,9 +85,11 @@ class MyAppWrapper extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    if (prefs.getString('search_history') == null) {
-      await prefs.setString('search_history', jsonEncode({}));
-    }
-    return {'isFirstLaunch': isFirstLaunch, 'isLoggedIn': isLoggedIn};
+    final searchHistory = prefs.getString('searchHistory') ?? [];
+    return {
+      'isFirstLaunch': isFirstLaunch,
+      'isLoggedIn': isLoggedIn,
+      'searchHistory': searchHistory
+    };
   }
 }

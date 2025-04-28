@@ -63,7 +63,7 @@ class _MapPageState extends State<MapPage> {
   Place? _selectedPlace;
   String? _selectedAmenity;
   double _bottomSheetHeight = 80.0;
-  Map<String, String> _searchHistory = {};
+  List<Place> _searchHistory = [];
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
@@ -99,6 +99,7 @@ class _MapPageState extends State<MapPage> {
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
     _mapEventSubscription = _mapController.mapEventStream.listen(_onMapEvent);
     loadTramData();
+    _loadSearchHistory();
     _apiService = ApiService(); // requêtes
     _routes = {};
     _showingAllAmenities = false; // Add this state variable
@@ -147,7 +148,6 @@ class _MapPageState extends State<MapPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPlacesBbox(_mapController.camera.visibleBounds);
     });
-    //_loadSearchHistory();
   }
 
   void _checkAndFetchNearbyModifications() {
@@ -293,20 +293,32 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _loadSearchHistory() async {
+    print("chargement de l'historique ...");
     final prefs = await SharedPreferences.getInstance();
-    String? historyJson = prefs.getString('search_history');
+    String? historyJson = prefs.getString('searchHistory');
     if (historyJson != null) {
-      final Map<String, dynamic> decoded = jsonDecode(historyJson);
+      print("historyJson chargé : $historyJson");
+      List<dynamic> decoded = jsonDecode(historyJson);
+
+      // Create a fresh list of Places by properly calling Place.fromJson
+      List<Place> history = [];
+      for (var item in decoded) {
+        Place place = Place.fromJson(Map<String, dynamic>.from(item), optionalParam: true); // appelle une fonction censée afficher 2
+        history.add(place);
+      }
+
       setState(() {
-        _searchHistory = decoded.map((key, value) => MapEntry(key, value.toString()));
+        _searchHistory = history;
       });
+
+      print("Historique chargé : $_searchHistory");
     } else {
       setState(() {
-        _searchHistory = {};
+        _searchHistory = [];
       });
     }
   }
-  
+
   void _onSuggestionTap(Place place) async {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
     _controller.text = place.name;
@@ -315,9 +327,9 @@ class _MapPageState extends State<MapPage> {
     double zoom = _mapController.camera.zoom;
     final double mapHeightInDegrees = 360 / (2 << (zoom.toInt() - 1));
     final double offsetInDegrees = mapHeightInDegrees *
-      (_bottomSheetHeight / MediaQuery.of(context).size.height);
+        (_bottomSheetHeight / MediaQuery.of(context).size.height);
     LatLng adjustedDestination =
-      LatLng(destination.latitude - offsetInDegrees, destination.longitude);
+        LatLng(destination.latitude - offsetInDegrees, destination.longitude);
 
     setState(() {
       _selectedPlace = place;
@@ -327,27 +339,35 @@ class _MapPageState extends State<MapPage> {
     });
 
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
-      .hideBottomNav();
+        .hideBottomNav();
 
     _mapController.move(adjustedDestination, zoom);
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      String? historyJson = prefs.getString('search_history');
-      Map<String, dynamic> history = historyJson != null
-          ? Map<String, dynamic>.from(jsonDecode(historyJson))
-          : {};
+      String? historyJson = prefs.getString('searchHistory');
+      List<dynamic> decodedJson =
+          historyJson != null ? jsonDecode(historyJson) : [];
+      List<Place> history =
+          decodedJson.map<Place>((item) => Place.fromJson(item)).toList();
 
-      history.remove(place.name);
-      /*à verifier pas sur que ca marche ca mdrrr*/
+      // Remove the place if it already exists in history to avoid duplicates
+      history.removeWhere((p) => p.id == place.id);
+
+      // faire en sorte qu'à l'ajout, la taille de la liste ne dépasse pas 5
       if (history.length >= 5) {
-        final oldestKey = history.keys.first;
-        history.remove(oldestKey);
+        history.removeAt(0); // Supprime le plus ancien élément
       }
+      history.add(place); // Ajoute le nouvel élément
 
-      history[place.name] = place.id;
+      // Convert places to JSON-serializable objects
+      List<Map<String, dynamic>> serializedHistory =
+          history.map((p) => p.toJson()).toList();
+      String encodedSreializedHistory = jsonEncode(serializedHistory);
 
-      await prefs.setString('search_history', jsonEncode(history));
+      await prefs.setString('searchHistory', encodedSreializedHistory);
+      print("historique mis à jour avec :");
+      logger.i(serializedHistory);
     } catch (e) {
       print('Erreur lors de la mise à jour de l\'historique : $e');
     }
@@ -602,7 +622,8 @@ class _MapPageState extends State<MapPage> {
   void _handleValidationResponse(int idModification, bool isApproved) async {
     try {
       //await _apiService.sendModificationValidation(idModification, isApproved);
-      print('Validation response: idModification: $idModification, isApproved: $isApproved');
+      print(
+          'Validation response: idModification: $idModification, isApproved: $isApproved');
 
       setState(() {
         // Move to the next modification if available
@@ -768,6 +789,7 @@ class _MapPageState extends State<MapPage> {
             onLayerToggle: (isVisible) {
               if (_isLayerVisible != isVisible) {
                 setState(() {
+                  _loadSearchHistory();
                   _isLayerVisible = isVisible;
                 });
               }
@@ -840,7 +862,8 @@ class _MapPageState extends State<MapPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (_controller.text.isEmpty && _searchHistory.isNotEmpty)
+                        if (_controller.text.isEmpty &&
+                            _searchHistory.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
@@ -851,26 +874,22 @@ class _MapPageState extends State<MapPage> {
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _searchHistory.length,
                               itemBuilder: (context, index) {
-                                final entry = _searchHistory.entries.elementAt(index);
-                                final placeName = entry.key;
-                                final placeId = entry.value;
-
                                 return ListTile(
-                                  leading: const Icon(Icons.history),
-                                  title: Text(placeName),
+                                  leading: const Icon(Icons.history_rounded),
+                                  title: Text(_searchHistory[index].name),
                                   subtitle: Text("Historique"),
                                   onTap: () async {
                                     try {
-                                      final place = suggestedPlaces(placeName)
-                                      _onSuggestionTap(place[0]);
+                                      _onSuggestionTap(_searchHistory[index]);
                                     } catch (e) {
-                                      print("Erreur lors de la récupération du lieu depuis l'historique : $e");
+                                      print(
+                                          "Erreur lors de la récupération du lieu depuis l'historique : $e");
                                     }
                                   },
                                 );
                               },
                             ),
-                          )
+                          ),
                         if (suggestedAmenities.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
