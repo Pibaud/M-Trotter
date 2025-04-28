@@ -37,8 +37,9 @@ exports.fetchAvisbyUser = async (user_id) => {
 };
 
 exports.fetchAvisById = async (place_id, startid, user_id, LorD) => {
+    let result;
     if (LorD){
-    const result = await pool.query(
+    result = await pool.query(
         `SELECT a.*, 
                 COALESCE(l.like_count, 0) AS like_count,
                 json_agg(p.id_photo) AS photos,
@@ -65,7 +66,7 @@ exports.fetchAvisById = async (place_id, startid, user_id, LorD) => {
          LIMIT 50`,
         [place_id, startid, user_id]
     );} else {
-        const result = await pool.query(
+        result = await pool.query(
             `SELECT a.*, 
                     COALESCE(l.like_count, 0) AS like_count,
                     json_agg(p.id_photo) AS photos,
