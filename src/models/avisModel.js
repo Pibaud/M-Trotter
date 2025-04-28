@@ -37,12 +37,14 @@ exports.fetchAvisbyUser = async (user_id) => {
 };
 
 exports.fetchAvisById = async (place_id, startid, user_id, LorD) => {
-    let result;
-    if (LorD){
-    result = await pool.query(
+    const orderBy = LorD
+    ? 'user_is_author DESC, like_count DESC, a.created_at ASC'
+    : 'user_is_author DESC, a.created_at ASC, like_count DESC';
+
+    const result = await pool.query(
         `SELECT a.*, 
                 COALESCE(l.like_count, 0) AS like_count,
-                json_agg(p.id_photo) AS photos,
+                json_agg(DISTINCT p.id_photo) AS photos,
                 CASE 
                     WHEN al.user_id IS NOT NULL THEN true 
                     ELSE false 
@@ -62,39 +64,12 @@ exports.fetchAvisById = async (place_id, startid, user_id, LorD) => {
          WHERE a.place_id = $1
          AND a.avis_id > $2
          GROUP BY a.avis_id, l.like_count, al.user_id
-         ORDER BY user_is_author DESC, like_count DESC, a.created_at ASC
+         ORDER BY ${orderBy}
          LIMIT 50`,
         [place_id, startid, user_id]
-    );} else {
-        result = await pool.query(
-            `SELECT a.*, 
-                    COALESCE(l.like_count, 0) AS like_count,
-                    json_agg(p.id_photo) AS photos,
-                    CASE 
-                        WHEN al.user_id IS NOT NULL THEN true 
-                        ELSE false 
-                    END AS user_has_liked,
-                    CASE 
-                        WHEN a.user_id = $3 THEN true 
-                        ELSE false
-                    END AS user_is_author
-             FROM avis a
-             LEFT JOIN (
-                 SELECT avis_id, COUNT(*) AS like_count
-                 FROM avis_likes
-                 GROUP BY avis_id
-             ) l ON a.avis_id = l.avis_id
-             LEFT JOIN photos p ON a.avis_id = p.id_avis
-             LEFT JOIN avis_likes al ON a.avis_id = al.avis_id AND al.user_id = $3
-             WHERE a.place_id = $1
-             AND a.avis_id > $2
-             GROUP BY a.avis_id, l.like_count, al.user_id
-             ORDER BY user_is_author DESC, a.created_at ASC, like_count DESC
-             LIMIT 50`,
-            [place_id, startid, user_id]);
-    }
+    );
 
-    return result.rows.length > 0 ? result.rows : null;
+    return result.rows.length > 0 ? result.rows : [];
 };
 
 exports.deleteAvisById = async (avis_id, user_id) => {
