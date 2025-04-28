@@ -63,7 +63,7 @@ class _MapPageState extends State<MapPage> {
   Place? _selectedPlace;
   String? _selectedAmenity;
   double _bottomSheetHeight = 80.0;
-  List<String> _searchHistory = [];
+  Map<String, String> _searchHistory = {};
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
@@ -292,50 +292,66 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-/*
   void _loadSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     String? historyJson = prefs.getString('search_history');
-    if (historyJson != null){
+    if (historyJson != null) {
+      final Map<String, dynamic> decoded = jsonDecode(historyJson);
       setState(() {
-      _searchHistory = List<Place>.from(jsonDecode(historyJson));
+        _searchHistory = decoded.map((key, value) => MapEntry(key, value.toString()));
       });
-    }
-    else{
+    } else {
       setState(() {
-      _searchHistory = [];
+        _searchHistory = {};
       });
     }
   }
-*/
+  
   void _onSuggestionTap(Place place) async {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
-    _controller.text =
-        place.name; // Mise à jour du champ texte avec le nom du lieu
+    _controller.text = place.name;
     _focusNode.unfocus();
-    LatLng? destination;
-    destination = LatLng(place.latitude, place.longitude);
+    LatLng? destination = LatLng(place.latitude, place.longitude);
     double zoom = _mapController.camera.zoom;
-    final double mapHeightInDegrees =
-        360 / (2 << (zoom.toInt() - 1)); // Conversion zoom -> degrés
+    final double mapHeightInDegrees = 360 / (2 << (zoom.toInt() - 1));
     final double offsetInDegrees = mapHeightInDegrees *
-        (_bottomSheetHeight / MediaQuery.of(context).size.height);
+      (_bottomSheetHeight / MediaQuery.of(context).size.height);
     LatLng adjustedDestination =
-        LatLng(destination.latitude - offsetInDegrees, destination.longitude);
+      LatLng(destination.latitude - offsetInDegrees, destination.longitude);
 
     setState(() {
-      _selectedPlace = place; // Mettre à jour le lieu sélectionné
-      suggestedPlaces.clear(); // Vide la liste des suggestions
+      _selectedPlace = place;
+      suggestedPlaces.clear();
       _isLayerVisible = false;
       _isPlacePresentationSheetVisible = true;
     });
 
     Provider.of<BottomNavBarVisibilityProvider>(context, listen: false)
-        .hideBottomNav();
+      .hideBottomNav();
 
     _mapController.move(adjustedDestination, zoom);
 
-    // Fetch images for the selected place
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? historyJson = prefs.getString('search_history');
+      Map<String, dynamic> history = historyJson != null
+          ? Map<String, dynamic>.from(jsonDecode(historyJson))
+          : {};
+
+      history.remove(place.name);
+      /*à verifier pas sur que ca marche ca mdrrr*/
+      if (history.length >= 5) {
+        final oldestKey = history.keys.first;
+        history.remove(oldestKey);
+      }
+
+      history[place.name] = place.id;
+
+      await prefs.setString('search_history', jsonEncode(history));
+    } catch (e) {
+      print('Erreur lors de la mise à jour de l\'historique : $e');
+    }
+
     try {
       List<Photo> fetchedPhotos =
           await _apiService.fetchImagesByPlaceId(place.id.toString());
@@ -345,13 +361,6 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       print('Erreur lors de la récupération des images : $e');
     }
-    final prefs = await SharedPreferences.getInstance();
-    String? historyJson = prefs.getString('search_history');
-    /*historyJson.removeWhere((existingPlace) => existingPlace.id == place.id);
-    historyJson.insert(0, place);
-    if (historyJson.length > 5) {
-      historyJson.removeLast();
-    }*/
   }
 
   void _onMarkerTap(Place place) {
@@ -831,31 +840,37 @@ class _MapPageState extends State<MapPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Affichage des amenities
-                        /*if (_searchHistory.isNotEmpty)
+                        if (_controller.text.isEmpty && _searchHistory.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(8.0),
                             ),
-                            margin: const EdgeInsets.only(bottom: 8.0),
                             child: ListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _searchHistory.length,
                               itemBuilder: (context, index) {
-                                final placeName = _searchHistory[index];
+                                final entry = _searchHistory.entries.elementAt(index);
+                                final placeName = entry.key;
+                                final placeId = entry.value;
+
                                 return ListTile(
                                   leading: const Icon(Icons.history),
-                                  title: Text(place.name),
-                                  subtitle: Text(place.amenity ?? ''),
-                                  onTap: () {
-                                    _onSuggestionTap(place)
+                                  title: Text(placeName),
+                                  subtitle: Text("Historique"),
+                                  onTap: () async {
+                                    try {
+                                      final place = suggestedPlaces(placeName)
+                                      _onSuggestionTap(place[0]);
+                                    } catch (e) {
+                                      print("Erreur lors de la récupération du lieu depuis l'historique : $e");
+                                    }
                                   },
                                 );
                               },
                             ),
-                          ),*/
+                          )
                         if (suggestedAmenities.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
