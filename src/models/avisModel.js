@@ -37,6 +37,8 @@ exports.fetchAvisbyUser = async (user_id) => {
 };
 
 exports.fetchAvisById = async (place_id, startid, user_id, LorD) => {
+    console.log("valeur de LorD", LorD);
+    
     const orderBy = LorD
     ? 'user_is_author DESC, like_count DESC, a.created_at ASC'
     : 'user_is_author DESC, a.created_at ASC, like_count DESC';

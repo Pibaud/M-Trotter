@@ -21,6 +21,8 @@ exports.getAvisByPlaceId = async (req, res) => {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
         }
 
+        console.log("valeur de likeOrDate : ", likeOrDate)
+
         const avis = await fetchAvisById(place_id, startid || 0, user_id, likeOrDate || true);
 
         if (!avis || avis.length === 0) {
