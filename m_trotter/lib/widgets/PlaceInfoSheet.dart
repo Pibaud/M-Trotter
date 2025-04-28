@@ -132,9 +132,8 @@ class _PlaceInfoSheetState extends State<PlaceInfoSheet> {
                                       selectedAmenity = newValue;
                                       modifications.add({
                                         'champ_modifie': 'amenity',
-                                        'ancienne_valeur':
-                                            widget.place.amenity!,
-                                        'nouvelle_valeur': selectedAmenity!,
+                                        'ancienne_valeur': GlobalData.amenities[widget.place.amenity!] ?? 'unknown',
+                                        'nouvelle_valeur': GlobalData.amenities[selectedAmenity!] ?? 'unknown',
                                       });
                                     });
                                   },
