@@ -24,10 +24,12 @@ exports.getAvisByPlaceId = async (req, res) => {
         console.log("valeur de likeOrDate : ", likeOrDate)
 
         if (likeOrDate == undefined) {
-            likeOrDate = true;
+            LorD = true;
+        } else {
+            LorD = likeOrDate;
         }
 
-        const avis = await fetchAvisById(place_id, startid || 0, user_id, likeOrDate);
+        const avis = await fetchAvisById(place_id, startid || 0, user_id, LorD);
 
         if (!avis || avis.length === 0) {
             return res.status(200).json({avis: []});
