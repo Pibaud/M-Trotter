@@ -27,6 +27,8 @@ exports.getAvisByPlaceId = async (req, res) => {
             return res.status(200).json({avis: []});
         }
 
+        console.log("les avis récupérés : ", avis);
+
         res.status(200).json({ avis });
     } catch (error) {
         console.error('Erreur lors de la récupération des avis:', error);
