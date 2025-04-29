@@ -29,7 +29,7 @@ const verifierModifications = async () => {
                 WHERE v.id_modification = $1
             `, [id_modification]);
 
-            if (votes.rows.length < 20) {
+            if (votes.rows.length < 1) {
                 await db.query(`
                     UPDATE modifications SET etat = 'refusee' WHERE id_modification = $1
                 `, [id_modification]);
