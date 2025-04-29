@@ -635,7 +635,7 @@ class ApiService {
   }
 
   Future<List<dynamic>> fetchReviewsByPlaceId(
-      String placeId, int startId) async {
+      String placeId, int startId, bool likeOrDate) async {
     String? accessToken = await AuthService.getToken();
     final String url = '$baseUrl/api/getavis';
 
@@ -650,6 +650,7 @@ class ApiService {
         body: json.encode({
           'place_id': placeId,
           'startid': startId,
+          'likeOrDate': likeOrDate, // Ajout du paramètre
           'accessToken': accessToken,
         }),
       );
