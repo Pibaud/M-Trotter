@@ -97,6 +97,10 @@ class ModificationValidationCard extends StatelessWidget {
         modificationHeading = 'Modification proposée';
       }
       formattedChanges = '$champModifie:\n$ancienneValeur → $nouvelleValeur';
+
+      if(champModifie == "amenity"){
+        formattedChanges = 'Type d\'établissement :\n${GlobalData.getAmenityKey(ancienneValeur)} → ${GlobalData.getAmenityKey(nouvelleValeur)}';
+      }
     }
 
     return Card(

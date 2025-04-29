@@ -105,11 +105,10 @@ class _MapPageState extends State<MapPage> {
     _showingAllAmenities = false; // Add this state variable
     _lastQueryLocation = null;
 
-    // Appeler getUserLocation d'abord, puis _fetchNearbyModificationsToValidate après
     getUserLocation().then((_) {
-      // Ajoute un délai pour s'assurer que _currentLocation est défini
       Future.delayed(const Duration(seconds: 1), () {
         _fetchNearbyModificationsToValidate();
+        _lastQueryLocation = _currentLocation;
       });
     });
 
@@ -152,22 +151,17 @@ class _MapPageState extends State<MapPage> {
 
   void _checkAndFetchNearbyModifications() {
     if (_currentLocation != null) {
-      if (_lastQueryLocation == null) {
+      // Calcul de la distance entre la dernière position de requête et la position actuelle
+      double distance = Geolocator.distanceBetween(
+          _lastQueryLocation!.latitude,
+          _lastQueryLocation!.longitude,
+          _currentLocation!.latitude,
+          _currentLocation!.longitude);
+
+      // Si la distance dépasse le seuil, faire une nouvelle requête
+      if (distance > _queryDistanceThreshold) {
         _lastQueryLocation = _currentLocation;
         _fetchNearbyModificationsToValidate();
-      } else {
-        // Calcul de la distance entre la dernière position de requête et la position actuelle
-        double distance = Geolocator.distanceBetween(
-            _lastQueryLocation!.latitude,
-            _lastQueryLocation!.longitude,
-            _currentLocation!.latitude,
-            _currentLocation!.longitude);
-
-        // Si la distance dépasse le seuil, faire une nouvelle requête
-        if (distance > _queryDistanceThreshold) {
-          _lastQueryLocation = _currentLocation;
-          _fetchNearbyModificationsToValidate();
-        }
       }
     }
   }
@@ -303,7 +297,8 @@ class _MapPageState extends State<MapPage> {
       // Create a fresh list of Places by properly calling Place.fromJson
       List<Place> history = [];
       for (var item in decoded) {
-        Place place = Place.fromJson(Map<String, dynamic>.from(item), optionalParam: true); // appelle une fonction censée afficher 2
+        Place place = Place.fromJson(Map<String, dynamic>.from(item),
+            optionalParam: true); // appelle une fonction censée afficher 2
         history.add(place);
       }
 
@@ -621,36 +616,52 @@ class _MapPageState extends State<MapPage> {
   // Handle validation response
   void _handleValidationResponse(int idModification, bool isApproved) async {
     try {
-      //await _apiService.sendModificationValidation(idModification, isApproved);
+      final response = await _apiService.sendModificationValidation(
+          idModification, isApproved);
       print(
-          'Validation response: idModification: $idModification, isApproved: $isApproved');
+          'Validation response: idModification: $idModification, isApproved: $isApproved, success: ${response['success']}');
 
-      setState(() {
-        // Move to the next modification if available
-        if (_currentModificationIndex <
-            _nearbyModificationsToValidate.length - 1) {
-          _currentModificationIndex++;
-        } else {
-          // If this was the last one, hide the card
-          _isShowingValidationCard = false;
-          _nearbyModificationsToValidate = [];
-        }
-      });
+      if (response['success']) {
+        setState(() {
+          // Move to the next modification if available
+          if (_currentModificationIndex <
+              _nearbyModificationsToValidate.length - 1) {
+            _currentModificationIndex++;
+          } else {
+            // If this was the last one, hide the card
+            _isShowingValidationCard = false;
+            _nearbyModificationsToValidate = [];
+          }
+        });
 
-      // Show feedback to user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              isApproved ? 'Modification approuvée' : 'Modification refusée'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+        // Show feedback to user with data from response if available
+        final responseMessage = response['data']?['message'] ??
+            (isApproved ? 'Modification approuvée' : 'Modification refusée');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(responseMessage),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // Show error message from the response
+        final errorMessage = response['error'] ?? 'Une erreur est survenue';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } catch (e) {
       print('Erreur lors de l\'envoi de la validation: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Erreur lors de l\'envoi de la réponse'),
-          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
         ),
       );
     }

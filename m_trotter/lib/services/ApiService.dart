@@ -1065,13 +1065,18 @@ class ApiService {
   Future<Map<String, dynamic>> fetchModificationsToValidate(
       double latitude, double longitude, double rayon) async {
     final String url = '$baseUrl/modification/nearby';
+    final token = await AuthService.getToken();
 
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(
-            {'latitude': latitude, 'longitude': longitude, 'rayon': rayon}),
+        body: json.encode({
+          'latitude': latitude,
+          'longitude': longitude,
+          'rayon': rayon,
+          'accessToken': token
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -1082,6 +1087,52 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Erreur lors de la requête : $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> sendModificationValidation(
+      int idModification, bool isApproved) async {
+    final String url = '$baseUrl/modification/vote';
+    final String? token = await AuthService.getToken();
+
+    if (token == null) {
+      return {'success': false, 'error': 'Token non trouvé'};
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'id_modification': idModification,
+          'vote': isApproved ? 'confirm' : 'infirme',
+          'accesstoken': token,
+        }),
+      );
+
+      // Parse the response body
+      final responseBody = response.body;
+      Map<String, dynamic> responseData;
+      try {
+        responseData = json.decode(responseBody);
+      } catch (e) {
+        responseData = {'rawResponse': responseBody};
+      }
+
+      // Return the complete response information
+      return {
+        'success': response.statusCode >= 200 && response.statusCode < 300,
+        'statusCode': response.statusCode,
+        'data': responseData,
+        'fullResponse': responseBody,
+      };
+    } catch (e) {
+      print('Erreur lors de l\'envoi de la validation : $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+        'fullResponse': null,
+      };
     }
   }
 }
