@@ -36,11 +36,17 @@ exports.fetchAvisbyUser = async (user_id) => {
     return avisList.length > 0 ? avisList : null;
 };
 
-exports.fetchAvisById = async (place_id, startid, user_id) => {
+exports.fetchAvisById = async (place_id, startid, user_id, LorD) => {
+    console.log("valeur de LorD", LorD);
+    
+    const orderBy = LorD
+    ? 'user_is_author DESC, like_count DESC, a.created_at ASC'
+    : 'user_is_author DESC, a.created_at ASC, like_count DESC';
+
     const result = await pool.query(
         `SELECT a.*, 
                 COALESCE(l.like_count, 0) AS like_count,
-                json_agg(p.id_photo) AS photos,
+                json_agg(DISTINCT p.id_photo) AS photos,
                 CASE 
                     WHEN al.user_id IS NOT NULL THEN true 
                     ELSE false 
@@ -60,12 +66,12 @@ exports.fetchAvisById = async (place_id, startid, user_id) => {
          WHERE a.place_id = $1
          AND a.avis_id > $2
          GROUP BY a.avis_id, l.like_count, al.user_id
-         ORDER BY user_is_author DESC, like_count DESC, a.created_at ASC
+         ORDER BY ${orderBy}
          LIMIT 50`,
         [place_id, startid, user_id]
     );
 
-    return result.rows.length > 0 ? result.rows : null;
+    return result.rows.length > 0 ? result.rows : [];
 };
 
 exports.deleteAvisById = async (avis_id, user_id) => {

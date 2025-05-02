@@ -29,13 +29,21 @@ exports.proposerModification = async (req, res) => {
 
 exports.lieuxATesterProches = async (req, res) => {
     try {
-        const { latitude, longitude, rayon } = req.body;
+        const { latitude, longitude, rayon, accessToken } = req.body;
 
-        if (!latitude || !longitude) {
-            return res.status(400).json({ error: 'Latitude et longitude sont requises' });
+        if (!latitude || !longitude || !accessToken) {
+            return res.status(400).json({ error: 'Latitude et longitude et accessToken sont requises' });
         }
 
-        const lieux = await modificationsModel.getLieuxProches(latitude, longitude, rayon);
+        let user_id;
+        try {
+            const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+            user_id = decodedToken.id;
+        } catch (err) {
+            return res.status(401).json({ error: 'Token invalide ou expiré' });
+        }
+
+        const lieux = await modificationsModel.getLieuxProches(latitude, longitude, rayon, user_id);
         res.status(200).json({ lieux });
     } catch (error) {
         console.error(error);

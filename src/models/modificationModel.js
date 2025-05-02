@@ -9,12 +9,18 @@ exports.ajouterModification = async ({ osm_id, champ_modifie, ancienne_valeur, n
     return rows[0];
 };
 
-exports.getLieuxProches = async (latitude, longitude, rayon = 100) => {
+exports.getLieuxProches = async (latitude, longitude, rayon = 100, user_id) => {
     const query = `
         SELECT DISTINCT p.osm_id, p.name, ST_AsGeoJSON(p.way) AS geojson, m.*
         FROM planet_osm_point p
         JOIN modifications m ON p.osm_id = m.osm_id
         WHERE m.etat = 'pending'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM validation_modification vm
+            WHERE vm.id_modification = m.id_modification
+            AND vm.id_utilisateur = $4
+        )
         AND ST_DWithin(
             p.way,
             ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), ST_SRID(p.way)),
@@ -23,7 +29,7 @@ exports.getLieuxProches = async (latitude, longitude, rayon = 100) => {
         LIMIT 10;
     `;
 
-    const { rows } = await db.query(query, [longitude, latitude, rayon]);
+    const { rows } = await db.query(query, [longitude, latitude, rayon, user_id]);
     return rows;
 };
 

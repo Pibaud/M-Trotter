@@ -14,30 +14,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Étape 2 : Installer Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18' # Remplacez par la version de Node.js utilisée par votre projet
-
-      # Étape 3 : Installer les dépendances
-      - name: Install dependencies
-        run: npm install
-        working-directory: src
-
-      # Étape 4 : Déployer sur le serveur
+      # Étape 2 : Déployer sur le serveur
       - name: Deploy to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_KEY }}
-          port: 22
-          source: ./src/
-          target: /var/www/m-trotter-backend/
-
-      # Étape 5 : Redémarrer le serveur
-      - name: Restart server
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -45,6 +23,7 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           port: 22
           script: |
-            cd /var/www/m-trotter-backend
-            npm install
-            pm2 restart m-trotter-backend
+            cd M-Trotter
+            pm2 stop Serveur
+            git pull
+            pm2 start ecosystem.config.js --env production

@@ -26,18 +26,27 @@ class Place {
       required this.avgStars,
       required this.numReviews});
 
-  static Place fromJson(Map<String, dynamic> json) {
+  static Place fromJson(Map<String, dynamic> json,
+      {bool optionalParam = false}) {
     // Traitement des tags
-    Map<String, String> tags = {};
-    if (json['tags'] != null && json['tags'] is String) {
-      for (String entry in json['tags'].split(", ")) {
-        List<String> keyValue = entry.split("=>");
-        if (keyValue.length == 2) {
-          tags[keyValue[0].replaceAll('"', '').trim()] =
-              keyValue[1].replaceAll('"', '').trim();
+    Map<String, String> tags;
+    if (!optionalParam) {
+      tags = {};
+      if (json['tags'] != null && json['tags'] is String) {
+        for (String entry in json['tags'].split(", ")) {
+          List<String> keyValue = entry.split("=>");
+          if (keyValue.length == 2) {
+            tags[keyValue[0].replaceAll('"', '').trim()] =
+                keyValue[1].replaceAll('"', '').trim();
+          }
         }
       }
+    } else {
+      tags = (json['tags'] as Map<dynamic, dynamic>?)?.map(
+        (key, value) => MapEntry(key.toString(), value.toString()),
+      ) ?? {};
     }
+    
 
     String? foundAmenity;
     String? amenityValue = json['amenity'];
@@ -48,8 +57,8 @@ class Place {
     }
 
     return Place(
-        id: int.parse(json['id']),
-        placeTable: json['place_table'],
+        id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+        placeTable: json['place_table'] ?? "Inconnu",
         name: json['name'],
         amenity: foundAmenity,
         latitude: json['latitude'] ?? json['lat'] ?? 0.0,
@@ -64,6 +73,22 @@ class Place {
             ? int.parse(json['nb_avis_stars'].toString())
             : 0,
         tags: tags);
+  }
+
+  // Add toJson method to make the class serializable
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'place_table': placeTable,
+      'name': name,
+      'amenity': GlobalData.amenities[amenity],
+      'latitude': latitude,
+      'longitude': longitude,
+      'addr:housenumber': houseNumber == -1 ? null : houseNumber,
+      'avg_stars': avgStars,
+      'nb_avis_stars': numReviews,
+      'tags': tags
+    };
   }
 
   @override

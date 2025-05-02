@@ -29,6 +29,7 @@ import 'package:logger/logger.dart';
 import '../utils/AmenityIcons.dart';
 import '../utils/GlobalData.dart'; // Added import for GlobalData
 import 'package:url_launcher/url_launcher.dart'; // Add this import
+import '../widgets/ModificationValidationCard.dart'; // Add this import
 
 class MapPage extends StatefulWidget {
   final bool focusOnSearch;
@@ -62,7 +63,7 @@ class _MapPageState extends State<MapPage> {
   Place? _selectedPlace;
   String? _selectedAmenity;
   double _bottomSheetHeight = 80.0;
-  List<String> _searchHistory = [];
+  List<Place> _searchHistory = [];
   late LocationService _locationService;
   late MapInteractions _mapInteractions;
   late ApiService _apiService;
@@ -86,6 +87,8 @@ class _MapPageState extends State<MapPage> {
   LatLng? _lastQueryLocation;
   List<dynamic> _nearbyModificationsToValidate = [];
   final double _queryDistanceThreshold = 100.0;
+  bool _isShowingValidationCard = false;
+  int _currentModificationIndex = 0;
 
   @override
   void initState() {
@@ -96,11 +99,19 @@ class _MapPageState extends State<MapPage> {
     _mapInteractions = MapInteractions(_mapController); // interactions de carte
     _mapEventSubscription = _mapController.mapEventStream.listen(_onMapEvent);
     loadTramData();
+    _loadSearchHistory();
     _apiService = ApiService(); // requêtes
     _routes = {};
     _showingAllAmenities = false; // Add this state variable
     _lastQueryLocation = null;
-    _fetchNearbyModificationsToValidate();
+
+    getUserLocation().then((_) {
+      Future.delayed(const Duration(seconds: 1), () {
+        _fetchNearbyModificationsToValidate();
+        _lastQueryLocation = _currentLocation;
+      });
+    });
+
     if (widget.focusOnSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
@@ -126,6 +137,7 @@ class _MapPageState extends State<MapPage> {
           _currentLocation = LatLng(position.latitude, position.longitude);
         });
         print('Nouvelle position : $_currentLocation');
+        _checkAndFetchNearbyModifications(); // Check for new modifications when position changes
       },
       onError: (dynamic error) {
         debugPrint('Erreur de localisation : $error');
@@ -135,44 +147,44 @@ class _MapPageState extends State<MapPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPlacesBbox(_mapController.camera.visibleBounds);
     });
-    //_loadSearchHistory();
   }
 
   void _checkAndFetchNearbyModifications() {
     if (_currentLocation != null) {
-      if (_lastQueryLocation == null) {
+      // Calcul de la distance entre la dernière position de requête et la position actuelle
+      double distance = Geolocator.distanceBetween(
+          _lastQueryLocation!.latitude,
+          _lastQueryLocation!.longitude,
+          _currentLocation!.latitude,
+          _currentLocation!.longitude);
+
+      // Si la distance dépasse le seuil, faire une nouvelle requête
+      if (distance > _queryDistanceThreshold) {
         _lastQueryLocation = _currentLocation;
         _fetchNearbyModificationsToValidate();
-      } else {
-        // Calcul de la distance entre la dernière position de requête et la position actuelle
-        double distance = Geolocator.distanceBetween(
-            _lastQueryLocation!.latitude,
-            _lastQueryLocation!.longitude,
-            _currentLocation!.latitude,
-            _currentLocation!.longitude);
-
-        // Si la distance dépasse le seuil, faire une nouvelle requête
-        if (distance > _queryDistanceThreshold) {
-          _lastQueryLocation = _currentLocation;
-          _fetchNearbyModificationsToValidate();
-        }
       }
     }
   }
 
   Future<void> _fetchNearbyModificationsToValidate() async {
-    if (_currentLocation == null) return;
+    print('Fetching nearby modifications...');
 
     try {
       final response = await _apiService.fetchModificationsToValidate(
-          _currentLocation!.latitude, _currentLocation!.longitude, 250);
+          _currentLocation!.latitude, _currentLocation!.longitude, 400);
 
       setState(() {
         _nearbyModificationsToValidate = response['lieux'];
 
-        print('Nombre de modifications reçues : ${_nearbyModificationsToValidate.length}');
+        // Show the first modification if there are any and if conditions are met
+        if (_nearbyModificationsToValidate.isNotEmpty) {
+          _isShowingValidationCard = _canShowValidationCard();
+          _currentModificationIndex = 0;
+        }
+
+        print(
+            'Nombre de modifications reçues : ${_nearbyModificationsToValidate.length}');
       });
-  
     } catch (e) {
       print('Erreur lors de la récupération des modifications à valider: $e');
     }
@@ -203,7 +215,8 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  Future<void> getUserLocation() async {
+  Future<LatLng?> getUserLocation() async {
+    print('Getting user location...');
     LocationService locationService = LocationService();
 
     var position = await locationService.getCurrentPosition();
@@ -211,6 +224,7 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
+      print('Location updated: $_currentLocation');
 
       try {
         if (_currentLocation != null) {
@@ -231,8 +245,11 @@ class _MapPageState extends State<MapPage> {
         _mapController.move(
             LatLng(position.latitude, position.longitude), 13.0);
       }
+
+      return _currentLocation;
     } else {
       debugPrint('Impossible d\'obtenir la position de l\'utilisateur.');
+      return null;
     }
   }
 
@@ -269,40 +286,49 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-/*
   void _loadSearchHistory() async {
+    print("chargement de l'historique ...");
     final prefs = await SharedPreferences.getInstance();
-    String? historyJson = prefs.getString('search_history');
-    if (historyJson != null){
+    String? historyJson = prefs.getString('searchHistory');
+    if (historyJson != null) {
+      print("historyJson chargé : $historyJson");
+      List<dynamic> decoded = jsonDecode(historyJson);
+
+      // Create a fresh list of Places by properly calling Place.fromJson
+      List<Place> history = [];
+      for (var item in decoded) {
+        Place place = Place.fromJson(Map<String, dynamic>.from(item),
+            optionalParam: true); // appelle une fonction censée afficher 2
+        history.add(place);
+      }
+
       setState(() {
-      _searchHistory = List<Place>.from(jsonDecode(historyJson));
+        _searchHistory = history;
       });
-    }
-    else{
+
+      print("Historique chargé : $_searchHistory");
+    } else {
       setState(() {
-      _searchHistory = [];
+        _searchHistory = [];
       });
     }
   }
-*/
+
   void _onSuggestionTap(Place place) async {
     _bottomSheetHeight = MediaQuery.of(context).size.height * 0.45;
-    _controller.text =
-        place.name; // Mise à jour du champ texte avec le nom du lieu
+    _controller.text = place.name;
     _focusNode.unfocus();
-    LatLng? destination;
-    destination = LatLng(place.latitude, place.longitude);
+    LatLng? destination = LatLng(place.latitude, place.longitude);
     double zoom = _mapController.camera.zoom;
-    final double mapHeightInDegrees =
-        360 / (2 << (zoom.toInt() - 1)); // Conversion zoom -> degrés
+    final double mapHeightInDegrees = 360 / (2 << (zoom.toInt() - 1));
     final double offsetInDegrees = mapHeightInDegrees *
         (_bottomSheetHeight / MediaQuery.of(context).size.height);
     LatLng adjustedDestination =
         LatLng(destination.latitude - offsetInDegrees, destination.longitude);
 
     setState(() {
-      _selectedPlace = place; // Mettre à jour le lieu sélectionné
-      suggestedPlaces.clear(); // Vide la liste des suggestions
+      _selectedPlace = place;
+      suggestedPlaces.clear();
       _isLayerVisible = false;
       _isPlacePresentationSheetVisible = true;
     });
@@ -312,7 +338,35 @@ class _MapPageState extends State<MapPage> {
 
     _mapController.move(adjustedDestination, zoom);
 
-    // Fetch images for the selected place
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? historyJson = prefs.getString('searchHistory');
+      List<dynamic> decodedJson =
+          historyJson != null ? jsonDecode(historyJson) : [];
+      List<Place> history =
+          decodedJson.map<Place>((item) => Place.fromJson(item)).toList();
+
+      // Remove the place if it already exists in history to avoid duplicates
+      history.removeWhere((p) => p.id == place.id);
+
+      // faire en sorte qu'à l'ajout, la taille de la liste ne dépasse pas 5
+      if (history.length >= 5) {
+        history.removeAt(0); // Supprime le plus ancien élément
+      }
+      history.add(place); // Ajoute le nouvel élément
+
+      // Convert places to JSON-serializable objects
+      List<Map<String, dynamic>> serializedHistory =
+          history.map((p) => p.toJson()).toList();
+      String encodedSreializedHistory = jsonEncode(serializedHistory);
+
+      await prefs.setString('searchHistory', encodedSreializedHistory);
+      print("historique mis à jour avec :");
+      logger.i(serializedHistory);
+    } catch (e) {
+      print('Erreur lors de la mise à jour de l\'historique : $e');
+    }
+
     try {
       List<Photo> fetchedPhotos =
           await _apiService.fetchImagesByPlaceId(place.id.toString());
@@ -322,13 +376,6 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       print('Erreur lors de la récupération des images : $e');
     }
-    final prefs = await SharedPreferences.getInstance();
-    String? historyJson = prefs.getString('search_history');
-    /*historyJson.removeWhere((existingPlace) => existingPlace.id == place.id);
-    historyJson.insert(0, place);
-    if (historyJson.length > 5) {
-      historyJson.removeLast();
-    }*/
   }
 
   void _onMarkerTap(Place place) {
@@ -558,6 +605,80 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  // Helper method to check if validation card can be shown
+  bool _canShowValidationCard() {
+    return !_isLayerVisible &&
+        !_isPlacePresentationSheetVisible &&
+        !_isPlaceInfoSheetVisible &&
+        _nearbyModificationsToValidate.isNotEmpty;
+  }
+
+  // Handle validation response
+  void _handleValidationResponse(int idModification, bool isApproved) async {
+    try {
+      final response = await _apiService.sendModificationValidation(
+          idModification, isApproved);
+      print(
+          'Validation response: idModification: $idModification, isApproved: $isApproved, success: ${response['success']}');
+
+      if (response['success']) {
+        setState(() {
+          // Move to the next modification if available
+          if (_currentModificationIndex <
+              _nearbyModificationsToValidate.length - 1) {
+            _currentModificationIndex++;
+          } else {
+            // If this was the last one, hide the card
+            _isShowingValidationCard = false;
+            _nearbyModificationsToValidate = [];
+          }
+        });
+
+        // Show feedback to user with data from response if available
+        final responseMessage = response['data']?['message'] ??
+            (isApproved ? 'Modification approuvée' : 'Modification refusée');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(responseMessage),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // Show error message from the response
+        final errorMessage = response['error'] ?? 'Une erreur est survenue';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Erreur lors de l\'envoi de la validation: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de l\'envoi de la réponse'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // Dismiss current validation card
+  void _dismissValidationCard() {
+    setState(() {
+      if (_currentModificationIndex <
+          _nearbyModificationsToValidate.length - 1) {
+        _currentModificationIndex++;
+      } else {
+        _isShowingValidationCard = false;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     print("Build appelé pour mappage");
@@ -679,6 +800,7 @@ class _MapPageState extends State<MapPage> {
             onLayerToggle: (isVisible) {
               if (_isLayerVisible != isVisible) {
                 setState(() {
+                  _loadSearchHistory();
                   _isLayerVisible = isVisible;
                 });
               }
@@ -751,31 +873,34 @@ class _MapPageState extends State<MapPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Affichage des amenities
-                        /*if (_searchHistory.isNotEmpty)
+                        if (_controller.text.isEmpty &&
+                            _searchHistory.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(8.0),
                             ),
-                            margin: const EdgeInsets.only(bottom: 8.0),
                             child: ListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _searchHistory.length,
                               itemBuilder: (context, index) {
-                                final placeName = _searchHistory[index];
                                 return ListTile(
-                                  leading: const Icon(Icons.history),
-                                  title: Text(place.name),
-                                  subtitle: Text(place.amenity ?? ''),
-                                  onTap: () {
-                                    _onSuggestionTap(place)
+                                  leading: const Icon(Icons.history_rounded),
+                                  title: Text(_searchHistory[index].name),
+                                  subtitle: Text("Historique"),
+                                  onTap: () async {
+                                    try {
+                                      _onSuggestionTap(_searchHistory[index]);
+                                    } catch (e) {
+                                      print(
+                                          "Erreur lors de la récupération du lieu depuis l'historique : $e");
+                                    }
                                   },
                                 );
                               },
                             ),
-                          ),*/
+                          ),
                         if (suggestedAmenities.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
@@ -1002,7 +1127,9 @@ class _MapPageState extends State<MapPage> {
                 },
                 onWebsiteTap: () async {
                   final website = _selectedPlace!.tags["website"];
-                  if (website != null && website.isNotEmpty) {
+                  if (website != null &&
+                      website is String &&
+                      website.isNotEmpty) {
                     final Uri websiteUri = Uri.parse(website);
                     if (await canLaunchUrl(websiteUri)) {
                       await launchUrl(websiteUri,
@@ -1193,9 +1320,38 @@ class _MapPageState extends State<MapPage> {
                 });
               },
             ),
+          // Add the validation card if conditions are met
+          if (_isShowingValidationCard &&
+              _nearbyModificationsToValidate.isNotEmpty)
+            Positioned(
+              top: 15, // Position it above the bottom nav bar
+              left: 0,
+              right: 0,
+              child: ModificationValidationCard(
+                modification:
+                    _nearbyModificationsToValidate[_currentModificationIndex],
+                onValidationResponse: _handleValidationResponse,
+                onDismiss: _dismissValidationCard,
+                userLocation: _currentLocation,
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  @override
+  void didUpdateWidget(MapPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Check if we can show validation card when UI state changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      bool canShow = _canShowValidationCard();
+      if (canShow != _isShowingValidationCard) {
+        setState(() {
+          _isShowingValidationCard = canShow;
+        });
+      }
+    });
   }
 
   @override
