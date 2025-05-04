@@ -25,28 +25,6 @@ class _AuthPageState extends State<AuthPage> {
     return emailRegex.hasMatch(email);
   }
 
-  Future<void> setPreferencesToTrue() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (prefs.containsKey('isLoggedIn')) {
-      bool? isLoggedIn = prefs.getBool('isLoggedIn');
-      print("Valeur existante de 'isLoggedIn': $isLoggedIn");
-      await prefs.setBool('isLoggedIn', true);
-    } else {
-      await prefs.setBool('isLoggedIn', true);
-      print("Clé 'isLoggedIn' créée et définie sur true");
-    }
-
-    if (prefs.containsKey('isFirstLaunch')) {
-      bool? isFirstLaunch = prefs.getBool('isFirstLaunch');
-      print("Valeur existante de 'isFirstLaunch': $isFirstLaunch");
-      await prefs.setBool('isFirstLaunch', false);
-    } else {
-      await prefs.setBool('isFirstLaunch', false);
-      print("Clé 'isFirstLaunch' créée et définie sur true");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final authState = Provider.of<AuthState>(context);
@@ -61,117 +39,220 @@ class _AuthPageState extends State<AuthPage> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text(_isLoginMode ? "Connexion" : "Inscription"),
+        centerTitle: true,
+        title: Text(
+          _isLoginMode ? "Connexion" : "Inscription",
+          style: TextStyle(color: Colors.white, fontSize: 30),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              if (!_isLoginMode)
-                TextField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: "Nom d'utilisateur",
-                    errorText: _usernameError,
-                  ),
-                ),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: "Email ou Nom d'Utilisateur",
-                  errorText: _emailError,
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: "Mot de passe",
-                  errorText: _passwordError,
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  final email = _emailController.text.trim();
-                  final password = _passwordController.text.trim().toString();
-                  final username = _usernameController.text.trim();
-
-                  setState(() {
-                    _emailError = null;
-                    _passwordError = null;
-                    _usernameError = null;
-                  });
-
-                  if (!_isValidEmail(email)) {
-                    setState(() {
-                      _emailError = "L'email n'est pas valide.";
-                    });
-                    return;
-                  }
-
-                  if (password.isEmpty) {
-                    setState(() {
-                      _passwordError = "Le mot de passe ne peut pas être vide.";
-                    });
-                    return;
-                  }
-
-                  if (password.runtimeType != String) {
-                    setState(() {
-                      _passwordError =
-                          "Le mot de passe doit être une chaîne de caractères.";
-                    });
-                    return;
-                  }
-
-                  if (!_isLoginMode && username.isEmpty) {
-                    setState(() {
-                      _usernameError =
-                          "Le nom d'utilisateur ne peut pas être vide.";
-                    });
-                    return;
-                  }
-
-                  if (_isLoginMode) {
-                    authState.logIn(
-                      email: email,
-                      password: password,
-                    );
-                  } else {
-                    print(
-                        "Données envoyées au backend : $email, $username, $password");
-                    authState.signUp(
-                      email: email,
-                      username: username,
-                      password: password,
-                    );
-                  }
-                },
-                child: Text(_isLoginMode ? "Se connecter" : "S'inscrire"),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isLoginMode = !_isLoginMode;
-                  });
-                },
-                child: Text(
-                  _isLoginMode
-                      ? "Pas encore de compte ? Inscrivez-vous"
-                      : "Déjà inscrit ? Connectez-vous",
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: setPreferencesToTrue,
-                child: Text("Définir 'isLoggedIn' et 'isFirstLaunch' à true"),
-              ),
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.fromRGBO(61, 90, 254, 0.2),
+              Color.fromRGBO(61, 90, 254, 0.8),
             ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (!_isLoginMode)
+                    Container(
+                      margin: EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 5,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          errorText: _usernameError,
+                          border: InputBorder.none,
+                          labelText: "Nom d'utilisateur",
+                          labelStyle: TextStyle(color: Colors.black54),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                        ),
+                      ),
+                    ),
+                  Container(
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 5,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: "Email ou Nom d'Utilisateur",
+                        labelStyle: TextStyle(color: Colors.black54),
+                        errorText: _emailError,
+                        border: InputBorder.none,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                  ),
+                  Container(
+                    margin: EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 5,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: "Mot de passe",
+                        labelStyle: TextStyle(color: Colors.black54),
+                        errorText: _passwordError,
+                        border: InputBorder.none,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      obscureText: true,
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final email = _emailController.text.trim();
+                      final password =
+                          _passwordController.text.trim().toString();
+                      final username = _usernameController.text.trim();
+
+                      setState(() {
+                        _emailError = null;
+                        _passwordError = null;
+                        _usernameError = null;
+                      });
+
+                      if (!_isValidEmail(email)) {
+                        setState(() {
+                          _emailError = "L'email n'est pas valide.";
+                        });
+                        return;
+                      }
+
+                      if (password.isEmpty) {
+                        setState(() {
+                          _passwordError =
+                              "Le mot de passe ne peut pas être vide.";
+                        });
+                        return;
+                      }
+
+                      if (password.runtimeType != String) {
+                        setState(() {
+                          _passwordError =
+                              "Le mot de passe doit être une chaîne de caractères.";
+                        });
+                        return;
+                      }
+
+                      if (!_isLoginMode && username.isEmpty) {
+                        setState(() {
+                          _usernameError =
+                              "Le nom d'utilisateur ne peut pas être vide.";
+                        });
+                        return;
+                      }
+
+                      if (_isLoginMode) {
+                        authState.logIn(
+                          email: email,
+                          password: password,
+                        );
+                      } else {
+                        print(
+                            "Données envoyées au backend : $email, $username, $password");
+                        authState.signUp(
+                          email: email,
+                          username: username,
+                          password: password,
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Color.fromRGBO(61, 90, 254, 1),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)),
+                      elevation: 5,
+                    ),
+                    child: Text(
+                      _isLoginMode ? "Se connecter" : "S'inscrire",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _isLoginMode = !_isLoginMode;
+                      });
+                    },
+                    child: RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: TextStyle(color: Colors.white),
+                        children: [
+                          TextSpan(
+                            text: _isLoginMode
+                                ? "Pas encore de compte ?\n"
+                                : "Déjà inscrit ?\n",
+                          ),
+                          TextSpan(
+                            text: _isLoginMode
+                                ? "Inscrivez-vous"
+                                : "Connectez-vous",
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
