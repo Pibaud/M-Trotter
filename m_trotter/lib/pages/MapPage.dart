@@ -821,7 +821,7 @@ class _MapPageState extends State<MapPage> {
           ),
           if (!_isLayerVisible && !_isPlacePresentationSheetVisible)
             Positioned(
-              top: 85.0,
+              top: 92.0,
               left: 0.0,
               right: 0.0,
               child: SingleChildScrollView(
@@ -870,6 +870,8 @@ class _MapPageState extends State<MapPage> {
                     return false;
                   },
                   child: SingleChildScrollView(
+                    // ajouter un espacement du haut
+                    padding: const EdgeInsets.only(top: 8.0), // ajout d'un espacement
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -957,7 +959,7 @@ class _MapPageState extends State<MapPage> {
             ),
           if (!_isLayerVisible)
             Positioned(
-              top: 140.0,
+              top: 150.0,
               right: 10.0,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10.0),
