@@ -190,7 +190,6 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin) => {
                 LIMIT 10`,
                 [amenity, startid, notemin]
             );
-            console.log("result amenity : ", result.rows);
             return result.rows;
         }
     } catch (error) {
