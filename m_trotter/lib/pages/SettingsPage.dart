@@ -28,6 +28,7 @@ class SettingsPage extends StatelessWidget {
               themeNotifier.toggleTheme(value);
             },
           ),
+          /*
 
           // Autres paramètres factices
           const Divider(),
@@ -75,6 +76,8 @@ class SettingsPage extends StatelessWidget {
               // Tu pourrais ouvrir un dialogue si tu le souhaites pour choisir la langue
             },
           ),
+
+           */
           const Divider(),
 
           ListTile(
@@ -82,10 +85,77 @@ class SettingsPage extends StatelessWidget {
             title: const Text('À propos'),
             subtitle: const Text('En savoir plus sur cette application'),
             onTap: () {
-              // Naviguer vers une page "À propos"
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutPage()),
+              );
             },
           ),
         ],
+      ),
+    );
+  }
+}
+class AboutPage extends StatelessWidget {
+  const AboutPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      //backgroundColor: const Color(0xFFB9C3F3), // Couleur douce inspirée de ton fond
+      appBar: AppBar(
+        title: const Text("À propos"),
+        backgroundColor: const Color(0xFFB9C3F3), // Violet bleuté
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              SizedBox(height: 20),
+              Text(
+                "M'Trotter",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFB9C3F3),
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                "M'Trotter est une application mobile développée dans le cadre d’un projet universitaire, visant à faciliter l’exploration de la ville de Montpellier. Que ce soit pour se déplacer, découvrir de nouvelles activités ou tester des restaurants, l’application accompagne les utilisateurs dans leur quotidien. Elle repose également sur la participation de sa communauté, qui peut enrichir la base de données en partageant ses découvertes et en laissant des avis sur les lieux visités.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 30),
+              Text(
+                "Notre équipe",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                "- Thibaud\n"
+                    "- Hugo\n"
+                    "- Yanis\n"
+                    "- Robin\n",
+                style: TextStyle(fontSize: 16, color: Colors.black),
+              ),
+              SizedBox(height: 30),
+              Text(
+                "Ce projet a été réalisé dans le cadre de notre formation à l’Université de Montpellier.\n\nAnnée universitaire : 2024-2025",
+                style: TextStyle(fontSize: 14, color: Colors.black),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

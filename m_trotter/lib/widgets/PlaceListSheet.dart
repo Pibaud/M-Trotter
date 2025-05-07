@@ -37,6 +37,10 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
   late ApiService _apiService;
   List<Place> _places = [];
   final ScrollController _controller = ScrollController();
+  Map<String, dynamic> _filters = {
+    'isOpen': false,
+    'minNote': 0.0,
+  };
 
   // Add state variables for filters
   bool _isOpenFilterSelected = false;
@@ -69,7 +73,25 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
       setState(() {
         _places.addAll(res.map<Place>((data) => Place.fromJson(data)));
       });
-      print("nouveaux lieu récupérés :");
+    } catch (e) {
+      print('Erreur lors de la récupération des places pour une amenity : $e');
+    }
+  }
+
+  Future<void> getFilteredPlaces(Map<String, dynamic> filters,
+      {int? osmStartId}) async {
+    print(
+        "Filtering places with osmStartId: $osmStartId, isOpenFilter: ${filters['isOpen']}, minNote: ${filters['minNote']}");
+    try {
+      final res = await _apiService.fetchPlacesFittingAmenity(
+        GlobalData.amenities[_title]!,
+        osmStartId: osmStartId,
+        isOpen: filters['isOpen'],
+        minNote: filters['minNote'],
+      );
+      setState(() {
+        _places = (res.map<Place>((data) => Place.fromJson(data))).toList();
+      });
     } catch (e) {
       print('Erreur lors de la récupération des places pour une amenity : $e');
     }
@@ -170,8 +192,9 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
                           onPressed: () {
                             setState(() {
                               _isOpenFilterSelected = !_isOpenFilterSelected;
+                              _filters['isOpen'] = !_filters['isOpen'];
                             });
-                            // Action pour le filtre "Ouvert actuellement"
+                            getFilteredPlaces(_filters);
                           },
                           icon: Icon(
                             Icons.access_time_rounded,
@@ -208,11 +231,53 @@ class _PlaceListSheetState extends State<PlaceListSheet> {
                         margin: const EdgeInsets.only(right: 10.0),
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            setState(() {
-                              _isRatingFilterSelected =
-                                  !_isRatingFilterSelected;
-                            });
-                            // Action pour le filtre "Note"
+                            double selectedNote = 0.0;
+                            //faire apparaitre une pop up avec 5 étoiles alignées, l'appui la i-ème étoile met selectedNote = i
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text("Sélectionnez une note"),
+                                  content: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: List.generate(5, (index) {
+                                      return IconButton(
+                                        icon: Icon(
+                                          Icons.star,
+                                          color: index < selectedNote
+                                              ? Colors.yellow
+                                              : Colors.grey,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isRatingFilterSelected =
+                                                !_isRatingFilterSelected;
+                                            _filters['minNote'] =
+                                                (index + 1).toDouble();
+                                          });
+                                          getFilteredPlaces(_filters);
+                                          Navigator.of(context).pop();
+                                        },
+                                      );
+                                    }),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _isRatingFilterSelected = false;
+                                          _filters['minNote'] = 0.0;
+                                        });
+                                        getFilteredPlaces(_filters);
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text("Annuler"),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
                           },
                           icon: Icon(
                             Icons.star_rounded,
