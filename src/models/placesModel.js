@@ -151,7 +151,7 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin) => {
                   AND p.amenity = $1
                   AND p.osm_id > $2
                   AND p.tags->'opening_hours' IS NOT NULL
-                  AND avg_stars >= $3 
+                  AND (AVG(a.nb_etoiles) >= $3 OR AVG(a.nb_etoiles) IS NULL)
                 GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber", p.tags
                 LIMIT 30`,
                 [amenity, startid, notemin]
@@ -180,7 +180,7 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin) => {
                 WHERE p.name IS NOT NULL 
                   AND p.amenity = $1
                   AND p.osm_id > $2
-                  AND avg_stars >= $3
+                  AND (AVG(a.nb_etoiles) >= $3 OR AVG(a.nb_etoiles) IS NULL)
                 GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
                 LIMIT 10`,
                 [amenity, startid, notemin]
