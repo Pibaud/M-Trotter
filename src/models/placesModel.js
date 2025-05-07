@@ -162,8 +162,7 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin, wheelchair) =>
                   AND p.tags->'opening_hours' IS NOT NULL
                   ${havingwheelchair}
                 GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber", p.tags
-                ${havingClause}
-                LIMIT 30`,
+                ${havingClause}`,
                 [amenity, startid, notemin]
             );
 
