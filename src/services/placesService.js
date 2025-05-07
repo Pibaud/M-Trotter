@@ -22,10 +22,10 @@ exports.bboxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     }
 }
 
-exports.amenitylist = async (amenity, startid) => {
+exports.amenitylist = async (amenity, startid, ouver, notemin) => {
     console.log("Appel à amenitylist rvice place seavec les paramètres :", amenity, startid);
     try {
-        const lieux = await AmenityPlaces(amenity, startid);
+        const lieux = await AmenityPlaces(amenity, startid, ouver, notemin);
         return lieux;
     } catch (error) {
         console.error(error);
