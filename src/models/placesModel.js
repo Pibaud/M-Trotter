@@ -69,7 +69,7 @@ exports.ListePlaces = async (search, startid) => {
         pointsResult.rows.forEach((element) => {
             element.avg_stars = parseFloat(element.avg_stars);
         });
-        
+
         // Fusion des résultats
         // Création d'un objet avec 3 propriétés distinctes
         const finalResults = {
@@ -132,34 +132,151 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     }
 };
 
-exports.AmenityPlaces = async (amenity, startid) => {
+exports.AmenityPlaces = async (amenity, startid, ouvert, notemin, wheelchair) => {
     try {
-        const result = await pool.query(
-            `SELECT p.osm_id as id, p.name, p.amenity, p."addr:housenumber",
+        let result;
+        // Définir la condition HAVING en fonction de notemin
+        const havingClause = notemin > 0 
+            ? `HAVING AVG(a.nb_etoiles) >= $3` // Si notemin > 0, exclure les NULL
+            : `HAVING AVG(a.nb_etoiles) >= $3 OR AVG(a.nb_etoiles) IS NULL`; // Sinon, inclure les NULL
+        
+        const havingwheelchair = wheelchair
+            ? `AND p.tags->'wheelchair' IS NOT NULL`
+            : ``;
+        
+        if (ouvert) {
+            // Quand l'utilisateur souhaite les établissements ouverts
+            result = await pool.query(
+                `SELECT p.osm_id as id, p.name, p.amenity, p."addr:housenumber",
+                    ST_X(ST_Transform(p.way, 4326)) AS lon, 
+                    ST_Y(ST_Transform(p.way, 4326)) AS lat,
+                    p.tags->'opening_hours' AS opening_hours,
+                    STRING_AGG(p.tags::TEXT, '; ') AS tags,
+                    AVG(a.nb_etoiles) AS avg_stars,
+                    count(a.nb_etoiles) AS nb_avis_stars
+                FROM planet_osm_point p
+                LEFT JOIN avis a ON p.osm_id = a.place_id
+                WHERE p.name IS NOT NULL 
+                  AND p.amenity = $1
+                  AND p.osm_id > $2
+                  AND p.tags->'opening_hours' IS NOT NULL
+                  ${havingwheelchair}
+                GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber", p.tags
+                ${havingClause}`,
+                [amenity, startid, notemin]
+            );
+
+            // Filtrer pour déterminer les établissements actuellement ouverts
+            const now = new Date();
+            const filteredResults = result.rows.filter(place => {
+                const openingHours = place.opening_hours;
+                return isOpenNow(openingHours, now);
+            });
+
+            // Ne renvoyer que les 10 premiers résultats après filtrage
+            return filteredResults.slice(0, 10);
+        } else {
+            // Requête normale sans filtre d'ouverture
+            result = await pool.query(
+                `SELECT p.osm_id as id, p.name, p.amenity, p."addr:housenumber",
                     ST_X(ST_Transform(p.way, 4326)) AS lon, 
                     ST_Y(ST_Transform(p.way, 4326)) AS lat,
                     STRING_AGG(p.tags::TEXT, '; ') AS tags,
                     AVG(a.nb_etoiles) AS avg_stars,
                     count(a.nb_etoiles) AS nb_avis_stars
-            FROM planet_osm_point p
-            LEFT JOIN avis a ON p.osm_id = a.place_id
-            WHERE p.name IS NOT NULL 
-              AND p.amenity = $1
-              AND p.osm_id > $2
-            GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
-            LIMIT 10`,
-            [amenity, startid]
-        );
-
-        console.log("Places pour l'AMENITY ", amenity, " et le startid ", startid, " :")
-        console.dir(result.rows)
-        return result.rows;
+                FROM planet_osm_point p
+                LEFT JOIN avis a ON p.osm_id = a.place_id
+                WHERE p.name IS NOT NULL 
+                  AND p.amenity = $1
+                  AND p.osm_id > $2
+                  ${havingwheelchair}
+                GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
+                ${havingClause}
+                LIMIT 10`,
+                [amenity, startid, notemin]
+            );
+            return result.rows;
+        }
     } catch (error) {
         console.error("Erreur lors de la récupération des places :", error);
         throw { error: "Erreur interne du serveur." };
     }
 }
 
+// Fonction simplifiée pour déterminer si un établissement est actuellement ouvert
+function isOpenNow(openingHours, now) {
+    try {
+        // Cas faciles à détecter
+        if (!openingHours) return false;
+        if (openingHours === '24/7') return true;
+        
+        const currentDay = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][now.getDay()];
+        const currentTime = now.getHours() * 100 + now.getMinutes();
+        
+        // Format courant: "Mo-Fr 08:00-20:00"
+        // Pour une première version, on détecte quelques patterns communs
+        const dayPatterns = {
+            'Mo-Fr': ['Mo', 'Tu', 'We', 'Th', 'Fr'],
+            'Mo-Sa': ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+            'Sa-Su': ['Sa', 'Su']
+        };
+        
+        // Diviser en sections (chaque section séparée par un point-virgule)
+        const sections = openingHours.split(';').map(s => s.trim());
+        
+        for (const section of sections) {
+            // Vérifier si le jour actuel est mentionné ou dans une plage
+            let includesToday = false;
+            
+            // Vérifier les plages de jours (Mo-Fr, etc.)
+            for (const [pattern, days] of Object.entries(dayPatterns)) {
+                if (section.includes(pattern) && days.includes(currentDay)) {
+                    includesToday = true;
+                    break;
+                }
+            }
+            
+            // Vérifier mention directe du jour
+            if (section.includes(currentDay)) {
+                includesToday = true;
+            }
+            
+            // Si les jours ne sont pas mentionnés, on suppose tous les jours
+            if (!section.match(/Mo|Tu|We|Th|Fr|Sa|Su/)) {
+                includesToday = true;
+            }
+            
+            // Si cette section concerne le jour actuel, vérifier les heures
+            if (includesToday) {
+                // Extraire les intervalles de temps (ex: "08:00-20:00")
+                const timeRanges = section.match(/\d{1,2}:\d{2}-\d{1,2}:\d{2}/g) || [];
+                
+                for (const range of timeRanges) {
+                    const [start, end] = range.split('-');
+                    const [startHour, startMin] = start.split(':').map(Number);
+                    const [endHour, endMin] = end.split(':').map(Number);
+                    
+                    const startTime = startHour * 100 + startMin;
+                    const endTime = endHour * 100 + endMin;
+                    
+                    // Gérer le cas où la fermeture est après minuit
+                    if (endTime < startTime) {
+                        if (currentTime >= startTime || currentTime <= endTime) {
+                            return true;
+                        }
+                    } else if (currentTime >= startTime && currentTime <= endTime) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    } catch (e) {
+        console.error("Erreur lors de l'analyse des heures d'ouverture:", e);
+        return false; // En cas d'erreur, considérer comme fermé
+    }
+}
 exports.BestPlaces = async () => {
     try {
         const result = await pool.query(
