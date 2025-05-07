@@ -135,6 +135,11 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
 exports.AmenityPlaces = async (amenity, startid, ouvert, notemin) => {
     try {
         let result;
+        // Définir la condition HAVING en fonction de notemin
+        const havingClause = notemin > 0 
+            ? `HAVING AVG(a.nb_etoiles) >= $3` // Si notemin > 0, exclure les NULL
+            : `HAVING AVG(a.nb_etoiles) >= $3 OR AVG(a.nb_etoiles) IS NULL`; // Sinon, inclure les NULL
+        
         if (ouvert) {
             // Quand l'utilisateur souhaite les établissements ouverts
             result = await pool.query(
@@ -152,7 +157,7 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin) => {
                   AND p.osm_id > $2
                   AND p.tags->'opening_hours' IS NOT NULL
                 GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber", p.tags
-                HAVING AVG(a.nb_etoiles) >= $3 OR AVG(a.nb_etoiles) IS NULL
+                ${havingClause}
                 LIMIT 30`,
                 [amenity, startid, notemin]
             );
@@ -181,7 +186,7 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin) => {
                   AND p.amenity = $1
                   AND p.osm_id > $2
                 GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
-                HAVING AVG(a.nb_etoiles) >= $3 OR AVG(a.nb_etoiles) IS NULL
+                ${havingClause}
                 LIMIT 10`,
                 [amenity, startid, notemin]
             );
