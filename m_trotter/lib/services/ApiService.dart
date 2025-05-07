@@ -46,10 +46,10 @@ class ApiService {
   }
 
   Future<List<dynamic>> fetchPlacesFittingAmenity(String amenity,
-      {int? osmStartId}) async {
-    final String url = '$baseUrl/api/amenityList/';
+      {int? osmStartId, bool? isOpen, double? minNote}) async {
+    final String url = '$baseUrl/api/amenitylist/';
     print(
-        "Dans apiservice avec les paramètres : $amenity, osmStartId: $osmStartId ");
+        "Dans apiservice avec les paramètres : $amenity, osmStartId: $osmStartId , isOpen: $isOpen, minNote: $minNote ");
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -57,6 +57,8 @@ class ApiService {
         body: json.encode({
           'amenity': amenity,
           if (osmStartId != null) 'startid': osmStartId,
+          if (isOpen != null) 'ouvert': isOpen,
+          if (minNote != null) 'notemin': minNote,
         }),
       );
 
@@ -65,6 +67,8 @@ class ApiService {
         for (var point in responseData) {
           point['place_table'] = "planet_osm_point";
         }
+        print("lieux :");
+        logger.i(responseData);
         return responseData;
       } else {
         throw Exception('Erreur serveur : ${response.statusCode}');
@@ -1135,4 +1139,6 @@ class ApiService {
       };
     }
   }
+
+  //
 }
