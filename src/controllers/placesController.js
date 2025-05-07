@@ -43,7 +43,7 @@ exports.amenitylist = async(req, res) => {
         if (notemin && (notemin < 0 || notemin > 5)) {
             return res.status(400).json({ error: "notemin doit être entre 0 et 5." });
         };
-        const liste = await amenitylist(amenity, startid || 0, ouvert || false, notemin || 0, wheelchair || false); // Appel au service
+        const liste = await amenitylist(amenity, startid || 0, ouvert || false, notemin || 0, wheelchair || false, takeaway || false); // Appel au service
         //on fait passer avgstars de string à float
         liste.forEach((element) => {
             element.avg_stars = parseFloat(element.avg_stars);
