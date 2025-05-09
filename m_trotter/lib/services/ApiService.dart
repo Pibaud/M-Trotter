@@ -688,7 +688,7 @@ class ApiService {
       );
 
       final Map<String, dynamic> responseData = json.decode(response.body);
-      if (response.statusCode == 200 && responseData['success'] == true) {
+      if (response.statusCode == 200) {
         return {'success': true, 'data': responseData};
       } else {
         return {
@@ -703,28 +703,37 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> modifReview(
-      String reviewId, String comment, int etoiles) async {
-    final String url = '$baseUrl/api/modifavis';
+      String reviewId, String comment, int? etoiles, String? parentID) async {
+    final String url = '$baseUrl/api/updateavis';
     final String? token = await AuthService.getToken();
 
     if (token == null) {
       return {'success': false, 'error': 'Token non trouvé'};
+    }
+    print("reviewId : $reviewId comment : $comment etoiles : $etoiles");
+
+    final Map<String, dynamic> body = {
+      'accessToken': token,
+      'avis_id': reviewId,
+      'lavis': comment,
+    };
+
+    if (parentID != null) {
+      body['avis_parent'] = parentID;
+    } else if (etoiles != null) {
+      body['nb_etoile'] = etoiles;
     }
 
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'accesstoken': token,
-          'avis_id': reviewId,
-          'avis': comment,
-          'nb_etoile': etoiles,
-        }),
+        body: json.encode(body),
       );
 
+
       final Map<String, dynamic> responseData = json.decode(response.body);
-      if (response.statusCode == 200 && responseData['success'] == true) {
+      if (response.statusCode == 200) {
         return {'success': true, 'data': responseData};
       } else {
         return {

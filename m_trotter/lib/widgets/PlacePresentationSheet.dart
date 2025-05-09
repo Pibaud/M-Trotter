@@ -500,10 +500,16 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
     }
   }
 
-  void modifReview(String reviewId, String comment, int etoiles) async {
+  void modifReview(String reviewId, String comment, int? etoiles, String? parentID) async {
     try {
       ApiService apiService = ApiService();
-      final response = await apiService.modifReview(reviewId, comment, etoiles);
+
+      final response = await apiService.modifReview(
+        reviewId,
+        comment,
+        etoiles,
+        parentID,
+      );
 
       if (response['success']) {
         print('Avis modifié avec succès');
@@ -1274,7 +1280,7 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
               if (review.parentId == null && !isEditing)
                 _buildStars(review.rating.toDouble()),
 
-              if (isEditing)
+              if (isEditing && review.parentId == null)
                 Row(
                   children: List.generate(5, (index) {
                     return IconButton(
@@ -1327,7 +1333,12 @@ class _PlacePresentationSheetState extends State<PlacePresentationSheet> {
                     TextButton(
                       onPressed: () {
                         setState(() {
-                          modifReview(review.id, controller.text, editingRating);
+                          modifReview(
+                            review.id,
+                            controller.text,
+                            review.parentId == null ? editingRating : null,
+                            review.parentId,
+                          );
                           isEditing = false;
                         });
                       },
