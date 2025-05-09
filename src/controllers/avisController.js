@@ -155,9 +155,9 @@ exports.deleteAvis = async (req, res) => {
             return res.status(401).json({ error: 'Token invalide ou expiré' });
         }
 
-        // Appel du modèle pour supprimer l'avis
+        let deletedAvis;
         try {
-            const deletedAvis = await deleteAvisById(avis_id, user_id);
+            deletedAvis = await deleteAvisById(avis_id, user_id);
         } catch (error) {
             console.error('Erreur lors de la suppression de l\'avis erreur 406:', error);
             return res.status(406).json({ error });
@@ -167,7 +167,7 @@ exports.deleteAvis = async (req, res) => {
             return res.status(404).json({ error: 'Avis non trouvé.' });
         }
 
-        res.status(200).json({ message: 'Avis supprimé avec succès.' });
+        res.status(200).json({ message: 'Avis supprimé avec succès.' , avis: deletedAvis });
     } catch (error) {
         console.error('Erreur lors de la suppression de l\'avis:', error);
         res.status(500).json({ error: 'Erreur interne du serveur' });
