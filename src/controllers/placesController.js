@@ -34,7 +34,7 @@ exports.bboxPlaces = async (req, res) => {
 
 exports.amenitylist = async(req, res) => {
     try {
-        const {amenity, startid, ouvert, notemin, wheelchair, takeaway } = req.body;
+        const {amenity, startid, ouvert, notemin, wheelchair, takeaway, religion} = req.body;
         console.log("Appel à amenitylist controller avec les paramètres :", amenity, startid);
         if (!amenity){
             return res.status(400).json({error : "pas d'amenity "});
@@ -43,7 +43,7 @@ exports.amenitylist = async(req, res) => {
         if (notemin && (notemin < 0 || notemin > 5)) {
             return res.status(400).json({ error: "notemin doit être entre 0 et 5." });
         };
-        const liste = await amenitylist(amenity, startid || 0, ouvert || false, notemin || 0, wheelchair || false, takeaway || false); // Appel au service
+        const liste = await amenitylist(amenity, startid || 0, ouvert || false, notemin || 0, wheelchair || false, takeaway || false, religion || false); // Appel au service
         //on fait passer avgstars de string à float
         liste.forEach((element) => {
             element.avg_stars = parseFloat(element.avg_stars);

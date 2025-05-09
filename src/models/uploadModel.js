@@ -19,6 +19,7 @@ const getImagesByPlaceId = async (id_lieu, user_id) => {
              ORDER BY weighted_vote_score DESC, p.id_photo ASC`,
             [id_lieu, user_id]
         );
+        console.log('✅ Images récupérées avec succès :', result.rows);
         return result.rows;
     } catch (error) {
         console.error('❌ Erreur lors de la récupération des images dans la BDD :', error);

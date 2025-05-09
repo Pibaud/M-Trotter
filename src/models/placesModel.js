@@ -132,7 +132,7 @@ exports.BoxPlaces = async (minlat, minlon, maxlat, maxlon) => {
     }
 };
 
-exports.AmenityPlaces = async (amenity, startid, ouvert, notemin, wheelchair, takeaway) => {
+exports.AmenityPlaces = async (amenity, startid, ouvert, notemin, wheelchair, takeaway, religion) => {
     try {
         let result;
         // Définir la condition HAVING en fonction de notemin
@@ -142,6 +142,10 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin, wheelchair, ta
         
         const havingwheelchair = wheelchair
             ? `AND p.tags->'wheelchair' IS NOT NULL`
+            : ``;
+        
+        const religionClause = religion
+            ? `p.religion IS NOT NULL`
             : ``;
 
         const takeawayClause = takeaway
@@ -166,6 +170,7 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin, wheelchair, ta
                   AND p.tags->'opening_hours' IS NOT NULL
                   ${havingwheelchair}
                   ${takeawayClause}
+                  ${religionClause}
                 GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber", p.tags
                 ${havingClause}`,
                 [amenity, startid, notemin]
@@ -196,6 +201,7 @@ exports.AmenityPlaces = async (amenity, startid, ouvert, notemin, wheelchair, ta
                   AND p.osm_id > $2
                   ${havingwheelchair}
                   ${takeawayClause}
+                  ${religionClause}
                 GROUP BY p.osm_id, p.name, p.amenity, p.way, p."addr:housenumber"
                 ${havingClause}
                 LIMIT 10`,
